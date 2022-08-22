@@ -13,11 +13,27 @@
 			]
 		},
 		{
+			"name": "getTypeContract",
+			"inputs": [
+			],
+			"outputs": [
+				{"name":"value0","type":"string"}
+			]
+		},
+		{
+			"name": "setCodeDirectSell",
+			"inputs": [
+				{"name":"_directSellCode","type":"cell"}
+			],
+			"outputs": [
+			]
+		},
+		{
 			"name": "buildPayload",
 			"inputs": [
 				{"name":"_nftAddress","type":"address"},
 				{"name":"_startAuction","type":"uint64"},
-				{"name":"_endAuction","type":"optional(uint64)"},
+				{"name":"_endAuction","type":"uint64"},
 				{"name":"_paymentToken","type":"address"},
 				{"name":"_price","type":"uint128"}
 			],
@@ -35,6 +51,16 @@
 				{"name":"value4","type":"address"},
 				{"name":"sendGasTo","type":"address"},
 				{"name":"payload","type":"cell"}
+			],
+			"outputs": [
+			]
+		},
+		{
+			"name": "upgrade",
+			"inputs": [
+				{"name":"newCode","type":"cell"},
+				{"name":"newVersion","type":"uint32"},
+				{"name":"sendGasTo","type":"address"}
 			],
 			"outputs": [
 			]
@@ -82,6 +108,13 @@
 			]
 		},
 		{
+			"name": "FactoryDirectSellUpgrade",
+			"inputs": [
+			],
+			"outputs": [
+			]
+		},
+		{
 			"name": "OwnershipTransferred",
 			"inputs": [
 				{"name":"oldOwner","type":"address"},
@@ -97,6 +130,7 @@
 		{"name":"_constructorFlag","type":"bool"},
 		{"name":"owner_","type":"address"},
 		{"name":"nonce_","type":"uint64"},
-		{"name":"directSellCode","type":"cell"}
+		{"name":"directSellCode","type":"cell"},
+		{"name":"currentVersion","type":"uint32"}
 	]
 }

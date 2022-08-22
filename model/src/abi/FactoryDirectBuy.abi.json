@@ -13,14 +13,38 @@
 			]
 		},
 		{
+			"name": "getTypeContract",
+			"inputs": [
+			],
+			"outputs": [
+				{"name":"value0","type":"string"}
+			]
+		},
+		{
 			"name": "buildPayload",
 			"inputs": [
 				{"name":"nft","type":"address"},
-				{"name":"startTime","type":"optional(uint64)"},
-				{"name":"durationTime","type":"optional(uint64)"}
+				{"name":"startTime","type":"uint64"},
+				{"name":"durationTime","type":"uint64"}
 			],
 			"outputs": [
 				{"name":"value0","type":"cell"}
+			]
+		},
+		{
+			"name": "setCodeTokenPlatform",
+			"inputs": [
+				{"name":"_tokenPlatformCode","type":"cell"}
+			],
+			"outputs": [
+			]
+		},
+		{
+			"name": "setCodeDirectBuy",
+			"inputs": [
+				{"name":"_directBuyCode","type":"cell"}
+			],
+			"outputs": [
 			]
 		},
 		{
@@ -43,11 +67,20 @@
 				{"name":"_owner","type":"address"},
 				{"name":"_spentTokenRoot","type":"address"},
 				{"name":"_nft","type":"address"},
-				{"name":"_timeTx","type":"uint64"},
-				{"name":"_amount","type":"uint128"}
+				{"name":"_timeTx","type":"uint64"}
 			],
 			"outputs": [
 				{"name":"value0","type":"address"}
+			]
+		},
+		{
+			"name": "upgrade",
+			"inputs": [
+				{"name":"newCode","type":"cell"},
+				{"name":"newVersion","type":"uint32"},
+				{"name":"sendGasTo","type":"address"}
+			],
+			"outputs": [
 			]
 		},
 		{
@@ -95,6 +128,13 @@
 			]
 		},
 		{
+			"name": "FactoryDirectBuyUpgrade",
+			"inputs": [
+			],
+			"outputs": [
+			]
+		},
+		{
 			"name": "OwnershipTransferred",
 			"inputs": [
 				{"name":"oldOwner","type":"address"},
@@ -111,6 +151,7 @@
 		{"name":"owner_","type":"address"},
 		{"name":"nonce_","type":"uint64"},
 		{"name":"tokenPlatformCode","type":"cell"},
-		{"name":"directBuyCode","type":"cell"}
+		{"name":"directBuyCode","type":"cell"},
+		{"name":"currentVersion","type":"uint32"}
 	]
 }

@@ -20,6 +20,14 @@
 			]
 		},
 		{
+			"name": "getTypeContract",
+			"inputs": [
+			],
+			"outputs": [
+				{"name":"value0","type":"string"}
+			]
+		},
+		{
 			"name": "onNftChangeManager",
 			"inputs": [
 				{"name":"value0","type":"uint256"},
@@ -55,6 +63,16 @@
 			],
 			"outputs": [
 				{"name":"value0","type":"cell"}
+			]
+		},
+		{
+			"name": "upgrade",
+			"inputs": [
+				{"name":"newCode","type":"cell"},
+				{"name":"newVersion","type":"uint32"},
+				{"name":"sendGasTo","type":"address"}
+			],
+			"outputs": [
 			]
 		},
 		{
@@ -154,6 +172,13 @@
 			]
 		},
 		{
+			"name": "AuctionRootUpgrade",
+			"inputs": [
+			],
+			"outputs": [
+			]
+		},
+		{
 			"name": "OwnershipTransferred",
 			"inputs": [
 				{"name":"oldOwner","type":"address"},
@@ -176,6 +201,7 @@
 		{"name":"offerCode","type":"cell"},
 		{"name":"nonce_","type":"uint64"},
 		{"name":"auctionBidDelta","type":"uint8"},
-		{"name":"auctionBidDeltaDecimals","type":"uint8"}
+		{"name":"auctionBidDeltaDecimals","type":"uint8"},
+		{"name":"currentVersion","type":"uint32"}
 	]
 }
