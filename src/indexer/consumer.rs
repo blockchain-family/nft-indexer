@@ -1,32 +1,27 @@
-use crate::{database::actions, indexer::record_builder};
 use anyhow::Result;
-use futures::StreamExt;
+use futures::{Future, StreamExt};
 use nekoton_abi::{transaction_parser::Extracted, TransactionParser};
 use sqlx::PgPool;
-use std::sync::Arc;
+use std::{pin::Pin, sync::Arc};
 use transaction_consumer::{StreamFrom, TransactionConsumer};
 
 pub async fn serve(pool: Arc<PgPool>, consumer: Arc<TransactionConsumer>) -> Result<()> {
     let stream = consumer.stream_transactions(StreamFrom::Beginning).await?;
     let mut fs = futures::stream::StreamExt::fuse(stream);
 
-    let parsers = initialize_parsers()?;
+    let parsers_and_handlers = initialize_parsers_and_handlers()?;
 
     log::info!("Start listening to kafka...");
     while let Some(tx) = fs.next().await {
-        if let Some(extracted) = parsers
-            .iter()
-            .find_map(|parser| parser.parse(&tx.transaction).ok())
-        {
-            // TODO: handle by name
-            for ex in extracted {
-                println!("{:#?}", ex.name);
+        if let Some(f) = parsers_and_handlers.iter().find_map(|(parser, handler)| {
+            parser
+                .parse(&tx.transaction)
+                .map_or(None, |extracted| Some(handler(extracted, &pool)))
+        }) {
+            if let Some(e) = f.await.err() {
+                log::error!("Error processing transaction: {:#?}", e);
             }
         }
-
-        // if let Err(e) = process_event... {
-        //     log::error!("Error processing %event%: {:#?}", e);
-        // }
 
         if let Err(e) = tx.commit() {
             return Err(e.context("Failed committing consumed transacton."));
@@ -52,13 +47,75 @@ fn get_contract_parser(abi_path: &str) -> Result<TransactionParser> {
         .build_with_external_in()
 }
 
-fn initialize_parsers() -> Result<Vec<TransactionParser>> {
+type Handler = fn(Vec<Extracted<'_>>, &PgPool) -> Pin<Box<dyn Future<Output = Result<()>>>>;
+
+fn initialize_parsers_and_handlers() -> Result<Vec<(TransactionParser, Handler)>> {
     Ok(vec![
-        get_contract_parser("./abi/AuctionRootTip3.abi.json")?,
-        get_contract_parser("./abi/AuctionTip3.abi.json")?,
-        get_contract_parser("./abi/DirectBuy.abi.json")?,
-        get_contract_parser("./abi/DirectSell.abi.json")?,
-        get_contract_parser("./abi/FactoryDirectBuy.abi.json")?,
-        get_contract_parser("./abi/FactoryDirectSell.abi.json")?,
+        (
+            get_contract_parser("./abi/AuctionRootTip3.abi.json")?,
+            handle_auction_root_tip3,
+        ),
+        (
+            get_contract_parser("./abi/AuctionTip3.abi.json")?,
+            handle_auction_tip3,
+        ),
+        (
+            get_contract_parser("./abi/DirectBuy.abi.json")?,
+            handle_direct_buy,
+        ),
+        (
+            get_contract_parser("./abi/DirectSell.abi.json")?,
+            handle_direct_sell,
+        ),
+        (
+            get_contract_parser("./abi/FactoryDirectBuy.abi.json")?,
+            handle_factory_direct_buy,
+        ),
+        (
+            get_contract_parser("./abi/FactoryDirectSell.abi.json")?,
+            handle_factory_direct_sell,
+        ),
     ])
+}
+
+fn handle_auction_root_tip3(
+    _extracted: Vec<Extracted<'_>>,
+    _pool: &PgPool,
+) -> Pin<Box<dyn Future<Output = Result<()>>>> {
+    todo!()
+}
+
+fn handle_auction_tip3(
+    _extracted: Vec<Extracted<'_>>,
+    _pool: &PgPool,
+) -> Pin<Box<dyn Future<Output = Result<()>>>> {
+    todo!()
+}
+
+fn handle_direct_buy(
+    _extracted: Vec<Extracted<'_>>,
+    _pool: &PgPool,
+) -> Pin<Box<dyn Future<Output = Result<()>>>> {
+    todo!()
+}
+
+fn handle_direct_sell(
+    _extracted: Vec<Extracted<'_>>,
+    _pool: &PgPool,
+) -> Pin<Box<dyn Future<Output = Result<()>>>> {
+    todo!()
+}
+
+fn handle_factory_direct_buy(
+    _extracted: Vec<Extracted<'_>>,
+    _pool: &PgPool,
+) -> Pin<Box<dyn Future<Output = Result<()>>>> {
+    todo!()
+}
+
+fn handle_factory_direct_sell(
+    _extracted: Vec<Extracted<'_>>,
+    _pool: &PgPool,
+) -> Pin<Box<dyn Future<Output = Result<()>>>> {
+    todo!()
 }
