@@ -1,0 +1,9 @@
+database_url = "postgresql://postgres:postgres@127.0.0.1:5432?dbname=nft"
+server_addr = "0.0.0.0:3063"
+healthcheck_addr = "0.0.0.0:3034"
+database_max_connections = 5
+kafka_consumer_group = "nft"
+kafka_topic = "everscale-transactions"
+states_rpc_endpoints = ["http://0.0.0.0:3087"]
+
+kafka_settings = { "bootstrap.servers" = "127.0.0.1:9092", "acks" = "0", "security.protocol" = "PLAINTEXT" }
