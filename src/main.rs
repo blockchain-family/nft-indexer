@@ -52,7 +52,7 @@ pub async fn init_transactions_consumer(config: Arc<Config>) -> Result<Arc<Trans
     transaction_consumer::TransactionConsumer::new(
         &config.kafka_consumer_group,
         &config.kafka_topic,
-        &config.states_rpc_endpoints,
+        std::iter::empty::<&str>(),
         None,
         con_opt,
     )

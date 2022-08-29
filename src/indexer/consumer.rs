@@ -1,9 +1,11 @@
 use anyhow::Result;
-use futures::{Future, StreamExt};
-use nekoton_abi::{transaction_parser::Extracted, TransactionParser};
+use futures::{future::BoxFuture, StreamExt};
+use nekoton_abi::{transaction_parser::ExtractedOwned, TransactionParser};
 use sqlx::PgPool;
-use std::{pin::Pin, sync::Arc};
+use std::sync::Arc;
 use transaction_consumer::{StreamFrom, TransactionConsumer};
+
+use crate::{database::actions, indexer::record_builder};
 
 pub async fn serve(pool: Arc<PgPool>, consumer: Arc<TransactionConsumer>) -> Result<()> {
     let stream = consumer.stream_transactions(StreamFrom::Beginning).await?;
@@ -13,13 +15,17 @@ pub async fn serve(pool: Arc<PgPool>, consumer: Arc<TransactionConsumer>) -> Res
 
     log::info!("Start listening to kafka...");
     while let Some(tx) = fs.next().await {
-        if let Some(f) = parsers_and_handlers.iter().find_map(|(parser, handler)| {
-            parser
-                .parse(&tx.transaction)
-                .map_or(None, |extracted| Some(handler(extracted, &pool)))
-        }) {
-            if let Some(e) = f.await.err() {
-                log::error!("Error processing transaction: {:#?}", e);
+        for (parser, handler) in parsers_and_handlers.iter() {
+            if let Ok(extracted) = parser.parse(&tx.transaction) {
+                if let Some(e) = handler(
+                    extracted.into_iter().map(|ex| ex.into_owned()).collect(),
+                    &pool,
+                )
+                .await
+                .err()
+                {
+                    log::error!("Error processing transaction: {:#?}", e);
+                }
             }
         }
 
@@ -33,8 +39,6 @@ pub async fn serve(pool: Arc<PgPool>, consumer: Arc<TransactionConsumer>) -> Res
     Ok(())
 }
 
-// TODO: process event
-
 fn get_contract_parser(abi_path: &str) -> Result<TransactionParser> {
     let abi_json = std::fs::read_to_string(abi_path)?;
     let abi = ton_abi::Contract::load(&abi_json)?;
@@ -47,75 +51,88 @@ fn get_contract_parser(abi_path: &str) -> Result<TransactionParser> {
         .build_with_external_in()
 }
 
-type Handler = fn(Vec<Extracted<'_>>, &PgPool) -> Pin<Box<dyn Future<Output = Result<()>>>>;
+type Handler = fn(Vec<ExtractedOwned>, &PgPool) -> BoxFuture<Result<()>>;
 
 fn initialize_parsers_and_handlers() -> Result<Vec<(TransactionParser, Handler)>> {
     Ok(vec![
         (
-            get_contract_parser("./abi/AuctionRootTip3.abi.json")?,
-            handle_auction_root_tip3,
+            get_contract_parser("./abi/AuctionTip3.abi.json")?,
+            |extracted, pool| Box::pin(handle_auction_tip3(extracted, pool)),
         ),
         (
-            get_contract_parser("./abi/AuctionTip3.abi.json")?,
-            handle_auction_tip3,
+            get_contract_parser("./abi/AuctionRootTip3.abi.json")?,
+            |extracted, pool| Box::pin(handle_auction_root_tip3(extracted, pool)),
         ),
         (
             get_contract_parser("./abi/DirectBuy.abi.json")?,
-            handle_direct_buy,
+            |extracted, pool| Box::pin(handle_direct_buy(extracted, pool)),
         ),
         (
             get_contract_parser("./abi/DirectSell.abi.json")?,
-            handle_direct_sell,
+            |extracted, pool| Box::pin(handle_direct_sell(extracted, pool)),
         ),
         (
             get_contract_parser("./abi/FactoryDirectBuy.abi.json")?,
-            handle_factory_direct_buy,
+            |extracted, pool| Box::pin(handle_factory_direct_buy(extracted, pool)),
         ),
         (
             get_contract_parser("./abi/FactoryDirectSell.abi.json")?,
-            handle_factory_direct_sell,
+            |extracted, pool| Box::pin(handle_factory_direct_sell(extracted, pool)),
         ),
     ])
 }
 
-fn handle_auction_root_tip3(
-    _extracted: Vec<Extracted<'_>>,
-    _pool: &PgPool,
-) -> Pin<Box<dyn Future<Output = Result<()>>>> {
-    todo!()
+async fn handle_auction_root_tip3(extracted: Vec<ExtractedOwned>, pool: &PgPool) -> Result<()> {
+    if let Some(event) = extracted.iter().find(|e| e.name == "AuctionDeployed") {
+        match record_builder::build_auction_deployed_record(event) {
+            Ok(record) => actions::put_auction_deployed_record(pool, &record)
+                .await
+                .map(|_| {})
+                .map_err(|e| e.context("Couldn't save AuctionDeployed")),
+
+            Err(e) => Err(e.context("Error creating AuctionDeclined record")),
+        }
+    } else if let Some(event) = extracted.iter().find(|e| e.name == "AuctionDeclined") {
+        println!(
+            "{:#?}",
+            record_builder::build_auction_declined_record(event)
+        );
+        Ok(())
+    } else {
+        Ok(())
+    }
 }
 
-fn handle_auction_tip3(
-    _extracted: Vec<Extracted<'_>>,
-    _pool: &PgPool,
-) -> Pin<Box<dyn Future<Output = Result<()>>>> {
-    todo!()
+async fn handle_auction_tip3(extracted: Vec<ExtractedOwned>, _pool: &PgPool) -> Result<()> {
+    if let Some(event) = extracted.iter().find(|e| e.name == "AuctionActive") {
+        println!("{:#?}", record_builder::build_auction_active_record(event));
+    }
+
+    Ok(())
 }
 
-fn handle_direct_buy(
-    _extracted: Vec<Extracted<'_>>,
-    _pool: &PgPool,
-) -> Pin<Box<dyn Future<Output = Result<()>>>> {
-    todo!()
+async fn handle_direct_buy(_extracted: Vec<ExtractedOwned>, _pool: &PgPool) -> Result<()> {
+    Ok(())
 }
 
-fn handle_direct_sell(
-    _extracted: Vec<Extracted<'_>>,
-    _pool: &PgPool,
-) -> Pin<Box<dyn Future<Output = Result<()>>>> {
-    todo!()
+async fn handle_direct_sell(extracted: Vec<ExtractedOwned>, _pool: &PgPool) -> Result<()> {
+    if let Some(event) = extracted
+        .iter()
+        .find(|e| e.name == "DirectSellStateChanged")
+    {
+        println!(
+            "{:#?}",
+            record_builder::build_direct_sell_state_changed_record(event)
+        );
+    }
+
+    Ok(())
 }
 
-fn handle_factory_direct_buy(
-    _extracted: Vec<Extracted<'_>>,
-    _pool: &PgPool,
-) -> Pin<Box<dyn Future<Output = Result<()>>>> {
-    todo!()
+async fn handle_factory_direct_buy(_extracted: Vec<ExtractedOwned>, _pool: &PgPool) -> Result<()> {
+    Ok(())
 }
 
-fn handle_factory_direct_sell(
-    _extracted: Vec<Extracted<'_>>,
-    _pool: &PgPool,
-) -> Pin<Box<dyn Future<Output = Result<()>>>> {
-    todo!()
+async fn handle_factory_direct_sell(_extracted: Vec<ExtractedOwned>, _pool: &PgPool) -> Result<()> {
+    Ok(())
 }

@@ -1162,7 +1162,7 @@ dependencies = [
 [[package]]
 name = "nekoton"
 version = "0.11.0"
-source = "git+https://github.com/broxus/nekoton.git#9c312234a27e56e35076c8cb15f80feb7149ece4"
+source = "git+https://github.com/broxus/nekoton.git#1c81a27f4fe8b3789ad7adeb766fb40a5347d766"
 dependencies = [
  "anyhow",
  "async-trait",
@@ -1203,7 +1203,7 @@ dependencies = [
 [[package]]
 name = "nekoton-abi"
 version = "0.11.0"
-source = "git+https://github.com/broxus/nekoton.git#9c312234a27e56e35076c8cb15f80feb7149ece4"
+source = "git+https://github.com/broxus/nekoton.git#1c81a27f4fe8b3789ad7adeb766fb40a5347d766"
 dependencies = [
  "anyhow",
  "base64",
@@ -1229,7 +1229,7 @@ dependencies = [
 [[package]]
 name = "nekoton-contracts"
 version = "0.11.0"
-source = "git+https://github.com/broxus/nekoton.git#9c312234a27e56e35076c8cb15f80feb7149ece4"
+source = "git+https://github.com/broxus/nekoton.git#1c81a27f4fe8b3789ad7adeb766fb40a5347d766"
 dependencies = [
  "anyhow",
  "nekoton-abi",
@@ -1243,7 +1243,7 @@ dependencies = [
 [[package]]
 name = "nekoton-derive"
 version = "0.11.0"
-source = "git+https://github.com/broxus/nekoton.git#9c312234a27e56e35076c8cb15f80feb7149ece4"
+source = "git+https://github.com/broxus/nekoton.git#1c81a27f4fe8b3789ad7adeb766fb40a5347d766"
 dependencies = [
  "either",
  "proc-macro2",
@@ -1254,7 +1254,7 @@ dependencies = [
 [[package]]
 name = "nekoton-utils"
 version = "0.11.0"
-source = "git+https://github.com/broxus/nekoton.git#9c312234a27e56e35076c8cb15f80feb7149ece4"
+source = "git+https://github.com/broxus/nekoton.git#1c81a27f4fe8b3789ad7adeb766fb40a5347d766"
 dependencies = [
  "anyhow",
  "base64",
@@ -1283,6 +1283,7 @@ dependencies = [
  "futures",
  "log",
  "nekoton-abi",
+ "opg",
  "serde 1.0.144",
  "sqlx",
  "tokio",
@@ -1499,6 +1500,31 @@ dependencies = [
  "libc",
  "pkg-config",
  "vcpkg",
+]
+
+[[package]]
+name = "opg"
+version = "0.1.1"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "5acec38f13673212c9983de8a6fd22df24580acd4d08ed5bda793dc2d2a4bfb2"
+dependencies = [
+ "either",
+ "http",
+ "opg_derive",
+ "serde 1.0.144",
+ "uuid",
+]
+
+[[package]]
+name = "opg_derive"
+version = "0.1.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "168a2a2d84b0a0c7d6818a7740f8389a451e32dd6ec1ce7d29ac4af60bcf49d0"
+dependencies = [
+ "either",
+ "proc-macro2",
+ "quote",
+ "syn",
 ]
 
 [[package]]
@@ -2574,6 +2600,12 @@ dependencies = [
  "matches",
  "percent-encoding",
 ]
+
+[[package]]
+name = "uuid"
+version = "0.8.2"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "bc5cf98d8186244414c848017f0e2676b3fcb46807f6668a97dfe67359a3c4b7"
 
 [[package]]
 name = "vcpkg"
