@@ -2,6 +2,8 @@ use crate::cfg::*;
 use anyhow::Result;
 use std::sync::Arc;
 use storage::PgPool;
+use ton_block::{HashmapAugType, Transaction};
+use ton_indexer::utils::ShardStateStuff;
 use ton_indexer::ProcessBlockContext;
 
 pub struct IndexerSubscriber {
