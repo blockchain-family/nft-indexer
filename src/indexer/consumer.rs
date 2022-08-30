@@ -5,7 +5,7 @@ use sqlx::PgPool;
 use std::sync::Arc;
 use transaction_consumer::{StreamFrom, TransactionConsumer};
 
-use crate::{database::actions, indexer::record_builder};
+use crate::database::records::*;
 
 pub async fn serve(pool: Arc<PgPool>, consumer: Arc<TransactionConsumer>) -> Result<()> {
     let stream = consumer.stream_transactions(StreamFrom::Beginning).await?;
@@ -82,57 +82,63 @@ fn initialize_parsers_and_handlers() -> Result<Vec<(TransactionParser, Handler)>
     ])
 }
 
-async fn handle_auction_root_tip3(extracted: Vec<ExtractedOwned>, pool: &PgPool) -> Result<()> {
-    if let Some(event) = extracted.iter().find(|e| e.name == "AuctionDeployed") {
-        match record_builder::build_auction_deployed_record(event) {
-            Ok(record) => actions::put_auction_deployed_record(pool, &record)
+async fn handle_event<T>(
+    event_name: &str,
+    extracted: &[ExtractedOwned],
+    pool: &PgPool,
+) -> Result<()>
+where
+    T: Build + Put + Sync,
+{
+    if let Some(event) = extracted.iter().find(|e| e.name == event_name) {
+        return match T::build_record(event) {
+            Ok(record) => record
+                .put_record(pool)
                 .await
                 .map(|_| {})
-                .map_err(|e| e.context("Couldn't save AuctionDeployed")),
+                .map_err(|e| e.context(format!("Couldn't save {event_name}"))),
 
-            Err(e) => Err(e.context("Error creating AuctionDeclined record")),
-        }
-    } else if let Some(event) = extracted.iter().find(|e| e.name == "AuctionDeclined") {
-        println!(
-            "{:#?}",
-            record_builder::build_auction_declined_record(event)
-        );
-        Ok(())
-    } else {
-        Ok(())
-    }
-}
-
-async fn handle_auction_tip3(extracted: Vec<ExtractedOwned>, _pool: &PgPool) -> Result<()> {
-    if let Some(event) = extracted.iter().find(|e| e.name == "AuctionActive") {
-        println!("{:#?}", record_builder::build_auction_active_record(event));
+            Err(e) => Err(e.context(format!("Error creating {event_name} record"))),
+        };
     }
 
     Ok(())
 }
 
-async fn handle_direct_buy(_extracted: Vec<ExtractedOwned>, _pool: &PgPool) -> Result<()> {
-    Ok(())
+async fn handle_auction_root_tip3(extracted: Vec<ExtractedOwned>, pool: &PgPool) -> Result<()> {
+    handle_event::<AuctionDeployedRecord>("AuctionDeployed", &extracted, pool).await?;
+    handle_event::<AuctionDeclinedRecord>("AuctionDeclined", &extracted, pool).await?;
+    handle_event::<AuctionOwnershipTransferredRecord>("OwnershipTransferred", &extracted, pool)
+        .await
 }
 
-async fn handle_direct_sell(extracted: Vec<ExtractedOwned>, _pool: &PgPool) -> Result<()> {
-    if let Some(event) = extracted
-        .iter()
-        .find(|e| e.name == "DirectSellStateChanged")
-    {
-        println!(
-            "{:#?}",
-            record_builder::build_direct_sell_state_changed_record(event)
-        );
-    }
-
-    Ok(())
+async fn handle_auction_tip3(extracted: Vec<ExtractedOwned>, pool: &PgPool) -> Result<()> {
+    // TODO: AuctionActive?
+    handle_event::<AuctionActiveRecord>("AuctionActive", &extracted, pool).await?;
+    handle_event::<BidPlacedRecord>("BidPlaced", &extracted, pool).await?;
+    handle_event::<BidDeclinedRecord>("BidDeclined", &extracted, pool).await?;
+    handle_event::<AuctionCompleteRecord>("AuctionComplete", &extracted, pool).await?;
+    handle_event::<AuctionCancelledRecord>("AuctionCancelled", &extracted, pool).await
 }
 
-async fn handle_factory_direct_buy(_extracted: Vec<ExtractedOwned>, _pool: &PgPool) -> Result<()> {
-    Ok(())
+async fn handle_direct_buy(extracted: Vec<ExtractedOwned>, pool: &PgPool) -> Result<()> {
+    handle_event::<DirectBuyStateChangedRecord>("DirectBuyStateChanged", &extracted, pool).await
 }
 
-async fn handle_factory_direct_sell(_extracted: Vec<ExtractedOwned>, _pool: &PgPool) -> Result<()> {
-    Ok(())
+async fn handle_direct_sell(extracted: Vec<ExtractedOwned>, pool: &PgPool) -> Result<()> {
+    handle_event::<DirectSellStateChangedRecord>("DirectSellStateChanged", &extracted, pool).await
+}
+
+async fn handle_factory_direct_buy(extracted: Vec<ExtractedOwned>, pool: &PgPool) -> Result<()> {
+    handle_event::<DirectBuyDeployedRecord>("DirectBuyDeployed", &extracted, pool).await?;
+    handle_event::<DirectBuyDeclinedRecord>("DirectBuyDeclined", &extracted, pool).await?;
+    handle_event::<DirectBuyOwnershipTransferredRecord>("OwnershipTransferred", &extracted, pool)
+        .await
+}
+
+async fn handle_factory_direct_sell(extracted: Vec<ExtractedOwned>, pool: &PgPool) -> Result<()> {
+    handle_event::<DirectSellDeployedRecord>("DirectSellDeployed", &extracted, pool).await?;
+    handle_event::<DirectSellDeclinedRecord>("DirectSellDeclined", &extracted, pool).await?;
+    handle_event::<DirectSellOwnershipTransferredRecord>("OwnershipTransferred", &extracted, pool)
+        .await
 }

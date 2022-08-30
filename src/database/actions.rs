@@ -1,18 +1,42 @@
-use crate::database::{records::AuctionDeployedRecord, requests::AuctionDeployedRequest};
-use anyhow::Result;
-use sqlx::{postgres::PgQueryResult, PgPool};
+use crate::database::records::*;
 
-pub async fn put_auction_deployed_record(
-    _pool: &PgPool,
-    _record: &AuctionDeployedRecord,
-) -> Result<PgQueryResult> {
-    // TODO: Ok(sqlx::query!().execute(pool).await?)
-    Ok(PgQueryResult::default())
-}
+use super::records::AuctionActiveRecord;
 
-pub async fn _get_limit_order_state_changed_records(
-    _pool: &PgPool,
-    _request: AuctionDeployedRequest,
-) -> Result<(Vec<AuctionDeployedRecord>, i64)> {
-    todo!()
-}
+impl Put for AuctionDeployedRecord {}
+
+// pub async fn get_limit_order_state_changed_records(
+//     pool: &PgPool,
+//     request: AuctionDeployedRequest,
+// ) -> Result<(Vec<AuctionDeployedRecord>, i64)> {
+//     todo!()
+// }
+
+impl Put for AuctionActiveRecord {}
+
+impl Put for AuctionDeclinedRecord {}
+
+impl Put for AuctionOwnershipTransferredRecord {}
+
+impl Put for BidPlacedRecord {}
+
+impl Put for BidDeclinedRecord {}
+
+impl Put for AuctionCompleteRecord {}
+
+impl Put for AuctionCancelledRecord {}
+
+impl Put for DirectBuyDeployedRecord {}
+
+impl Put for DirectBuyDeclinedRecord {}
+
+impl Put for DirectBuyOwnershipTransferredRecord {}
+
+impl Put for DirectSellDeployedRecord {}
+
+impl Put for DirectSellDeclinedRecord {}
+
+impl Put for DirectSellOwnershipTransferredRecord {}
+
+impl Put for DirectBuyStateChangedRecord {}
+
+impl Put for DirectSellStateChangedRecord {}

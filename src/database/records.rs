@@ -1,4 +1,26 @@
+use anyhow::Result;
+use async_trait::async_trait;
 use bigdecimal::BigDecimal;
+use nekoton_abi::transaction_parser::ExtractedOwned;
+use sqlx::{postgres::PgQueryResult, PgPool};
+
+pub trait Build {
+    fn build_record(event: &ExtractedOwned) -> Result<Self>
+    where
+        Self: Sized;
+}
+
+#[async_trait]
+pub trait Put {
+    async fn put_record(&self, _pool: &PgPool) -> Result<PgQueryResult>
+    where
+        Self: Sync,
+    {
+        Ok(PgQueryResult::default())
+    }
+}
+
+// TODO: Make one struct OwnerShipTransferred?
 
 /// AuctionRootTip3 events
 
@@ -29,7 +51,6 @@ pub struct AuctionDeclinedRecord {
     pub data_address: String,
 }
 
-// TODO:
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub struct AuctionOwnershipTransferredRecord {
     pub account_addr: String,
@@ -60,7 +81,6 @@ pub struct AuctionActiveRecord {
     pub now_time: i128,
 }
 
-// TODO:
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub struct BidPlacedRecord {
     pub account_addr: String,
@@ -71,7 +91,6 @@ pub struct BidPlacedRecord {
     pub value: BigDecimal,
 }
 
-// TODO:
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub struct BidDeclinedRecord {
     pub account_addr: String,
@@ -82,7 +101,6 @@ pub struct BidDeclinedRecord {
     pub value: BigDecimal,
 }
 
-// TODO:
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub struct AuctionCompleteRecord {
     pub account_addr: String,
@@ -93,7 +111,6 @@ pub struct AuctionCompleteRecord {
     pub value: BigDecimal,
 }
 
-// TODO:
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub struct AuctionCancelledRecord {
     pub account_addr: String,
@@ -103,7 +120,6 @@ pub struct AuctionCancelledRecord {
 
 /// FactoryDirectBuy events
 
-// TODO:
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub struct DirectBuyDeployedRecord {
     pub account_addr: String,
@@ -118,7 +134,6 @@ pub struct DirectBuyDeployedRecord {
     pub amount: BigDecimal,
 }
 
-// TODO:
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub struct DirectBuyDeclinedRecord {
     pub account_addr: String,
@@ -130,7 +145,6 @@ pub struct DirectBuyDeclinedRecord {
     pub amount: BigDecimal,
 }
 
-// TODO:
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub struct DirectBuyOwnershipTransferredRecord {
     pub account_addr: String,
@@ -143,7 +157,6 @@ pub struct DirectBuyOwnershipTransferredRecord {
 
 /// FactoryDirectSell events
 
-// TODO:
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub struct DirectSellDeployedRecord {
     pub account_addr: String,
@@ -158,7 +171,6 @@ pub struct DirectSellDeployedRecord {
     pub price: BigDecimal,
 }
 
-// TODO:
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub struct DirectSellDeclinedRecord {
     pub account_addr: String,
@@ -168,7 +180,6 @@ pub struct DirectSellDeclinedRecord {
     pub sender: String,
 }
 
-// TODO:
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub struct DirectSellOwnershipTransferredRecord {
     pub account_addr: String,
@@ -181,7 +192,6 @@ pub struct DirectSellOwnershipTransferredRecord {
 
 /// DirectBuy events
 
-// TODO:
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub struct DirectBuyStateChangedRecord {
     pub account_addr: String,
