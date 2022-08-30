@@ -12,30 +12,6 @@ use serde::Serialize;
 use ton_block::MsgAddressInt;
 use url::Url;
 
-macro_rules! try_res {
-    ($some:expr, $msg:literal) => {
-        match $some {
-            Ok(a) => a,
-            Err(e) => {
-                ::log::error!("{}:{:?}", $msg, e);
-                continue;
-            }
-        }
-    };
-}
-
-macro_rules! try_opt {
-    ($some:expr, $msg:literal) => {
-        match $some {
-            Some(a) => a,
-            None => {
-                ::log::error!("{}", $msg);
-                continue;
-            }
-        }
-    };
-}
-
 #[derive(Clone)]
 pub struct StatesClient {
     client: LoadBalancedRpc,

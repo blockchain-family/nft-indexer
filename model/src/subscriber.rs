@@ -4,13 +4,12 @@ use crate::cfg::*;
 use std::sync::Arc;
 use anyhow::Result;
 use ton_indexer::ProcessBlockContext;
-use ton_block::{HashmapAugType, Transaction, AccountBlock};
-use nekoton_abi::{TransactionParser, UnpackAbiPlain};
+use ton_block::{HashmapAugType, Transaction};
 
 pub struct IndexerSubscriber {
-    cfg: ModelConfig,
+    //cfg: ModelConfig,
     //states: StatesClient,
-    db: PgPool,
+    _db: PgPool,
     //parser: TransactionParser,
 }
 
@@ -20,9 +19,9 @@ impl IndexerSubscriber {
             //.function_input(function, false)
             //.function_output(function, allow_partial_match)
             //.build()?;
-        let db = cfg.database.init().await?;
+        let _db = cfg.database.init().await?;
         //let states = RpcConfig::from(states_address).init().await?;
-        Ok(Arc::new(Self { db, cfg, /*parser*/ }))
+        Ok(Arc::new(Self { _db, /*cfg, parser*/ }))
     }
 
     pub async fn new2(cfg: ModelConfig) -> Result<Arc<Self>> {
@@ -35,7 +34,7 @@ impl IndexerSubscriber {
         Ok(Arc::new(Self { db, cfg, /*parser*/ }))
     }
 
-    pub async fn handle_transaction(&self, tran: Transaction) -> Result<(), anyhow::Error> {
+    pub async fn handle_transaction(&self, _tran: Transaction) -> Result<(), anyhow::Error> {
         Ok(())
     }
 }
@@ -45,8 +44,8 @@ impl ton_indexer::Subscriber for IndexerSubscriber {
     async fn process_block(&self, ctx: ProcessBlockContext<'_>) -> Result<()> {
         log::error!("IndexSubscriber process_block");
         let block_stuff = ctx.block_stuff();
-        let block_id = block_stuff.id();
-        let block = block_stuff.block();
+        let _block_id = block_stuff.id();
+        let _block = block_stuff.block();
         let block_extra = block.read_extra()?;
 
         // Process transactions
