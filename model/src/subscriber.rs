@@ -15,14 +15,14 @@ pub struct IndexerSubscriber {
 }
 
 impl IndexerSubscriber {
-    pub async fn new(cfg: ModelConfig) -> Result<Arc<dyn ton_indexer::Subscriber>> {
+    pub async fn new(cfg: ModelConfig) -> Result<Self> {
         //let parser = TransactionParser::builder()
             //.function_input(function, false)
             //.function_output(function, allow_partial_match)
             //.build()?;
         let _db = cfg.database.init().await?;
         //let states = RpcConfig::from(states_address).init().await?;
-        Ok(Arc::new(Self { _db, /*cfg, parser*/ }))
+        Ok(Self { _db, /*cfg, parser*/ })
     }
 
     pub async fn new2(cfg: ModelConfig) -> Result<Arc<Self>> {
