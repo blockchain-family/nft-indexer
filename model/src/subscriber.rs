@@ -66,7 +66,7 @@ impl ton_indexer::Subscriber for IndexerSubscriber {
         Ok(())
     }
 
-    async fn process_full_state(&self, state: &ShardStateStuff) -> Result<()> {
+    async fn process_full_state(&self, _state: &ShardStateStuff) -> Result<()> {
         log::error!("IndexSubscriber process_full_state");
         Ok(())
     }

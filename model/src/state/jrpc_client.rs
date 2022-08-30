@@ -12,7 +12,7 @@ use parking_lot::RwLock;
 use reqwest::Url;
 use serde::{de::DeserializeOwned, Deserialize, Serialize};
 use serde_json::Value;
-use ton_block::HashmapAugType;
+
 
 #[derive(Debug, Clone)]
 pub struct LoadBalancedRpc {
