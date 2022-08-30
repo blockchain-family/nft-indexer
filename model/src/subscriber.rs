@@ -5,6 +5,7 @@ use std::sync::Arc;
 use anyhow::Result;
 use ton_indexer::ProcessBlockContext;
 use ton_block::Transaction;
+use ton_block::HashmapAugType;
 
 pub struct IndexerSubscriber {
     //cfg: ModelConfig,
