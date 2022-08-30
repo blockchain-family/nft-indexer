@@ -1,11 +1,8 @@
-use ton_indexer::utils::*;
-use storage::PgPool;
 use crate::cfg::*;
-use std::sync::Arc;
 use anyhow::Result;
+use std::sync::Arc;
+use storage::PgPool;
 use ton_indexer::ProcessBlockContext;
-use ton_block::Transaction;
-use ton_block::HashmapAugType;
 
 pub struct IndexerSubscriber {
     //cfg: ModelConfig,
@@ -16,23 +13,13 @@ pub struct IndexerSubscriber {
 
 impl IndexerSubscriber {
     pub async fn new(cfg: ModelConfig) -> Result<Self> {
-        //let parser = TransactionParser::builder()
-            //.function_input(function, false)
-            //.function_output(function, allow_partial_match)
-            //.build()?;
         let _db = cfg.database.init().await?;
-        //let states = RpcConfig::from(states_address).init().await?;
-        Ok(Self { _db, /*cfg, parser*/ })
+        Ok(Self { _db })
     }
 
     pub async fn new2(cfg: ModelConfig) -> Result<Arc<Self>> {
-        //let parser = TransactionParser::builder()
-            //.function_input(function, false)
-            //.function_output(function, allow_partial_match)
-            //.build()?;
         let _db = cfg.database.init().await?;
-        //let states = RpcConfig::from(states_address).init().await?;
-        Ok(Arc::new(Self { _db, /*cfg, parser*/ }))
+        Ok(Arc::new(Self { _db }))
     }
 
     pub async fn handle_transaction(&self, _tran: Transaction) -> Result<(), anyhow::Error> {
@@ -60,9 +47,7 @@ impl ton_indexer::Subscriber for IndexerSubscriber {
                 })?;
                 Ok(true)
             })?;
-        
         futures::future::join_all(ts).await;
-
         Ok(())
     }
 

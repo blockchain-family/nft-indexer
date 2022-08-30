@@ -1,4 +1,3 @@
-
 pub use storage::*;
 
 pub mod auctions;

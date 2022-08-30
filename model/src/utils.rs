@@ -1,12 +1,9 @@
-use bigdecimal::BigDecimal;
 use bigdecimal::num_bigint::{BigInt, Sign};
-use indexer_lib::{
-    AnyExtractable, AnyExtractableOutput, ExtractInput, ParsedOutput,
-};
+use bigdecimal::BigDecimal;
+use indexer_lib::{AnyExtractable, AnyExtractableOutput, ExtractInput, ParsedOutput};
 use num_traits::ToPrimitive;
 use ton_block::Transaction;
 use ton_types::UInt256;
-
 
 pub fn extract_events(
     data: &Transaction,

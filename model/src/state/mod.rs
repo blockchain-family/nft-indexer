@@ -1,11 +1,11 @@
-#![deny(clippy::dbg_macro)]
+//#![deny(clippy::dbg_macro)]
 use std::time::Duration;
 
 mod jrpc_client;
 
-use anyhow::{Context, Result};
 pub use self::jrpc_client::LoadBalancedRpcOptions;
 use self::jrpc_client::{JrpcRequest, LoadBalancedRpc};
+use anyhow::{Context, Result};
 use nekoton::transport::models::{ExistingContract, RawContractState};
 use nekoton_utils::SimpleClock;
 use serde::Serialize;
@@ -28,9 +28,7 @@ impl StatesClient {
     {
         let endpoints: Result<Vec<_>, _> = states_rpc_endpoint
             .into_iter()
-            .map(|x| 
-                Url::parse(x.as_ref()).and_then(|x| x.join("/rpc"))
-            )
+            .map(|x| Url::parse(x.as_ref()).and_then(|x| x.join("/rpc")))
             .collect();
         let options = options.unwrap_or(LoadBalancedRpcOptions {
             prove_interval: Duration::from_secs(10),

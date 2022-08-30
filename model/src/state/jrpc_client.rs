@@ -13,7 +13,6 @@ use reqwest::Url;
 use serde::{de::DeserializeOwned, Deserialize, Serialize};
 use serde_json::Value;
 
-
 #[derive(Debug, Clone)]
 pub struct LoadBalancedRpc {
     state: Arc<RpcState>,
@@ -117,7 +116,7 @@ impl RpcState {
         let mut futures = futures::stream::FuturesOrdered::new();
         for endpoint in &self.endpoints {
             futures.extend([async move { endpoint.is_alive().await.then(|| endpoint.clone()) }]);
-                }
+        }
 
         let mut new_endpoints = Vec::with_capacity(self.endpoints.len());
         while let Some(endpoint) = futures.next().await {
@@ -267,51 +266,3 @@ pub struct JsonRpcError {
     code: i32,
     message: String,
 }
-
-/*#[cfg(test)]
-mod test {
-    use std::time::Duration;
-
-    use super::*;
-
-    #[tokio::test]
-    async fn test() {
-        env_logger::Builder::new()
-            .filter_level(log::LevelFilter::Info)
-            .init();
-
-        let rpc = [
-            // "http://127.0.0.1:8081",
-            "http://34.78.198.249:8081/rpc",
-            "https://extension-api.broxus.com/rpc",
-        ]
-        .iter()
-        .map(|x| x.parse().unwrap())
-        .collect::<Vec<_>>();
-
-        let balanced_client = LoadBalancedRpc::new(
-            rpc,
-            LoadBalancedRpcOptions {
-                prove_interval: Duration::from_secs(10),
-            },
-        )
-        .await
-        .unwrap();
-
-        let request = JrpcRequest {
-            id: 1337,
-            method: "getLatestKeyBlock",
-            params: (),
-        };
-
-        for _ in 0..100 {
-            let response = balanced_client.request(request.clone()).await;
-            log::info!(
-                "response is ok: {}",
-                matches!(response.result, JsonRpcAnswer::Result(_))
-            );
-            tokio::time::sleep(Duration::from_secs(1)).await;
-        }
-    }
-}
-*/

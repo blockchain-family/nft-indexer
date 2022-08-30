@@ -8,7 +8,6 @@ fn default_contracts() -> Vec<String> {
 pub struct AuctionsConfig {
     #[serde(default = "default_contracts")]
     pub contracts: Vec<String>,
-
 }
 
 impl Default for AuctionsConfig {
