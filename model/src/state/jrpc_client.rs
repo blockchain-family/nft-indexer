@@ -116,8 +116,8 @@ impl RpcState {
         // to preserve order of endpoints within round-robin
         let mut futures = futures::stream::FuturesOrdered::new();
         for endpoint in &self.endpoints {
-            futures.extend_one(async move { endpoint.is_alive().await.then(|| endpoint.clone()) });
-        }
+            futures.extend([async move { endpoint.is_alive().await.then(|| endpoint.clone()) }]);
+                }
 
         let mut new_endpoints = Vec::with_capacity(self.endpoints.len());
         while let Some(endpoint) = futures.next().await {
