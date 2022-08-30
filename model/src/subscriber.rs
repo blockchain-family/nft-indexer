@@ -4,7 +4,7 @@ use crate::cfg::*;
 use std::sync::Arc;
 use anyhow::Result;
 use ton_indexer::ProcessBlockContext;
-use ton_block::{HashmapAugType, Transaction};
+use ton_block::Transaction;
 
 pub struct IndexerSubscriber {
     //cfg: ModelConfig,
@@ -29,9 +29,9 @@ impl IndexerSubscriber {
             //.function_input(function, false)
             //.function_output(function, allow_partial_match)
             //.build()?;
-        let db = cfg.database.init().await?;
+        let _db = cfg.database.init().await?;
         //let states = RpcConfig::from(states_address).init().await?;
-        Ok(Arc::new(Self { db, cfg, /*parser*/ }))
+        Ok(Arc::new(Self { _db, /*cfg, parser*/ }))
     }
 
     pub async fn handle_transaction(&self, _tran: Transaction) -> Result<(), anyhow::Error> {
@@ -46,7 +46,7 @@ impl ton_indexer::Subscriber for IndexerSubscriber {
         let block_stuff = ctx.block_stuff();
         let _block_id = block_stuff.id();
         let _block = block_stuff.block();
-        let block_extra = block.read_extra()?;
+        let block_extra = _block.read_extra()?;
 
         // Process transactions
         let mut ts = Vec::with_capacity(128);
