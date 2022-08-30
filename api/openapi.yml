@@ -1,0 +1,576 @@
+openapi: "3.0.3"
+info:
+  title: nft indexer api
+  version: "0.1"
+components:
+  schemas:
+    address:
+      type: string
+      minLength: 63
+      maxLength: 64
+      description: contract address
+
+    ts:
+      type: integer
+      format: int32
+      description: unix timestamp
+
+    price:
+      type: object
+      properties:
+        price-token:
+          $ref: '#/components/schemas/address'
+        price:
+          type: integer
+          format: int64
+        usd-price:
+          type: number
+          format: float64
+      required:
+        - price
+        - price-token
+
+    offer:
+      type: object
+      properties:
+        from:
+          $ref: '#/components/schemas/address'
+        to:
+          $ref: '#/components/schemas/address'
+        nft:
+          $ref: '#/components/schemas/address'
+        price:
+          $ref: '#/components/schemas/price'
+        created-at:
+          $ref: '#/components/schemas/ts'
+        expired-at:
+          $ref: '#/components/schemas/ts'
+        finished-at:
+          $ref: '#/components/schemas/ts'
+        active:
+          type: boolean
+      required:
+        - from
+        - nft
+        - price
+        - price-token
+        - created-at
+
+    auction:
+      allOf:
+        - $ref: '#/components/schemas/offer'
+        - type: object
+          properties:
+            address:
+              $ref: '#/components/schemas/address'
+            max-bid:
+              $ref: '#/components/schemas/price'
+          required:
+            - address
+  
+    contract:
+      type: object
+      properties:
+        address:
+          $ref: '#/components/schemas/address'
+        name:
+          type: string
+        description:
+          type: string
+        owner:
+          $ref: '#/components/schemas/address'
+      required:
+        - address
+        - name
+
+    nft:
+      allOf:
+      - $ref: '#/components/schemas/contract'
+      - type: object
+        properties:
+          image:
+            type: string
+            format: uri
+          collection:
+            $ref: '#/components/schemas/contract'
+          traits:
+            type: array
+            items:
+              type: object
+          current-price:
+            $ref: '#/components/schemas/price'
+          last-price:
+            $ref: '#/components/schemas/price'
+          auction:
+            $ref: '#/components/schemas/address'
+          forsale:
+            $ref: '#/components/schemas/address'       
+        required:
+          - image
+          - owner
+          - collection
+          - traits
+
+    collection:
+      allOf:
+      - $ref: '#/components/schemas/contract'
+      - type: object
+        properties:
+          created:
+            $ref: '#/components/schemas/ts'        
+          images:
+            type: array
+            items:
+              type: string
+              format: uri
+          lowest-price:
+            $ref: '#/components/schemas/price'
+          total-price:
+            $ref: '#/components/schemas/price'
+          owners-count:
+            type: integer
+            format: int32
+        required:
+          - images
+          - owners-count
+          - created
+
+    event-type:
+      type: string
+      enum:
+      - bid
+      - offer
+      - transfer
+      - todo
+
+    event:
+      type: object
+      properties:
+        type:
+          $ref: '#/components/schemas/event-type'
+        address:
+          $ref: '#/components/schemas/address'
+        initiator:
+          $ref: '#/components/schemas/address'
+        ts:
+          $ref: '#/components/schemas/ts'
+      required:
+        - type
+        - address
+        - initiator
+        - ts
+
+
+paths:
+  /nft/{address}/offers:
+    get:
+      parameters:
+        - name: address
+          required: true
+          description: nft address
+          in: path
+          schema:
+            $ref: '#/components/schemas/address'
+      responses:
+        '200':
+          description: OK
+          content:
+            'application/json':
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/offer'
+
+  /nft/{address}/price-history:
+    get:
+      parameters:
+        - name: address
+          required: true
+          description: nft address
+          in: path
+          schema:
+            $ref: '#/components/schemas/address'
+        - name: scale
+          required: false
+          description: periods by days/hours
+          in: query
+          schema:
+            type: string
+            default: d
+            enum:
+              - d
+              - h
+      responses:
+        '200':
+          description: OK
+          content:
+            'application/json':
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/offer'
+
+  /nft/{address}/details:
+    get:
+      parameters:
+        - name: address
+          required: true
+          description: nft address
+          in: path
+          schema:
+            $ref: '#/components/schemas/address'
+      responses:
+        '200':
+          description: OK
+          content:
+            'application/json':
+              schema:
+                $ref: '#/components/schemas/nft'
+
+  /nft/{address}/reload-meta:
+    post:
+      parameters:
+        - name: address
+          required: true
+          description: nft address
+          in: path
+          schema:
+            $ref: '#/components/schemas/address'
+      responses:
+        '200':
+          description: OK
+          content:
+            'application/json':
+              schema:
+                $ref: '#/components/schemas/nft'
+
+
+  /collection/{address}/details:
+    get:
+      parameters:
+        - name: address
+          required: true
+          description: nft address
+          in: path
+          schema:
+            $ref: '#/components/schemas/address'
+      responses:
+        '200':
+          description: OK
+          content:
+            'application/json':
+              schema:
+                $ref: '#/components/schemas/collection'
+
+  /nfts/:
+    get:
+      parameters:
+        - name: owners
+          required: false
+          in: query
+          schema:
+            type: array
+            items:
+              $ref: '#/components/schemas/address'
+        - name: collections
+          required: false
+          in: query
+          schema:
+            type: array
+            items:
+              $ref: '#/components/schemas/address'
+        - name: price-from
+          required: false
+          in: query
+          schema:
+            type: integer
+            format: int64
+        - name: price-to
+          required: false
+          in: query
+          schema:
+            type: integer
+            format: int64
+        - name: price-token
+          required: false
+          in: query
+          schema:
+            $ref: '#/components/schemas/address'
+        - name: forsale
+          required: false
+          in: query
+          schema:
+            type: boolean
+        - name: auction
+          required: false
+          in: query
+          schema:
+            type: boolean
+
+      responses:
+        '200':
+          description: OK
+          content:
+            'application/json':
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/nft'
+
+  /collections/by-owner/{owner}:
+    get:
+      parameters:
+        - name: owner
+          required: true
+          description: owner address
+          in: path
+          schema:
+            $ref: '#/components/schemas/address'
+      responses:
+        '200':
+          description: OK
+          content:
+            'application/json':
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/collection'
+
+  /auctions:
+    get:
+      parameters:
+        - name: owners
+          required: false
+          in: query
+          schema:
+            type: array
+            items:
+              $ref: '#/components/schemas/address'
+        - name: collections
+          required: false
+          in: query
+          schema:
+            type: array
+            items:
+              $ref: '#/components/schemas/address'
+        - name: tokens
+          required: false
+          in: query
+          schema:
+            type: array
+            items:
+              $ref: '#/components/schemas/address'
+        - name: sort
+          in: query
+          required: false
+          schema:
+            type: string
+            enum:
+            - start-date
+            - bids-count
+            - average
+            - average-in-hour
+            - average-in-day
+      responses:
+        '200':
+          description: OK
+          content:
+            'application/json':
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/nft'
+
+  /auction/{address}/bids:
+    get:
+      parameters:
+        - name: address
+          in: path
+          required: true
+          schema:
+            $ref: '#/components/schemas/address'
+  
+      responses:
+        '200':
+          description: OK
+          content:
+            'application/json':
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/offer'
+
+  /owner/{address}/bids-out:
+    get:
+      parameters:
+        - name: address
+          in: path
+          required: true
+          schema:
+            $ref: '#/components/schemas/address'
+        - name: collections
+          in: query
+          required: false
+          schema:
+            type: array
+            items:
+              $ref: '#/components/schemas/address'
+        - name: lastbid
+          in: query
+          required: false
+          schema:
+            type: boolean
+      responses:
+        '200':
+          description: OK
+          content:
+            'application/json':
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/offer'
+
+  /owner/{address}/bids-in:
+    get:
+      parameters:
+        - name: address
+          in: path
+          required: true
+          schema:
+            $ref: '#/components/schemas/address'
+        - name: collections
+          in: query
+          required: false
+          schema:
+            type: array
+            items:
+              $ref: '#/components/schemas/address'
+      responses:
+        '200':
+          description: OK
+          content:
+            'application/json':
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/offer'
+
+  /owner/{address}/offers-out:
+    get:
+      parameters:
+        - name: address
+          in: path
+          required: true
+          schema:
+            $ref: '#/components/schemas/address'
+        - name: collections
+          in: query
+          required: false
+          schema:
+            type: array
+            items:
+              $ref: '#/components/schemas/address'
+        - name: active
+          in: query
+          required: false
+          schema:
+            type: boolean
+
+      responses:
+        '200':
+          description: OK
+          content:
+            'application/json':
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/offer'
+
+  /owner/{address}/offers-in:
+    get:
+      parameters:
+        - name: address
+          in: path
+          required: true
+          schema:
+            $ref: '#/components/schemas/address'
+        - name: collections
+          in: query
+          required: false
+          schema:
+            type: array
+            items:
+              $ref: '#/components/schemas/address'
+        - name: active
+          in: query
+          required: false
+          schema:
+            type: boolean
+
+      responses:
+        '200':
+          description: OK
+          content:
+            'application/json':
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/offer'
+
+  /events:
+    get:
+      parameters:
+        - name: nft
+          in: query
+          required: false
+          schema:
+            $ref: '#/components/schemas/address'
+        - name: collection
+          in: query
+          required: false
+          schema:
+            $ref: '#/components/schemas/address'
+        - name: initiator
+          in: query
+          required: false
+          schema:
+            $ref: '#/components/schemas/address'
+        - name: owner
+          in: query
+          required: false
+          schema:
+            $ref: '#/components/schemas/address'
+        - name: type
+          in: query
+          required: false
+          schema:
+            $ref: '#/components/schemas/event-type'
+        - name: page-size
+          in: query
+          required: false
+          schema:
+            type: integer
+            format: int32
+            default: 100
+        - name: offset
+          in: query
+          required: false
+          schema:
+            type: integer
+            format: int32
+            default: 0
+      responses:
+        '200':
+          description: OK
+          content:
+            'application/json':
+              schema:
+                type: object
+                properties:
+                  total:
+                    type: integer
+                    format: int64
+                  items:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/event'
