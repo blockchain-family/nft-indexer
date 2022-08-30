@@ -267,7 +267,7 @@ pub struct JsonRpcError {
     message: String,
 }
 
-#[cfg(test)]
+/*#[cfg(test)]
 mod test {
     use std::time::Duration;
 
@@ -313,3 +313,4 @@ mod test {
         }
     }
 }
+*/
