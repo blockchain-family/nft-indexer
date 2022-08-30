@@ -116,6 +116,8 @@ components:
       - $ref: '#/components/schemas/contract'
       - type: object
         properties:
+          verified:
+            type: boolean
           created:
             $ref: '#/components/schemas/ts'        
           images:
