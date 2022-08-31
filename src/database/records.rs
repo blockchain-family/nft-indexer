@@ -68,7 +68,7 @@ pub struct AuctionOwnershipTransferredRecord {
 
 /// AuctionTip3 events
 
-// TODO: Auction created?
+// TODO: AuctionCreated?
 
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub struct AuctionActiveRecord {
