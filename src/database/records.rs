@@ -183,6 +183,7 @@ pub struct DirectSellDeclinedRecord {
     pub created_at: i64,
 
     pub sender: String,
+    pub _nft_address: String,
 }
 
 #[derive(Clone, Debug, PartialEq, Eq)]

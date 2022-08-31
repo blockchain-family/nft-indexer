@@ -531,7 +531,14 @@ impl Build for DirectSellDeclinedRecord {
             .ok_or_else(|| anyhow!("Couldn't find sender token"))?
             .clone();
 
-        let tokens = vec![sender_token];
+        let _nft_address_token = event
+            .tokens
+            .iter()
+            .find(|t| t.name == "_nftAddress")
+            .ok_or_else(|| anyhow!("Couldn't find _nftAddress token"))?
+            .clone();
+
+        let tokens = vec![sender_token, _nft_address_token];
 
         let to_str = get_token_processor(&tokens, token_to_str);
 
@@ -541,6 +548,7 @@ impl Build for DirectSellDeclinedRecord {
             created_at: get_created_at(event)?,
 
             sender: to_str("sender")?,
+            _nft_address: to_str("_nftAddress")?,
         })
     }
 }
