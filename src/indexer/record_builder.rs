@@ -7,7 +7,7 @@ use ton_abi::{
     Token,
     TokenValue::{self, Tuple, Uint as UintEnum},
 };
-use ton_block::CommonMsgInfo;
+use ton_block::{CommonMsgInfo, MsgAddressInt};
 
 impl Build for AuctionDeployedRecord {
     fn build_record(event: &ExtractedOwned) -> Result<Self>
@@ -53,6 +53,10 @@ impl Build for AuctionDeployedRecord {
             auction_duration: to_big_decimal("auctionDuration")?,
             deploy_nonce: to_i128("deployNonce")?,
         })
+    }
+
+    fn get_nft(&self) -> Option<ton_block::MsgAddressInt> {
+        Some(MsgAddressInt::from_str(&("0:".to_owned() + &self.nft)).unwrap())
     }
 }
 
@@ -353,6 +357,10 @@ impl Build for DirectBuyDeployedRecord {
             amount: to_bigdecimal("amount")?,
         })
     }
+
+    fn get_nft(&self) -> Option<ton_block::MsgAddressInt> {
+        Some(MsgAddressInt::from_str(&("0:".to_owned() + &self.nft)).unwrap())
+    }
 }
 
 impl Build for DirectBuyDeclinedRecord {
@@ -505,6 +513,10 @@ impl Build for DirectSellDeployedRecord {
             price: to_bigdecimal("price")?,
         })
     }
+
+    fn get_nft(&self) -> Option<ton_block::MsgAddressInt> {
+        Some(MsgAddressInt::from_str(&("0:".to_owned() + &self.nft)).unwrap())
+    }
 }
 
 impl Build for DirectSellDeclinedRecord {
@@ -626,6 +638,10 @@ impl Build for DirectBuyStateChangedRecord {
             end_time_buy: to_i128("endTimeBuy")?,
         })
     }
+
+    fn get_nft(&self) -> Option<ton_block::MsgAddressInt> {
+        Some(MsgAddressInt::from_str(&("0:".to_owned() + &self.nft)).unwrap())
+    }
 }
 
 impl Build for DirectSellStateChangedRecord {
@@ -685,6 +701,10 @@ impl Build for DirectSellStateChangedRecord {
             status: to_i16("status")?,
             sender: to_str("sender")?,
         })
+    }
+
+    fn get_nft(&self) -> Option<ton_block::MsgAddressInt> {
+        Some(MsgAddressInt::from_str(&("0:".to_owned() + &self.nft)).unwrap())
     }
 }
 

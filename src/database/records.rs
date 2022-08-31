@@ -3,11 +3,16 @@ use async_trait::async_trait;
 use bigdecimal::BigDecimal;
 use nekoton_abi::transaction_parser::ExtractedOwned;
 use sqlx::{postgres::PgQueryResult, PgPool};
+use ton_block::MsgAddressInt;
 
 pub trait Build {
     fn build_record(event: &ExtractedOwned) -> Result<Self>
     where
         Self: Sized;
+
+    fn get_nft(&self) -> Option<MsgAddressInt> {
+        None
+    }
 }
 
 #[async_trait]
