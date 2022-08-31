@@ -100,7 +100,7 @@ async fn handle_event<T>(
     consumer: &TransactionConsumer,
 ) -> Result<Option<T>>
 where
-    T: Build + Put + Sync + std::fmt::Debug,
+    T: Build + Put + Sync,
 {
     if let Some(event) = extracted.iter().find(|e| e.name == event_name) {
         return match T::build_record(event) {
