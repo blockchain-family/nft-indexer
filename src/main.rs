@@ -19,13 +19,11 @@ async fn main() -> Result<()> {
     let mut builder = Builder::new();
     builder.filter_level(LevelFilter::Info).init();
 
-    let config = Arc::new(Config::new("Settings.toml"));
+    let config = Config::new("Settings.toml");
 
-    let pg_pool = Arc::<PgPool>::new(
-        init_pg_pool(&config.database_url, config.database_max_connections)
-            .await
-            .expect("Postgres connection failed"),
-    );
+    let pg_pool = init_pg_pool(&config.database_url, config.database_max_connections)
+        .await
+        .expect("Postgres connection failed");
 
     let consumer = init_transactions_consumer(config.clone())
         .await
@@ -34,7 +32,7 @@ async fn main() -> Result<()> {
     consumer::serve(pg_pool, consumer).await
 }
 
-pub async fn init_transactions_consumer(config: Arc<Config>) -> Result<Arc<TransactionConsumer>> {
+pub async fn init_transactions_consumer(config: Config) -> Result<Arc<TransactionConsumer>> {
     log::info!("Initializing consumer");
 
     let kafka_options = HashMap::from_iter(

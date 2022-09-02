@@ -35,8 +35,8 @@ impl Build for AuctionDeployedRecord {
         tokens.push(offer_address_token);
 
         let to_str = get_token_processor(&tokens, token_to_str);
+        let to_i64 = get_token_processor(&tokens, token_to_i64);
         let to_big_decimal = get_token_processor(&tokens, token_to_big_decimal);
-        let to_i128 = get_token_processor(&tokens, token_to_i128);
 
         Ok(AuctionDeployedRecord {
             account_addr: get_account_addr(event),
@@ -50,8 +50,8 @@ impl Build for AuctionDeployedRecord {
             nft: to_str("nft")?,
             offer: to_str("offer")?,
             price: to_big_decimal("price")?,
-            auction_duration: to_big_decimal("auctionDuration")?,
-            deploy_nonce: to_i128("deployNonce")?,
+            auction_duration: to_i64("auctionDuration")?,
+            deploy_nonce: to_big_decimal("deployNonce")?,
         })
     }
 
@@ -128,7 +128,41 @@ impl Build for AuctionOwnershipTransferredRecord {
     }
 }
 
-// TODO: AuctionCreated?
+impl Build for AuctionCreatedRecord {
+    fn build_record(event: &ExtractedOwned) -> Result<Self>
+    where
+        Self: Sized,
+    {
+        let value0_token = event
+            .tokens
+            .iter()
+            .find(|t| t.name == "value0")
+            .ok_or_else(|| anyhow!("Couldn't find value0 token"))?;
+        let tokens = match &value0_token.value {
+            Tuple(v) => Some(v),
+            _ => None,
+        }
+        .ok_or_else(|| anyhow!("value2 token value is not tuple"))?;
+
+        let to_str = get_token_processor(tokens, token_to_str);
+        let to_i64 = get_token_processor(tokens, token_to_i64);
+
+        Ok(AuctionCreatedRecord {
+            account_addr: get_account_addr(event),
+            created_lt: get_created_lt(event)?,
+            created_at: get_created_at(event)?,
+
+            auction_subject: to_str("auctionSubject")?,
+            subject_owner: to_str("subjectOwner")?,
+            payment_token_root: to_str("paymentTokenRoot")?,
+            wallet_for_bids: to_str("walletForBids")?,
+            start_time: to_i64("startTime")?,
+            duration: to_i64("duration")?,
+            finish_time: to_i64("finishTime")?,
+            now_time: to_i64("nowTime")?,
+        })
+    }
+}
 
 impl Build for AuctionActiveRecord {
     fn build_record(event: &ExtractedOwned) -> Result<Self>
@@ -147,7 +181,7 @@ impl Build for AuctionActiveRecord {
         .ok_or_else(|| anyhow!("value2 token value is not tuple"))?;
 
         let to_str = get_token_processor(tokens, token_to_str);
-        let to_i128 = get_token_processor(tokens, token_to_i128);
+        let to_i64 = get_token_processor(tokens, token_to_i64);
 
         Ok(AuctionActiveRecord {
             account_addr: get_account_addr(event),
@@ -158,10 +192,10 @@ impl Build for AuctionActiveRecord {
             subject_owner: to_str("subjectOwner")?,
             payment_token_root: to_str("paymentTokenRoot")?,
             wallet_for_bids: to_str("walletForBids")?,
-            start_time: to_i128("startTime")?,
-            duration: to_i128("duration")?,
-            finish_time: to_i128("finishTime")?,
-            now_time: to_i128("nowTime")?,
+            start_time: to_i64("startTime")?,
+            duration: to_i64("duration")?,
+            finish_time: to_i64("finishTime")?,
+            now_time: to_i64("nowTime")?,
         })
     }
 }
@@ -341,7 +375,6 @@ impl Build for DirectBuyDeployedRecord {
         ];
 
         let to_str = get_token_processor(&tokens, token_to_str);
-        let to_i128 = get_token_processor(&tokens, token_to_i128);
         let to_bigdecimal = get_token_processor(&tokens, token_to_big_decimal);
 
         Ok(DirectBuyDeployedRecord {
@@ -353,7 +386,7 @@ impl Build for DirectBuyDeployedRecord {
             sender: to_str("sender")?,
             token_root: to_str("tokenRoot")?,
             nft: to_str("nft")?,
-            nonce: to_i128("nonce")?,
+            nonce: to_bigdecimal("nonce")?,
             amount: to_bigdecimal("amount")?,
         })
     }
@@ -497,7 +530,6 @@ impl Build for DirectSellDeployedRecord {
         ];
 
         let to_str = get_token_processor(&tokens, token_to_str);
-        let to_i128 = get_token_processor(&tokens, token_to_i128);
         let to_bigdecimal = get_token_processor(&tokens, token_to_big_decimal);
 
         Ok(DirectSellDeployedRecord {
@@ -509,7 +541,7 @@ impl Build for DirectSellDeployedRecord {
             sender: to_str("sender")?,
             payment_token: to_str("paymentToken")?,
             nft: to_str("nft")?,
-            _nonce: to_i128("_nonce")?,
+            _nonce: to_bigdecimal("_nonce")?,
             price: to_bigdecimal("price")?,
         })
     }
@@ -622,7 +654,7 @@ impl Build for DirectBuyStateChangedRecord {
         let to_str = get_token_processor(&tokens, token_to_str);
         let to_big_decimal = get_token_processor(&tokens, token_to_big_decimal);
         let to_i16 = get_token_processor(&tokens, token_to_i16);
-        let to_i128 = get_token_processor(&tokens, token_to_i128);
+        let to_i64 = get_token_processor(&tokens, token_to_i64);
 
         Ok(DirectBuyStateChangedRecord {
             account_addr: get_account_addr(event),
@@ -636,14 +668,14 @@ impl Build for DirectBuyStateChangedRecord {
             creator: to_str("creator")?,
             spent_token: to_str("spentToken")?,
             nft: to_str("nft")?,
-            _time_tx: to_i128("_timeTx")?,
+            _time_tx: to_i64("_timeTx")?,
             _price: to_big_decimal("_price")?,
             spent_wallet: to_str("spentWallet")?,
             status: to_i16("status")?,
             sender: to_str("sender")?,
-            start_time_buy: to_i128("startTimeBuy")?,
-            duration_time_buy: to_i128("durationTimeBuy")?,
-            end_time_buy: to_i128("endTimeBuy")?,
+            start_time_buy: to_i64("startTimeBuy")?,
+            duration_time_buy: to_i64("durationTimeBuy")?,
+            end_time_buy: to_i64("endTimeBuy")?,
         })
     }
 
@@ -687,7 +719,7 @@ impl Build for DirectSellStateChangedRecord {
         let to_str = get_token_processor(&tokens, token_to_str);
         let to_big_decimal = get_token_processor(&tokens, token_to_big_decimal);
         let to_i16 = get_token_processor(&tokens, token_to_i16);
-        let to_i128 = get_token_processor(&tokens, token_to_i128);
+        let to_i64 = get_token_processor(&tokens, token_to_i64);
 
         Ok(DirectSellStateChangedRecord {
             account_addr: get_account_addr(event),
@@ -701,9 +733,9 @@ impl Build for DirectSellStateChangedRecord {
             creator: to_str("creator")?,
             token: to_str("token")?,
             nft: to_str("nft")?,
-            _time_tx: to_i128("_timeTx")?,
-            start: to_i128("start")?,
-            end: to_i128("end")?,
+            _time_tx: to_i64("_timeTx")?,
+            start: to_i64("start")?,
+            end: to_i64("end")?,
             _price: to_big_decimal("_price")?,
             wallet: to_str("wallet")?,
             status: to_i16("status")?,
@@ -728,9 +760,9 @@ fn get_created_at(event: &ExtractedOwned) -> Result<i64> {
     .ok_or_else(|| anyhow!("Couldn't get crated_at of event"))
 }
 
-fn get_created_lt(event: &ExtractedOwned) -> Result<i128> {
+fn get_created_lt(event: &ExtractedOwned) -> Result<i64> {
     match event.message.header() {
-        CommonMsgInfo::ExtOutMsgInfo(info) => Some(info.created_lt as i128),
+        CommonMsgInfo::ExtOutMsgInfo(info) => Some(info.created_lt as i64),
         _ => None,
     }
     .ok_or_else(|| anyhow!("Couldn't get crated_lt of event"))
@@ -764,9 +796,9 @@ fn token_to_i16(token: &TokenValue) -> Option<i16> {
     }
 }
 
-fn token_to_i128(token: &TokenValue) -> Option<i128> {
+fn token_to_i64(token: &TokenValue) -> Option<i64> {
     match token.token_value() {
-        UintEnum(v) => v.number.to_i128(),
+        UintEnum(v) => v.number.to_i64(),
         _ => None,
     }
 }

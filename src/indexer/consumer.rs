@@ -7,7 +7,7 @@ use std::sync::Arc;
 use ton_block::MsgAddressInt;
 use transaction_consumer::{StreamFrom, TransactionConsumer};
 
-pub async fn serve(pool: Arc<PgPool>, consumer: Arc<TransactionConsumer>) -> Result<()> {
+pub async fn serve(pool: PgPool, consumer: Arc<TransactionConsumer>) -> Result<()> {
     let stream = consumer.stream_transactions(StreamFrom::Beginning).await?;
     let mut fs = futures::stream::StreamExt::fuse(stream);
 
@@ -19,8 +19,8 @@ pub async fn serve(pool: Arc<PgPool>, consumer: Arc<TransactionConsumer>) -> Res
             if let Ok(extracted) = parser.parse(&tx.transaction) {
                 if let Some(e) = handler(
                     extracted.into_iter().map(|ex| ex.into_owned()).collect(),
-                    &pool,
-                    &consumer,
+                    pool.clone(),
+                    consumer.clone(),
                 )
                 .await
                 .err()
@@ -52,11 +52,8 @@ fn get_contract_parser(abi_path: &str) -> Result<TransactionParser> {
         .build_with_external_in()
 }
 
-type Handler = for<'a> fn(
-    Vec<ExtractedOwned>,
-    &'a PgPool,
-    &'a TransactionConsumer,
-) -> BoxFuture<'a, Result<()>>;
+type Handler =
+    fn(Vec<ExtractedOwned>, PgPool, Arc<TransactionConsumer>) -> BoxFuture<'static, Result<()>>;
 
 fn initialize_parsers_and_handlers() -> Result<Vec<(TransactionParser, Handler)>> {
     Ok(vec![
@@ -96,8 +93,8 @@ fn initialize_parsers_and_handlers() -> Result<Vec<(TransactionParser, Handler)>
 async fn handle_event<T>(
     event_name: &str,
     extracted: &[ExtractedOwned],
-    pool: &PgPool,
-    consumer: &TransactionConsumer,
+    pool: PgPool,
+    consumer: Arc<TransactionConsumer>,
 ) -> Result<Option<T>>
 where
     T: Build + Put + Sync,
@@ -105,12 +102,41 @@ where
     if let Some(event) = extracted.iter().find(|e| e.name == event_name) {
         return match T::build_record(event) {
             Ok(record) => {
-                if let Some(nft) = record.get_nft() {
-                    println!("{:#?}", fetch_metadata(&nft, consumer).await);
+                {
+                    let pool = pool.clone();
+                    // TODO: better
+                    if let Some(nft) = record.get_nft() {
+                        tokio::spawn(async move {
+                            match fetch_metadata(&nft, consumer.clone()).await {
+                                Ok(data) => {
+                                    if let Err(e) = (NftMetadataRecord {
+                                        nft: nft.to_string(),
+                                        data,
+                                    }
+                                    .put_record(&pool)
+                                    .await)
+                                    {
+                                        log::error!(
+                                            "Couldn't save metadata for {}: {:#?}",
+                                            nft.to_string(),
+                                            e
+                                        );
+                                    }
+                                }
+                                Err(e) => {
+                                    log::error!(
+                                        "Error fetching metadata for {}: {:#?}",
+                                        nft.to_string(),
+                                        e
+                                    );
+                                }
+                            }
+                        });
+                    }
                 }
 
                 record
-                    .put_record(pool)
+                    .put_record(&pool)
                     .await
                     .map(|_| Some(record))
                     .map_err(|e| e.context(format!("Couldn't save {event_name}")))
@@ -125,11 +151,23 @@ where
 
 async fn handle_auction_root_tip3(
     extracted: Vec<ExtractedOwned>,
-    pool: &PgPool,
-    consumer: &TransactionConsumer,
+    pool: PgPool,
+    consumer: Arc<TransactionConsumer>,
 ) -> Result<()> {
-    handle_event::<AuctionDeployedRecord>("AuctionDeployed", &extracted, pool, consumer).await?;
-    handle_event::<AuctionDeclinedRecord>("AuctionDeclined", &extracted, pool, consumer).await?;
+    handle_event::<AuctionDeployedRecord>(
+        "AuctionDeployed",
+        &extracted,
+        pool.clone(),
+        consumer.clone(),
+    )
+    .await?;
+    handle_event::<AuctionDeclinedRecord>(
+        "AuctionDeclined",
+        &extracted,
+        pool.clone(),
+        consumer.clone(),
+    )
+    .await?;
     handle_event::<AuctionOwnershipTransferredRecord>(
         "OwnershipTransferred",
         &extracted,
@@ -142,23 +180,48 @@ async fn handle_auction_root_tip3(
 
 async fn handle_auction_tip3(
     extracted: Vec<ExtractedOwned>,
-    pool: &PgPool,
-    consumer: &TransactionConsumer,
+    pool: PgPool,
+    consumer: Arc<TransactionConsumer>,
 ) -> Result<()> {
-    // TODO: AuctionActive?
-    handle_event::<AuctionActiveRecord>("AuctionActive", &extracted, pool, consumer).await?;
-    handle_event::<BidPlacedRecord>("BidPlaced", &extracted, pool, consumer).await?;
-    handle_event::<BidDeclinedRecord>("BidDeclined", &extracted, pool, consumer).await?;
-    handle_event::<AuctionCompleteRecord>("AuctionComplete", &extracted, pool, consumer).await?;
-    handle_event::<AuctionCancelledRecord>("AuctionCancelled", &extracted, pool, consumer)
-        .await
-        .map(|_| {})
+    handle_event::<AuctionCreatedRecord>(
+        "AuctionCreated",
+        &extracted,
+        pool.clone(),
+        consumer.clone(),
+    )
+    .await?;
+    handle_event::<AuctionActiveRecord>(
+        "AuctionActive",
+        &extracted,
+        pool.clone(),
+        consumer.clone(),
+    )
+    .await?;
+    handle_event::<BidPlacedRecord>("BidPlaced", &extracted, pool.clone(), consumer.clone())
+        .await?;
+    handle_event::<BidDeclinedRecord>("BidDeclined", &extracted, pool.clone(), consumer.clone())
+        .await?;
+    handle_event::<AuctionCompleteRecord>(
+        "AuctionComplete",
+        &extracted,
+        pool.clone(),
+        consumer.clone(),
+    )
+    .await?;
+    handle_event::<AuctionCancelledRecord>(
+        "AuctionCancelled",
+        &extracted,
+        pool.clone(),
+        consumer.clone(),
+    )
+    .await
+    .map(|_| {})
 }
 
 async fn handle_direct_buy(
     extracted: Vec<ExtractedOwned>,
-    pool: &PgPool,
-    consumer: &TransactionConsumer,
+    pool: PgPool,
+    consumer: Arc<TransactionConsumer>,
 ) -> Result<()> {
     handle_event::<DirectBuyStateChangedRecord>("DirectBuyStateChanged", &extracted, pool, consumer)
         .await
@@ -167,8 +230,8 @@ async fn handle_direct_buy(
 
 async fn handle_direct_sell(
     extracted: Vec<ExtractedOwned>,
-    pool: &PgPool,
-    consumer: &TransactionConsumer,
+    pool: PgPool,
+    consumer: Arc<TransactionConsumer>,
 ) -> Result<()> {
     handle_event::<DirectSellStateChangedRecord>(
         "DirectSellStateChanged",
@@ -182,13 +245,23 @@ async fn handle_direct_sell(
 
 async fn handle_factory_direct_buy(
     extracted: Vec<ExtractedOwned>,
-    pool: &PgPool,
-    consumer: &TransactionConsumer,
+    pool: PgPool,
+    consumer: Arc<TransactionConsumer>,
 ) -> Result<()> {
-    handle_event::<DirectBuyDeployedRecord>("DirectBuyDeployed", &extracted, pool, consumer)
-        .await?;
-    handle_event::<DirectBuyDeclinedRecord>("DirectBuyDeclined", &extracted, pool, consumer)
-        .await?;
+    handle_event::<DirectBuyDeployedRecord>(
+        "DirectBuyDeployed",
+        &extracted,
+        pool.clone(),
+        consumer.clone(),
+    )
+    .await?;
+    handle_event::<DirectBuyDeclinedRecord>(
+        "DirectBuyDeclined",
+        &extracted,
+        pool.clone(),
+        consumer.clone(),
+    )
+    .await?;
     handle_event::<DirectBuyOwnershipTransferredRecord>(
         "OwnershipTransferred",
         &extracted,
@@ -201,13 +274,23 @@ async fn handle_factory_direct_buy(
 
 async fn handle_factory_direct_sell(
     extracted: Vec<ExtractedOwned>,
-    pool: &PgPool,
-    consumer: &TransactionConsumer,
+    pool: PgPool,
+    consumer: Arc<TransactionConsumer>,
 ) -> Result<()> {
-    handle_event::<DirectSellDeployedRecord>("DirectSellDeployed", &extracted, pool, consumer)
-        .await?;
-    handle_event::<DirectSellDeclinedRecord>("DirectSellDeclined", &extracted, pool, consumer)
-        .await?;
+    handle_event::<DirectSellDeployedRecord>(
+        "DirectSellDeployed",
+        &extracted,
+        pool.clone(),
+        consumer.clone(),
+    )
+    .await?;
+    handle_event::<DirectSellDeclinedRecord>(
+        "DirectSellDeclined",
+        &extracted,
+        pool.clone(),
+        consumer.clone(),
+    )
+    .await?;
     handle_event::<DirectSellOwnershipTransferredRecord>(
         "OwnershipTransferred",
         &extracted,
@@ -220,7 +303,7 @@ async fn handle_factory_direct_sell(
 
 async fn fetch_metadata(
     nft: &MsgAddressInt,
-    consumer: &TransactionConsumer,
+    consumer: Arc<TransactionConsumer>,
 ) -> Result<serde_json::Value> {
     let contract = consumer
         .get_contract_state(nft)
