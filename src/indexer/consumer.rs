@@ -95,7 +95,7 @@ async fn handle_event<T>(
     extracted: &[ExtractedOwned],
     pool: PgPool,
     consumer: Arc<TransactionConsumer>,
-) -> Result<Option<T>>
+) -> Result<()>
 where
     T: Build + Put + Sync,
 {
@@ -138,7 +138,7 @@ where
                 record
                     .put_record(&pool)
                     .await
-                    .map(|_| Some(record))
+                    .map(|_| {})
                     .map_err(|e| e.context(format!("Couldn't save {event_name}")))
             }
 
@@ -146,7 +146,7 @@ where
         };
     }
 
-    Ok(None)
+    Ok(())
 }
 
 async fn handle_auction_root_tip3(
