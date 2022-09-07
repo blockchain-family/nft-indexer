@@ -1146,6 +1146,31 @@ dependencies = [
 ]
 
 [[package]]
+name = "model"
+version = "0.1.0"
+dependencies = [
+ "anyhow",
+ "async-trait",
+ "bigdecimal",
+ "config",
+ "env_logger",
+ "futures",
+ "log",
+ "nekoton-abi",
+ "nekoton-contracts",
+ "nekoton-utils",
+ "opg",
+ "serde 1.0.144",
+ "serde_json",
+ "sqlx",
+ "tokio",
+ "ton_abi",
+ "ton_block",
+ "ton_types",
+ "transaction-consumer",
+]
+
+[[package]]
 name = "native-tls"
 version = "0.2.10"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -1274,31 +1299,6 @@ dependencies = [
  "ton_block",
  "ton_types",
  "zeroize",
-]
-
-[[package]]
-name = "nft-indexer"
-version = "0.1.0"
-dependencies = [
- "anyhow",
- "async-trait",
- "bigdecimal",
- "config",
- "env_logger",
- "futures",
- "log",
- "nekoton-abi",
- "nekoton-contracts",
- "nekoton-utils",
- "opg",
- "serde 1.0.144",
- "serde_json",
- "sqlx",
- "tokio",
- "ton_abi",
- "ton_block",
- "ton_types",
- "transaction-consumer",
 ]
 
 [[package]]
