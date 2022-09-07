@@ -1,2 +1,3 @@
-target/
-Settings.toml
+/target
+*.jks
+model/Settings.toml
