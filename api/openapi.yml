@@ -51,7 +51,8 @@ components:
         nft:
           $ref: '#/components/schemas/address'
         price:
-          $ref: '#/components/schemas/price'
+          type: integer
+          format: int64
         created-at:
           $ref: '#/components/schemas/ts'
         active:
@@ -112,14 +113,18 @@ components:
         address:
           $ref: '#/components/schemas/address'
         nft:
-          $ref: '#/components/schemas/nft'
+          $ref: '#/components/schemas/address'
+        bid-token:
+          $ref: '#/components/schemas/address'
         start-bid:
-          $ref: '#/components/schemas/price'
+          type: integer
+          format: int64
         max-bid:
-          $ref: '#/components/schemas/price'
-        created-at:
+          type: integer
+          format: int64
+        startTime:
           $ref: '#/components/schemas/ts'
-        finished-at:
+        finishTime:
           $ref: '#/components/schemas/ts'
       required:
         - address
