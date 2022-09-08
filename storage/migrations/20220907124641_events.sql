@@ -26,17 +26,27 @@ CREATE TYPE event_category AS ENUM (
     'direct_sell'
 );
 
+create table events_whitelist(
+	address t_address PRIMARY KEY
+);
+
 create table nft_events(
 	id bigint not null generated always as identity,
     event_cat event_category NOT NULL,
 	event_type event_type NOT NULL,
-	account_addr t_address,
+	address t_address references events_whitelist(address),
     created_lt bigint not null,
     created_at bigint not null,
+    checked boolean not null,
 	args jsonb,
 	
 	constraint nft_events_pk primary key (id),
-	constraint nft_events_unique unique (account_addr, created_lt, created_at)
+	constraint nft_events_unique unique (address, created_lt, created_at)
 );
+
+create index ix_nft_events_address ON nft_events USING btree (address);
+create index ix_nft_events_type ON nft_events USING btree (event_type);
+create index ix_nft_events_cat ON nft_events USING btree (event_cat);
+
 
 

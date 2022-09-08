@@ -18,19 +18,19 @@ components:
     price:
       type: object
       properties:
-        price-token:
+        priceToken:
           $ref: '#/components/schemas/address'
         price:
           type: integer
           format: int64
-        usd-price:
+        usdPrice:
           type: number
           format: float64
       required:
         - price
-        - price-token
+        - priceToken
 
-    nft-price:
+    nftPrice:
       type: object
       properties:
         price:
@@ -41,7 +41,7 @@ components:
         - price
         - ts
 
-    auction-bid:
+    auctionBid:
       type: object
       properties:
         from:
@@ -53,7 +53,7 @@ components:
         price:
           type: integer
           format: int64
-        created-at:
+        createdAt:
           $ref: '#/components/schemas/ts'
         active:
           type: boolean
@@ -62,8 +62,7 @@ components:
         - auction
         - nft
         - price
-        - price-token
-        - created-at
+        - createdAt
 
     offer:
       type: object
@@ -74,20 +73,19 @@ components:
           $ref: '#/components/schemas/address'
         price:
           $ref: '#/components/schemas/price'
-        created-at:
+        createdAt:
           $ref: '#/components/schemas/ts'
-        expired-at:
+        expiredAt:
           $ref: '#/components/schemas/ts'
-        finished-at:
+        finishedAt:
           $ref: '#/components/schemas/ts'
       required:
         - from
         - nft
         - price
-        - price-token
-        - created-at
+        - createdAt
 
-    for-sale:
+    forSale:
       type: object
       properties:
         from:
@@ -96,16 +94,15 @@ components:
           $ref: '#/components/schemas/address'
         price:
           $ref: '#/components/schemas/price'
-        created-at:
+        createdAt:
           $ref: '#/components/schemas/ts'
-        finished-at:
+        finishedAt:
           $ref: '#/components/schemas/ts'
       required:
         - from
         - nft
         - price
-        - price-token
-        - created-at
+        - createdAt
 
     auction:
       type: object
@@ -114,12 +111,12 @@ components:
           $ref: '#/components/schemas/address'
         nft:
           $ref: '#/components/schemas/address'
-        bid-token:
+        bidToken:
           $ref: '#/components/schemas/address'
-        start-bid:
+        startBid:
           type: integer
           format: int64
-        max-bid:
+        maxBid:
           type: integer
           format: int64
         startTime:
@@ -129,7 +126,7 @@ components:
       required:
         - address
         - nft
-        - created-at
+        - bidToken
   
     contract:
       type: object
@@ -156,18 +153,20 @@ components:
             format: uri
           collection:
             $ref: '#/components/schemas/contract'
-          traits:
+          attributes:
             type: array
             items:
               type: object
-          current-price:
+          currentPrice:
             $ref: '#/components/schemas/price'
-          last-price:
+          lastPrice:
             $ref: '#/components/schemas/price'
           auction:
             $ref: '#/components/schemas/address'
           forsale:
-            $ref: '#/components/schemas/address'       
+            $ref: '#/components/schemas/address'
+          manager:
+            $ref: '#/components/schemas/address'    
         required:
           - image
           - owner
@@ -181,48 +180,74 @@ components:
         properties:
           verified:
             type: boolean
-          created:
+          createdAt:
             $ref: '#/components/schemas/ts'        
-          images:
-            type: array
-            items:
-              type: string
-              format: uri
-          lowest-price:
+          wallpaper:
+            type: string
+            format: uri
+          logo:
+            type: string
+            format: uri
+          lowestPrice:
             $ref: '#/components/schemas/price'
-          total-price:
+          totalPrice:
             $ref: '#/components/schemas/price'
-          owners-count:
+          ownersCount:
             type: integer
             format: int32
         required:
-          - images
-          - owners-count
-          - created
+          - ownersCount
+          - createdAt
 
-    event-type:
+    eventType:
       type: string
       enum:
-      - bid
-      - offer
-      - transfer
-      - todo
+      - auction_deployed
+      - auction_created
+      - auction_ownership_transferred
+      - auction_active
+      - auction_declined
+      - auction_bid_placed
+      - auction_bid_declined
+      - auction_cancelled
+      - auction_complete
+      - direct_buy_deployed
+      - direct_buy_declined
+      - direct_buy_ownership_transferred
+      - direct_buy_state_changed
+      - direct_sell_deployed
+      - direct_sell_declined
+      - direct_sell_ownership_transferred
+      - direct_sell_state_changed
+
+    eventCategory:
+      type: string
+      enum:
+      - auction
+      - direct_buy
+      - direct_sell
 
     event:
       type: object
       properties:
+        id:
+          type: integer
+          format: int64
         type:
-          $ref: '#/components/schemas/event-type'
+          $ref: '#/components/schemas/eventType'
+        cat:
+          $ref: '#/components/schemas/eventCategory'
         address:
-          $ref: '#/components/schemas/address'
-        initiator:
           $ref: '#/components/schemas/address'
         ts:
           $ref: '#/components/schemas/ts'
+        args:
+          type: object
       required:
+        - id
         - type
+        - cat
         - address
-        - initiator
         - ts
 
 
@@ -273,7 +298,7 @@ paths:
               schema:
                 type: array
                 items:
-                  $ref: '#/components/schemas/nft-price'
+                  $ref: '#/components/schemas/nftPrice'
 
   /nft/{address}/details:
     get:
@@ -463,7 +488,7 @@ paths:
               schema:
                 type: array
                 items:
-                  $ref: '#/components/schemas/auction-bid'
+                  $ref: '#/components/schemas/auctionBid'
 
   /owner/{address}/bids-out:
     get:
@@ -493,7 +518,7 @@ paths:
               schema:
                 type: array
                 items:
-                  $ref: '#/components/schemas/auction-bid'
+                  $ref: '#/components/schemas/auctionBid'
 
   /owner/{address}/bids-in:
     get:
@@ -518,7 +543,7 @@ paths:
               schema:
                 type: array
                 items:
-                  $ref: '#/components/schemas/auction-bid'
+                  $ref: '#/components/schemas/auctionBid'
 
   /owner/{address}/offers-out:
     get:
@@ -609,7 +634,7 @@ paths:
           in: query
           required: false
           schema:
-            $ref: '#/components/schemas/event-type'
+            $ref: '#/components/schemas/eventType'
         - name: page-size
           in: query
           required: false
