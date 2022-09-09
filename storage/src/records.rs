@@ -1,4 +1,4 @@
-use crate::database::types::Address;
+use crate::types::Address;
 use anyhow::Result;
 use async_trait::async_trait;
 use bigdecimal::BigDecimal;

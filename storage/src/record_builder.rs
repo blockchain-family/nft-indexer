@@ -1,4 +1,4 @@
-use crate::database::{records::*, types::Address};
+use crate::{records::*, types::Address};
 use anyhow::{anyhow, Result};
 use bigdecimal::{BigDecimal, ToPrimitive};
 use nekoton_abi::{transaction_parser::ExtractedOwned, BuildTokenValue};

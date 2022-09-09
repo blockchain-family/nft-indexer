@@ -1,12 +1,12 @@
-use crate::database::{
-    actions::{self, add_whitelist_address},
-    records::*,
-};
 use anyhow::{anyhow, Result};
 use futures::{future::BoxFuture, StreamExt};
 use nekoton_abi::{transaction_parser::ExtractedOwned, TransactionParser};
 use sqlx::PgPool;
 use std::sync::Arc;
+use storage::{
+    actions::{self, add_whitelist_address},
+    records::*,
+};
 use ton_block::MsgAddressInt;
 use transaction_consumer::{StreamFrom, TransactionConsumer};
 
@@ -26,6 +26,10 @@ pub async fn serve(pool: PgPool, consumer: Arc<TransactionConsumer>) -> Result<(
     while let Some(tx) = fs.next().await {
         for (parser, handler) in parsers_and_handlers.iter() {
             if let Ok(extracted) = parser.parse(&tx.transaction) {
+                for e in extracted.iter() {
+                    println!("{}", e.name);
+                }
+
                 if let Some(e) = handler(
                     extracted.into_iter().map(|ex| ex.into_owned()).collect(),
                     pool.clone(),
@@ -99,17 +103,17 @@ fn initialize_parsers_and_handlers() -> Result<Vec<(TransactionParser, Handler)>
     ])
 }
 
-async fn handle_event<Event>(
+async fn handle_event<EventType>(
     event_name: &str,
     extracted: &[ExtractedOwned],
     pool: PgPool,
     consumer: Arc<TransactionConsumer>,
-) -> Result<Option<Event>>
+) -> Result<Option<EventType>>
 where
-    Event: EventRecord + DatabaseRecord + Sync,
+    EventType: EventRecord + DatabaseRecord + Sync,
 {
     if let Some(event) = extracted.iter().find(|e| e.name == event_name) {
-        return match Event::build_from(event) {
+        return match EventType::build_from(event) {
             Ok(record) => {
                 {
                     let pool = pool.clone();

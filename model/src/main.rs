@@ -3,14 +3,9 @@ use anyhow::Result;
 use env_logger::Builder;
 use indexer::consumer;
 use log::LevelFilter;
-use sqlx::{
-    postgres::{PgConnectOptions, PgPoolOptions},
-    {ConnectOptions, PgPool},
-};
-use std::{collections::HashMap, str::FromStr, sync::Arc, time::Duration};
+use std::{collections::HashMap, sync::Arc};
 use transaction_consumer::{ConsumerOptions, TransactionConsumer};
 
-mod database;
 mod indexer;
 mod settings;
 
@@ -21,7 +16,7 @@ async fn main() -> Result<()> {
 
     let config = Config::new("Settings.toml");
 
-    let pg_pool = init_pg_pool(&config.database_url, config.database_max_connections)
+    let pg_pool = storage::init_pg_pool(&config.database_url, config.database_max_connections)
         .await
         .expect("Postgres connection failed");
 
@@ -55,17 +50,4 @@ pub async fn init_transactions_consumer(config: Config) -> Result<Arc<Transactio
         con_opt,
     )
     .await
-}
-
-pub async fn init_pg_pool(db_string: &str, pool_size: u32) -> Result<PgPool> {
-    log::info!("Connecting to DB");
-
-    Ok(PgPoolOptions::new()
-        .max_connections(pool_size)
-        .connect_with(std::mem::take(
-            PgConnectOptions::from_str(db_string)?
-                .log_statements(LevelFilter::Debug)
-                .log_slow_statements(LevelFilter::Debug, Duration::from_secs(10)),
-        ))
-        .await?)
 }
