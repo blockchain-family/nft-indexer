@@ -1,243 +1,224 @@
 {
   "db": "PostgreSQL",
-  "07dcd51f561de729529ebc5deda6b238d338f2e43a68e089984664c81243ba31": {
+  "155f65d8aa34b6632069e9cf4e9232ab4c5f6a3c8079ebbd11876d281c04d135": {
     "describe": {
       "columns": [],
       "nullable": [],
       "parameters": {
         "Left": [
-          "Varchar",
+          {
+            "Custom": {
+              "kind": {
+                "Domain": "Varchar"
+              },
+              "name": "t_address"
+            }
+          },
           "Int8",
           "Int8",
-          "Varchar",
-          "Varchar",
-          "Varchar",
-          "Varchar",
-          "Varchar",
-          "Numeric",
-          "Int8",
-          "Numeric"
+          "Jsonb"
         ]
       }
     },
-    "query": "\n            insert into auction_deployed (account_addr, created_lt, created_at, offer_address, collection,\n                nft_owner, nft, offer, price, auction_duration, deploy_nonce)\n            values ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11)\n            "
+    "query": "\n            insert into nft_events (event_cat, event_type, address, created_lt, created_at, args)\n            values ('auction', 'auction_created', $1, $2, $3, $4)\n            "
   },
-  "126b0e5dc3afd07a34272b3388166e709fdcdacbe7f1ec681e12d2cc5eb46f0a": {
+  "22e9eef357f1fdc854b2032000b84a8dab367ac69b727a6a19681fe4036d7269": {
     "describe": {
       "columns": [],
       "nullable": [],
       "parameters": {
         "Left": [
-          "Varchar",
+          {
+            "Custom": {
+              "kind": {
+                "Domain": "Varchar"
+              },
+              "name": "t_address"
+            }
+          },
           "Int8",
           "Int8",
-          "Varchar",
-          "Varchar",
-          "Varchar",
-          "Varchar",
-          "Int8",
-          "Int8",
-          "Int8",
-          "Int8"
+          "Jsonb"
         ]
       }
     },
-    "query": "\n            insert into auction_created (account_addr, created_lt, created_at, auction_subject, subject_owner,\n                payment_token_root, wallet_for_bids, start_time, duration, finish_time, now_time)\n            values ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11)\n            "
+    "query": "\n            insert into nft_events (event_cat, event_type, address, created_lt, created_at, args)\n            values ('direct_buy', 'direct_buy_ownership_transferred', $1, $2, $3, $4)\n            "
   },
-  "195a145799172232e49496c79402e707522cade91ba2ca9c96333d9560382d6c": {
+  "247aeb03e4ae54ae0575cc77ad64910dcb4e0f991052840b0040b581c8fe0d07": {
     "describe": {
       "columns": [],
       "nullable": [],
       "parameters": {
         "Left": [
-          "Varchar",
+          {
+            "Custom": {
+              "kind": {
+                "Domain": "Varchar"
+              },
+              "name": "t_address"
+            }
+          },
           "Int8",
           "Int8",
-          "Varchar",
-          "Varchar",
-          "Varchar",
-          "Varchar",
-          "Numeric",
-          "Numeric"
+          "Jsonb"
         ]
       }
     },
-    "query": "\n            insert into direct_sell_deployed (account_addr, created_lt, created_at, _direct_sell_address, sender,\n                payment_token, nft, _nonce, price)\n            values ($1, $2, $3, $4, $5, $6, $7, $8, $9)\n            "
+    "query": "\n            insert into nft_events (event_cat, event_type, address, created_lt, created_at, args)\n            values ('auction', 'auction_deployed', $1, $2, $3, $4)\n            "
   },
-  "2b2cb1456c7dce7a3ffd3580f96a1c3bd7ebc9c956e2e8a6fac0b30412af10f2": {
+  "33f0393ad470cf20f785ad58034df65957cdbde44a7a88c08a5dcc88aa5be883": {
     "describe": {
       "columns": [],
       "nullable": [],
       "parameters": {
         "Left": [
-          "Varchar",
+          {
+            "Custom": {
+              "kind": {
+                "Domain": "Varchar"
+              },
+              "name": "t_address"
+            }
+          },
           "Int8",
           "Int8",
-          "Varchar",
-          "Numeric"
+          "Jsonb"
         ]
       }
     },
-    "query": "\n            insert into bid_placed (account_addr, created_lt, created_at, buyer_address, value)\n            values ($1, $2, $3, $4, $5)\n            "
+    "query": "\n            insert into nft_events (event_cat, event_type, address, created_lt, created_at, args)\n            values ('direct_buy', 'direct_buy_state_changed', $1, $2, $3, $4)\n            "
   },
-  "312f4c995ae35122c086a473848e5df17266153819948c3396218abf0886f709": {
+  "43a5bd54b11f0f8b924ab8d74ab7db16ee90ddc3aac50934e5a4b45095301fda": {
     "describe": {
       "columns": [],
       "nullable": [],
       "parameters": {
         "Left": [
-          "Varchar",
+          {
+            "Custom": {
+              "kind": {
+                "Domain": "Varchar"
+              },
+              "name": "t_address"
+            }
+          },
           "Int8",
           "Int8",
-          "Varchar",
-          "Varchar",
-          "Numeric"
+          "Jsonb"
         ]
       }
     },
-    "query": "\n            insert into direct_buy_declined (account_addr, created_lt, created_at, sender, token_root, amount)\n            values ($1, $2, $3, $4, $5, $6)\n            "
+    "query": "\n            insert into nft_events (event_cat, event_type, address, created_lt, created_at, args)\n            values ('direct_sell', 'direct_sell_state_changed', $1, $2, $3, $4)\n            "
   },
-  "340dd19de68d128533516cc20e692fc53d7868b0b2312a5729b2ae80e4524980": {
+  "49bf2dd1d50ab6040a19a20a721be00f80c95166896b709c31f6327f4d552d2d": {
     "describe": {
       "columns": [],
       "nullable": [],
       "parameters": {
         "Left": [
-          "Varchar",
+          {
+            "Custom": {
+              "kind": {
+                "Domain": "Varchar"
+              },
+              "name": "t_address"
+            }
+          },
           "Int8",
           "Int8",
-          "Varchar",
-          "Numeric"
+          "Jsonb"
         ]
       }
     },
-    "query": "\n            insert into auction_complete (account_addr, created_lt, created_at, buyer_address, value)\n            values ($1, $2, $3, $4, $5)\n            "
+    "query": "\n            insert into nft_events (event_cat, event_type, address, created_lt, created_at, args)\n            values ('auction', 'auction_declined', $1, $2, $3, $4)\n            "
   },
-  "4f89a31420ba79b490542900207c26201debe42658d5860b91af2b44c557882c": {
+  "4e66d5975967eef94fb46c6468906a5ba58e9bde9d65b823aaae207646e9ed2f": {
     "describe": {
       "columns": [],
       "nullable": [],
       "parameters": {
         "Left": [
-          "Varchar",
+          {
+            "Custom": {
+              "kind": {
+                "Domain": "Varchar"
+              },
+              "name": "t_address"
+            }
+          },
           "Int8",
           "Int8",
-          "Varchar",
-          "Varchar"
+          "Jsonb"
         ]
       }
     },
-    "query": "\n            insert into direct_buy_ownership_transferred (account_addr, created_lt, created_at, old_owner, new_owner)\n            values ($1, $2, $3, $4, $5)\n            "
+    "query": "\n            insert into nft_events (event_cat, event_type, address, created_lt, created_at, args)\n            values ('auction', 'auction_bid_declined', $1, $2, $3, $4)\n            "
   },
-  "53d95712af39588dbeb6941650e1bfee6fdbb1216cf9acdf61969875f6ed4596": {
+  "53e6c7725a2bdb2e6825b773f999d42679a86c60c607633b3105c55973232cfc": {
     "describe": {
       "columns": [],
       "nullable": [],
       "parameters": {
         "Left": [
-          "Varchar",
+          {
+            "Custom": {
+              "kind": {
+                "Domain": "Varchar"
+              },
+              "name": "t_address"
+            }
+          },
           "Int8",
           "Int8",
-          "Varchar",
-          "Varchar"
+          "Jsonb"
         ]
       }
     },
-    "query": "\n            insert into auction_ownership_transferred (account_addr, created_lt, created_at, old_owner, new_owner)\n            values ($1, $2, $3, $4, $5)\n            "
+    "query": "\n            insert into nft_events (event_cat, event_type, address, created_lt, created_at, args)\n            values ('auction', 'auction_complete', $1, $2, $3, $4)\n            "
   },
-  "5b4b8407d5c42de71ca59aa16d09dd4b39729dcf6164eb8f4c9256e80e132641": {
+  "7e223d0a5389548c626b692f6a7f58442e73b2216f85dfcd4c8ae66583c1eabb": {
     "describe": {
       "columns": [],
       "nullable": [],
       "parameters": {
         "Left": [
-          "Varchar",
+          {
+            "Custom": {
+              "kind": {
+                "Domain": "Varchar"
+              },
+              "name": "t_address"
+            }
+          },
           "Int8",
           "Int8",
-          "Int2",
-          "Int2",
-          "Varchar",
-          "Varchar",
-          "Varchar",
-          "Varchar",
-          "Int8",
-          "Numeric",
-          "Varchar",
-          "Int2",
-          "Varchar",
-          "Int8",
-          "Int8",
-          "Int8"
+          "Jsonb"
         ]
       }
     },
-    "query": "\n            insert into direct_buy_state_changed (account_addr, created_lt, created_at, from_state, to_state, factory,\n                creator, spent_token, nft, _time_tx, _price, spent_wallet, status, sender, start_time_buy,\n                duration_time_buy, end_time_buy)\n            values ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17)\n            "
+    "query": "\n            insert into nft_events (event_cat, event_type, address, created_lt, created_at, args)\n            values ('direct_sell', 'direct_sell_ownership_transferred', $1, $2, $3, $4)\n            "
   },
-  "6830b81d7ffd0fec782d35d64a4955898fb12b633b61af9b86131602102342e7": {
+  "814552288787b38abc35fcda6f0c30d62790b15213b400508f976f32e4778a99": {
     "describe": {
       "columns": [],
       "nullable": [],
       "parameters": {
         "Left": [
-          "Varchar",
+          {
+            "Custom": {
+              "kind": {
+                "Domain": "Varchar"
+              },
+              "name": "t_address"
+            }
+          },
           "Int8",
-          "Int8"
+          "Int8",
+          "Jsonb"
         ]
       }
     },
-    "query": "\n            insert into bid_declined (account_addr, created_lt, created_at)\n            values ($1, $2, $3)\n            "
-  },
-  "6896a03ec66d936be0189d8a9b28b1c5967637b249c5dcb77501b1f43ebcc230": {
-    "describe": {
-      "columns": [],
-      "nullable": [],
-      "parameters": {
-        "Left": [
-          "Varchar",
-          "Int8",
-          "Int8",
-          "Varchar",
-          "Varchar",
-          "Varchar",
-          "Varchar",
-          "Numeric",
-          "Numeric"
-        ]
-      }
-    },
-    "query": "\n            insert into direct_buy_deployed (account_addr, created_lt, created_at, direct_buy_address, sender,\n                token_root, nft, nonce, amount)\n            values ($1, $2, $3, $4, $5, $6, $7, $8, $9)\n            "
-  },
-  "6924a4764bc464c7dd156a08bbcb4310c30937f7a86e6b40c3698ef8753afc9b": {
-    "describe": {
-      "columns": [],
-      "nullable": [],
-      "parameters": {
-        "Left": [
-          "Varchar",
-          "Int8",
-          "Int8",
-          "Varchar",
-          "Varchar"
-        ]
-      }
-    },
-    "query": "\n            insert into direct_sell_ownership_transferred (account_addr, created_lt, created_at, old_owner, new_owner)\n            values ($1, $2, $3, $4, $5)\n            "
-  },
-  "849a72b42baa6bfa035f92cdf21e7d1b77ad590a03fc1a469b14e9f24d56765f": {
-    "describe": {
-      "columns": [],
-      "nullable": [],
-      "parameters": {
-        "Left": [
-          "Varchar",
-          "Int8",
-          "Int8",
-          "Varchar",
-          "Varchar"
-        ]
-      }
-    },
-    "query": "\n            insert into auction_declined (account_addr, created_lt, created_at, nft_owner, data_address)\n            values ($1, $2, $3, $4, $5)\n            "
+    "query": "\n            insert into nft_events (event_cat, event_type, address, created_lt, created_at, args)\n            values ('direct_buy', 'direct_buy_deployed', $1, $2, $3, $4)\n            "
   },
   "87000152202a9d68c9064ee703d4cbcf9ede7fe498a621dc34ab65ae20e7f08c": {
     "describe": {
@@ -245,92 +226,191 @@
       "nullable": [],
       "parameters": {
         "Left": [
-          "Varchar",
+          {
+            "Custom": {
+              "kind": {
+                "Domain": "Varchar"
+              },
+              "name": "t_address"
+            }
+          },
           "Jsonb"
         ]
       }
     },
     "query": "\n            insert into nft_metadata (nft, meta)\n            values ($1, $2)\n            "
   },
-  "871ffe7ede9a0aae80c85713abbb94b3b9f7083aa88e69b3e07169a31bb22158": {
+  "8ac40819aef0397b57db633e02777323f312f77a8f91283a3e7d46a36923d3c4": {
     "describe": {
       "columns": [],
       "nullable": [],
       "parameters": {
         "Left": [
-          "Varchar",
+          {
+            "Custom": {
+              "kind": {
+                "Domain": "Varchar"
+              },
+              "name": "t_address"
+            }
+          },
           "Int8",
           "Int8",
-          "Varchar",
-          "Numeric"
+          "Jsonb"
         ]
       }
     },
-    "query": "\n            insert into bid_declined (account_addr, created_lt, created_at, buyer_address, value)\n            values ($1, $2, $3, $4, $5)\n            "
+    "query": "\n            insert into nft_events (event_cat, event_type, address, created_lt, created_at, args)\n            values ('auction', 'auction_ownership_transferred', $1, $2, $3, $4)\n            "
   },
-  "c9febd1b65a3a2bd74c16be951143bcf226235f524426d5d51078e69bf1233b4": {
+  "9347c277a345f335fea74853a70814f6e4973d8f26cb9f104033a357ef5405e3": {
     "describe": {
       "columns": [],
       "nullable": [],
       "parameters": {
         "Left": [
-          "Varchar",
+          {
+            "Custom": {
+              "kind": {
+                "Domain": "Varchar"
+              },
+              "name": "t_address"
+            }
+          },
           "Int8",
           "Int8",
-          "Varchar",
-          "Varchar"
+          "Jsonb"
         ]
       }
     },
-    "query": "\n            insert into direct_sell_declined (account_addr, created_lt, created_at, sender, _nft_address)\n            values ($1, $2, $3, $4, $5)\n            "
+    "query": "\n            insert into nft_events (event_cat, event_type, address, created_lt, created_at, args)\n            values ('auction', 'auction_active', $1, $2, $3, $4)\n            "
   },
-  "d2d8f6ea9eec9f8fe34fc2ffcbf1a1830a473f13b0bc2dd0684b876d688f6b2f": {
+  "a5deef48744cd28a6c0eb4b4d8dce9b01048151dc2f74c7376209bcbd4322724": {
     "describe": {
       "columns": [],
       "nullable": [],
       "parameters": {
         "Left": [
-          "Varchar",
+          {
+            "Custom": {
+              "kind": {
+                "Domain": "Varchar"
+              },
+              "name": "t_address"
+            }
+          },
           "Int8",
           "Int8",
-          "Varchar",
-          "Varchar",
-          "Varchar",
-          "Varchar",
-          "Int8",
-          "Int8",
-          "Int8",
-          "Int8"
+          "Jsonb"
         ]
       }
     },
-    "query": "\n            insert into auction_active (account_addr, created_lt, created_at, auction_subject, subject_owner,\n                payment_token_root, wallet_for_bids, start_time, duration, finish_time, now_time)\n            values ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11)\n            "
+    "query": "\n            insert into nft_events (event_cat, event_type, address, created_lt, created_at, args)\n            values ('direct_sell', 'direct_sell_deployed', $1, $2, $3, $4)\n            "
   },
-  "f6c1725f0885ed02d3f6233c912b3151f6ec0fe94c9760c7a34ff151624eecc7": {
+  "df84a78ebfc01420a7f9b36bb773b21c34b88c703576f7c52b32cdb3d72bad6a": {
     "describe": {
       "columns": [],
       "nullable": [],
       "parameters": {
         "Left": [
-          "Varchar",
+          {
+            "Custom": {
+              "kind": {
+                "Domain": "Varchar"
+              },
+              "name": "t_address"
+            }
+          },
           "Int8",
           "Int8",
-          "Int2",
-          "Int2",
-          "Varchar",
-          "Varchar",
-          "Varchar",
-          "Varchar",
-          "Int8",
-          "Int8",
-          "Int8",
-          "Numeric",
-          "Varchar",
-          "Int2",
-          "Varchar"
+          "Jsonb"
         ]
       }
     },
-    "query": "\n            insert into direct_sell_state_changed (account_addr, created_lt, created_at, from_state, to_state, factory,\n                creator, token, nft, _time_tx, start_time, end_time, _price, wallet, status, sender)\n            values ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16)\n            "
+    "query": "\n            insert into nft_events (event_cat, event_type, address, created_lt, created_at, args)\n            values ('auction', 'auction_bid_placed', $1, $2, $3, $4)\n            "
+  },
+  "e37e7f5bbc2f7da663894a9c6bdc5766a681b8db1ed4d18a2497ed184f4529e7": {
+    "describe": {
+      "columns": [],
+      "nullable": [],
+      "parameters": {
+        "Left": [
+          {
+            "Custom": {
+              "kind": {
+                "Domain": "Varchar"
+              },
+              "name": "t_address"
+            }
+          },
+          "Int8",
+          "Int8",
+          "Jsonb"
+        ]
+      }
+    },
+    "query": "\n            insert into nft_events (event_cat, event_type, address, created_lt, created_at, args)\n            values ('direct_buy', 'direct_buy_declined', $1, $2, $3, $4)\n            "
+  },
+  "e9e797b063eb0ddc5ddc001219b00734bf9387b4689af64a0c0efd263e2c9e13": {
+    "describe": {
+      "columns": [],
+      "nullable": [],
+      "parameters": {
+        "Left": [
+          {
+            "Custom": {
+              "kind": {
+                "Domain": "Varchar"
+              },
+              "name": "t_address"
+            }
+          },
+          "Int8",
+          "Int8",
+          "Jsonb"
+        ]
+      }
+    },
+    "query": "\n            insert into nft_events (event_cat, event_type, address, created_lt, created_at, args)\n            values ('auction', 'auction_cancelled', $1, $2, $3, $4)\n            "
+  },
+  "ed5271faa0edea5031ec0f7204eabc4cad00034df488e6fec8fbc04a5d94081e": {
+    "describe": {
+      "columns": [],
+      "nullable": [],
+      "parameters": {
+        "Left": [
+          {
+            "Custom": {
+              "kind": {
+                "Domain": "Varchar"
+              },
+              "name": "t_address"
+            }
+          }
+        ]
+      }
+    },
+    "query": "\n        insert into events_whitelist (address)\n        values ($1)\n        "
+  },
+  "f501ab6e8070dc06bff8eb5ed1f1a4bc54bfaf8fd11dbfb239c100ab47621931": {
+    "describe": {
+      "columns": [],
+      "nullable": [],
+      "parameters": {
+        "Left": [
+          {
+            "Custom": {
+              "kind": {
+                "Domain": "Varchar"
+              },
+              "name": "t_address"
+            }
+          },
+          "Int8",
+          "Int8",
+          "Jsonb"
+        ]
+      }
+    },
+    "query": "\n            insert into nft_events (event_cat, event_type, address, created_lt, created_at, args)\n            values ('direct_sell', 'direct_sell_declined', $1, $2, $3, $4)\n            "
   }
 }

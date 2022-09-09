@@ -1,12 +1,14 @@
+use crate::database::types::Address;
 use anyhow::Result;
 use async_trait::async_trait;
 use bigdecimal::BigDecimal;
 use nekoton_abi::transaction_parser::ExtractedOwned;
+use serde::Serialize;
 use sqlx::{postgres::PgQueryResult, PgPool};
 use ton_block::MsgAddressInt;
 
-pub trait Build {
-    fn build_record(event: &ExtractedOwned) -> Result<Self>
+pub trait EventRecord {
+    fn build_from(event: &ExtractedOwned) -> Result<Self>
     where
         Self: Sized;
 
@@ -16,221 +18,269 @@ pub trait Build {
 }
 
 #[async_trait]
-pub trait Put {
-    async fn put_record(&self, pool: &PgPool) -> Result<PgQueryResult>
+pub trait DatabaseRecord {
+    async fn put_in(&self, pool: &PgPool) -> Result<PgQueryResult>
     where
         Self: Sync;
 }
 
 #[derive(Clone, Debug, PartialEq, Eq)]
-pub struct NftMetadataRecord {
-    pub nft: String,
+pub struct NftMetadata {
+    pub nft: Address,
     pub data: serde_json::Value,
 }
 
 /// AuctionRootTip3 events
 
-#[derive(Clone, Debug, PartialEq, Eq)]
-pub struct AuctionDeployedRecord {
-    pub account_addr: String,
+#[derive(Clone, Debug, PartialEq, Eq, Serialize)]
+pub struct AuctionDeployed {
+    #[serde(skip_serializing)]
+    pub address: Address,
+    #[serde(skip_serializing)]
     pub created_lt: i64,
+    #[serde(skip_serializing)]
     pub created_at: i64,
 
-    pub offer_address: String,
+    pub offer_address: Address,
 
-    pub collection: String,
-    pub nft_owner: String,
-    pub nft: String,
-    pub offer: String,
+    pub collection: Address,
+    pub nft_owner: Address,
+    pub nft: Address,
+    pub offer: Address,
     pub price: BigDecimal,
     pub auction_duration: i64,
     pub deploy_nonce: BigDecimal,
 }
 
-#[derive(Clone, Debug, PartialEq, Eq)]
-pub struct AuctionDeclinedRecord {
-    pub account_addr: String,
+#[derive(Clone, Debug, PartialEq, Eq, Serialize)]
+pub struct AuctionDeclined {
+    #[serde(skip_serializing)]
+    pub address: Address,
+    #[serde(skip_serializing)]
     pub created_lt: i64,
+    #[serde(skip_serializing)]
     pub created_at: i64,
 
-    pub nft_owner: String,
-    pub data_address: String,
+    pub nft_owner: Address,
+    pub data_address: Address,
 }
 
-#[derive(Clone, Debug, PartialEq, Eq)]
-pub struct AuctionOwnershipTransferredRecord {
-    pub account_addr: String,
+#[derive(Clone, Debug, PartialEq, Eq, Serialize)]
+pub struct AuctionOwnershipTransferred {
+    #[serde(skip_serializing)]
+    pub address: Address,
+    #[serde(skip_serializing)]
     pub created_lt: i64,
+    #[serde(skip_serializing)]
     pub created_at: i64,
 
-    pub old_owner: String,
-    pub new_owner: String,
+    pub old_owner: Address,
+    pub new_owner: Address,
 }
 
 /// AuctionTip3 events
 
-#[derive(Clone, Debug, PartialEq, Eq)]
-pub struct AuctionCreatedRecord {
-    pub account_addr: String,
+#[derive(Clone, Debug, PartialEq, Eq, Serialize)]
+pub struct AuctionCreated {
+    #[serde(skip_serializing)]
+    pub address: Address,
+    #[serde(skip_serializing)]
     pub created_lt: i64,
+    #[serde(skip_serializing)]
     pub created_at: i64,
 
-    pub auction_subject: String,
-    pub subject_owner: String,
-    pub payment_token_root: String,
-    pub wallet_for_bids: String,
+    pub auction_subject: Address,
+    pub subject_owner: Address,
+    pub payment_token_root: Address,
+    pub wallet_for_bids: Address,
     pub start_time: i64,
     pub duration: i64,
     pub finish_time: i64,
     pub now_time: i64,
 }
 
-#[derive(Clone, Debug, PartialEq, Eq)]
-pub struct AuctionActiveRecord {
-    pub account_addr: String,
+#[derive(Clone, Debug, PartialEq, Eq, Serialize)]
+pub struct AuctionActive {
+    #[serde(skip_serializing)]
+    pub address: Address,
+    #[serde(skip_serializing)]
     pub created_lt: i64,
+    #[serde(skip_serializing)]
     pub created_at: i64,
 
-    pub auction_subject: String,
-    pub subject_owner: String,
-    pub payment_token_root: String,
-    pub wallet_for_bids: String,
+    pub auction_subject: Address,
+    pub subject_owner: Address,
+    pub payment_token_root: Address,
+    pub wallet_for_bids: Address,
     pub start_time: i64,
     pub duration: i64,
     pub finish_time: i64,
     pub now_time: i64,
 }
 
-#[derive(Clone, Debug, PartialEq, Eq)]
-pub struct BidPlacedRecord {
-    pub account_addr: String,
+#[derive(Clone, Debug, PartialEq, Eq, Serialize)]
+pub struct BidPlaced {
+    #[serde(skip_serializing)]
+    pub address: Address,
+    #[serde(skip_serializing)]
     pub created_lt: i64,
+    #[serde(skip_serializing)]
     pub created_at: i64,
 
-    pub buyer_address: String,
+    pub buyer_address: Address,
     pub value: BigDecimal,
 }
 
-#[derive(Clone, Debug, PartialEq, Eq)]
-pub struct BidDeclinedRecord {
-    pub account_addr: String,
+#[derive(Clone, Debug, PartialEq, Eq, Serialize)]
+pub struct BidDeclined {
+    #[serde(skip_serializing)]
+    pub address: Address,
+    #[serde(skip_serializing)]
     pub created_lt: i64,
+    #[serde(skip_serializing)]
     pub created_at: i64,
 
-    pub buyer_address: String,
+    pub buyer_address: Address,
     pub value: BigDecimal,
 }
 
-#[derive(Clone, Debug, PartialEq, Eq)]
-pub struct AuctionCompleteRecord {
-    pub account_addr: String,
+#[derive(Clone, Debug, PartialEq, Eq, Serialize)]
+pub struct AuctionComplete {
+    #[serde(skip_serializing)]
+    pub address: Address,
+    #[serde(skip_serializing)]
     pub created_lt: i64,
+    #[serde(skip_serializing)]
     pub created_at: i64,
 
-    pub buyer_address: String,
+    pub buyer_address: Address,
     pub value: BigDecimal,
 }
 
-#[derive(Clone, Debug, PartialEq, Eq)]
-pub struct AuctionCancelledRecord {
-    pub account_addr: String,
+#[derive(Clone, Debug, PartialEq, Eq, Serialize)]
+pub struct AuctionCancelled {
+    #[serde(skip_serializing)]
+    pub address: Address,
+    #[serde(skip_serializing)]
     pub created_lt: i64,
+    #[serde(skip_serializing)]
     pub created_at: i64,
 }
 
 /// FactoryDirectBuy events
 
-#[derive(Clone, Debug, PartialEq, Eq)]
-pub struct DirectBuyDeployedRecord {
-    pub account_addr: String,
+#[derive(Clone, Debug, PartialEq, Eq, Serialize)]
+pub struct DirectBuyDeployed {
+    #[serde(skip_serializing)]
+    pub address: Address,
+    #[serde(skip_serializing)]
     pub created_lt: i64,
+    #[serde(skip_serializing)]
     pub created_at: i64,
 
-    pub direct_buy_address: String,
-    pub sender: String,
-    pub token_root: String,
-    pub nft: String,
+    pub direct_buy_address: Address,
+    pub sender: Address,
+    pub token_root: Address,
+    pub nft: Address,
     pub nonce: BigDecimal,
     pub amount: BigDecimal,
 }
 
-#[derive(Clone, Debug, PartialEq, Eq)]
-pub struct DirectBuyDeclinedRecord {
-    pub account_addr: String,
+#[derive(Clone, Debug, PartialEq, Eq, Serialize)]
+pub struct DirectBuyDeclined {
+    #[serde(skip_serializing)]
+    pub address: Address,
+    #[serde(skip_serializing)]
     pub created_lt: i64,
+    #[serde(skip_serializing)]
     pub created_at: i64,
 
-    pub sender: String,
-    pub token_root: String,
+    pub sender: Address,
+    pub token_root: Address,
     pub amount: BigDecimal,
 }
 
-#[derive(Clone, Debug, PartialEq, Eq)]
-pub struct DirectBuyOwnershipTransferredRecord {
-    pub account_addr: String,
+#[derive(Clone, Debug, PartialEq, Eq, Serialize)]
+pub struct DirectBuyOwnershipTransferred {
+    #[serde(skip_serializing)]
+    pub address: Address,
+    #[serde(skip_serializing)]
     pub created_lt: i64,
+    #[serde(skip_serializing)]
     pub created_at: i64,
 
-    pub old_owner: String,
-    pub new_owner: String,
+    pub old_owner: Address,
+    pub new_owner: Address,
 }
 
 /// FactoryDirectSell events
 
-#[derive(Clone, Debug, PartialEq, Eq)]
-pub struct DirectSellDeployedRecord {
-    pub account_addr: String,
+#[derive(Clone, Debug, PartialEq, Eq, Serialize)]
+pub struct DirectSellDeployed {
+    #[serde(skip_serializing)]
+    pub address: Address,
+    #[serde(skip_serializing)]
     pub created_lt: i64,
+    #[serde(skip_serializing)]
     pub created_at: i64,
 
-    pub _direct_sell_address: String,
-    pub sender: String,
-    pub payment_token: String,
-    pub nft: String,
+    pub _direct_sell_address: Address,
+    pub sender: Address,
+    pub payment_token: Address,
+    pub nft: Address,
     pub _nonce: BigDecimal,
     pub price: BigDecimal,
 }
 
-#[derive(Clone, Debug, PartialEq, Eq)]
-pub struct DirectSellDeclinedRecord {
-    pub account_addr: String,
+#[derive(Clone, Debug, PartialEq, Eq, Serialize)]
+pub struct DirectSellDeclined {
+    #[serde(skip_serializing)]
+    pub address: Address,
+    #[serde(skip_serializing)]
     pub created_lt: i64,
+    #[serde(skip_serializing)]
     pub created_at: i64,
 
-    pub sender: String,
-    pub _nft_address: String,
+    pub sender: Address,
+    pub _nft_address: Address,
 }
 
-#[derive(Clone, Debug, PartialEq, Eq)]
-pub struct DirectSellOwnershipTransferredRecord {
-    pub account_addr: String,
+#[derive(Clone, Debug, PartialEq, Eq, Serialize)]
+pub struct DirectSellOwnershipTransferred {
+    #[serde(skip_serializing)]
+    pub address: Address,
+    #[serde(skip_serializing)]
     pub created_lt: i64,
+    #[serde(skip_serializing)]
     pub created_at: i64,
 
-    pub old_owner: String,
-    pub new_owner: String,
+    pub old_owner: Address,
+    pub new_owner: Address,
 }
 
 /// DirectBuy events
 
-#[derive(Clone, Debug, PartialEq, Eq)]
-pub struct DirectBuyStateChangedRecord {
-    pub account_addr: String,
+#[derive(Clone, Debug, PartialEq, Eq, Serialize)]
+pub struct DirectBuyStateChanged {
+    #[serde(skip_serializing)]
+    pub address: Address,
+    #[serde(skip_serializing)]
     pub created_lt: i64,
+    #[serde(skip_serializing)]
     pub created_at: i64,
 
     pub from: i16,
     pub to: i16,
 
-    pub factory: String,
-    pub creator: String,
-    pub spent_token: String,
-    pub nft: String,
+    pub factory: Address,
+    pub creator: Address,
+    pub spent_token: Address,
+    pub nft: Address,
     pub _time_tx: i64,
     pub _price: BigDecimal,
-    pub spent_wallet: String,
+    pub spent_wallet: Address,
     pub status: i16,
-    pub sender: String,
+    pub sender: Address,
     pub start_time_buy: i64,
     pub duration_time_buy: i64,
     pub end_time_buy: i64,
@@ -238,24 +288,27 @@ pub struct DirectBuyStateChangedRecord {
 
 /// DirectSell events
 
-#[derive(Clone, Debug, PartialEq, Eq)]
-pub struct DirectSellStateChangedRecord {
-    pub account_addr: String,
+#[derive(Clone, Debug, PartialEq, Eq, Serialize)]
+pub struct DirectSellStateChanged {
+    #[serde(skip_serializing)]
+    pub address: Address,
+    #[serde(skip_serializing)]
     pub created_lt: i64,
+    #[serde(skip_serializing)]
     pub created_at: i64,
 
     pub from: i16,
     pub to: i16,
 
-    pub factory: String,
-    pub creator: String,
-    pub token: String,
-    pub nft: String,
+    pub factory: Address,
+    pub creator: Address,
+    pub token: Address,
+    pub nft: Address,
     pub _time_tx: i64,
     pub start: i64,
     pub end: i64,
     pub _price: BigDecimal,
-    pub wallet: String,
+    pub wallet: Address,
     pub status: i16,
-    pub sender: String,
+    pub sender: Address,
 }

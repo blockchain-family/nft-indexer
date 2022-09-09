@@ -1,4 +1,4 @@
-use crate::database::records::*;
+use crate::database::{records::*, types::Address};
 use anyhow::{anyhow, Result};
 use bigdecimal::{BigDecimal, ToPrimitive};
 use nekoton_abi::{transaction_parser::ExtractedOwned, BuildTokenValue};
@@ -9,8 +9,8 @@ use ton_abi::{
 };
 use ton_block::{CommonMsgInfo, MsgAddressInt};
 
-impl Build for AuctionDeployedRecord {
-    fn build_record(event: &ExtractedOwned) -> Result<Self>
+impl EventRecord for AuctionDeployed {
+    fn build_from(event: &ExtractedOwned) -> Result<Self>
     where
         Self: Sized,
     {
@@ -34,21 +34,21 @@ impl Build for AuctionDeployedRecord {
 
         tokens.push(offer_address_token);
 
-        let to_str = get_token_processor(&tokens, token_to_str);
+        let to_address = get_token_processor(&tokens, token_to_addr);
         let to_i64 = get_token_processor(&tokens, token_to_i64);
         let to_big_decimal = get_token_processor(&tokens, token_to_big_decimal);
 
-        Ok(AuctionDeployedRecord {
-            account_addr: get_account_addr(event),
+        Ok(AuctionDeployed {
+            address: get_address(event),
             created_lt: get_created_lt(event)?,
             created_at: get_created_at(event)?,
 
-            offer_address: to_str("offerAddress")?,
+            offer_address: to_address("offerAddress")?,
 
-            collection: to_str("collection")?,
-            nft_owner: to_str("nftOwner")?,
-            nft: to_str("nft")?,
-            offer: to_str("offer")?,
+            collection: to_address("collection")?,
+            nft_owner: to_address("nftOwner")?,
+            nft: to_address("nft")?,
+            offer: to_address("offer")?,
             price: to_big_decimal("price")?,
             auction_duration: to_i64("auctionDuration")?,
             deploy_nonce: to_big_decimal("deployNonce")?,
@@ -56,12 +56,12 @@ impl Build for AuctionDeployedRecord {
     }
 
     fn get_nft(&self) -> Option<ton_block::MsgAddressInt> {
-        Some(MsgAddressInt::from_str(&("0:".to_owned() + &self.nft)).unwrap())
+        Some(MsgAddressInt::from_str(&("0:".to_owned() + &self.nft.0)).unwrap())
     }
 }
 
-impl Build for AuctionDeclinedRecord {
-    fn build_record(event: &ExtractedOwned) -> Result<Self>
+impl EventRecord for AuctionDeclined {
+    fn build_from(event: &ExtractedOwned) -> Result<Self>
     where
         Self: Sized,
     {
@@ -81,21 +81,21 @@ impl Build for AuctionDeclinedRecord {
 
         let tokens = vec![nft_owner_token, data_address_token];
 
-        let to_str = get_token_processor(&tokens, token_to_str);
+        let to_address = get_token_processor(&tokens, token_to_addr);
 
-        Ok(AuctionDeclinedRecord {
-            account_addr: get_account_addr(event),
+        Ok(AuctionDeclined {
+            address: get_address(event),
             created_lt: get_created_lt(event)?,
             created_at: get_created_at(event)?,
 
-            nft_owner: to_str("nftOwner")?,
-            data_address: to_str("dataAddress")?,
+            nft_owner: to_address("nftOwner")?,
+            data_address: to_address("dataAddress")?,
         })
     }
 }
 
-impl Build for AuctionOwnershipTransferredRecord {
-    fn build_record(event: &ExtractedOwned) -> Result<Self>
+impl EventRecord for AuctionOwnershipTransferred {
+    fn build_from(event: &ExtractedOwned) -> Result<Self>
     where
         Self: Sized,
     {
@@ -115,21 +115,21 @@ impl Build for AuctionOwnershipTransferredRecord {
 
         let tokens = vec![old_owner_token, new_owner_token];
 
-        let to_str = get_token_processor(&tokens, token_to_str);
+        let to_address = get_token_processor(&tokens, token_to_addr);
 
-        Ok(AuctionOwnershipTransferredRecord {
-            account_addr: get_account_addr(event),
+        Ok(AuctionOwnershipTransferred {
+            address: get_address(event),
             created_lt: get_created_lt(event)?,
             created_at: get_created_at(event)?,
 
-            old_owner: to_str("oldOwner")?,
-            new_owner: to_str("newOwner")?,
+            old_owner: to_address("oldOwner")?,
+            new_owner: to_address("newOwner")?,
         })
     }
 }
 
-impl Build for AuctionCreatedRecord {
-    fn build_record(event: &ExtractedOwned) -> Result<Self>
+impl EventRecord for AuctionCreated {
+    fn build_from(event: &ExtractedOwned) -> Result<Self>
     where
         Self: Sized,
     {
@@ -144,18 +144,18 @@ impl Build for AuctionCreatedRecord {
         }
         .ok_or_else(|| anyhow!("value2 token value is not tuple"))?;
 
-        let to_str = get_token_processor(tokens, token_to_str);
+        let to_address = get_token_processor(tokens, token_to_addr);
         let to_i64 = get_token_processor(tokens, token_to_i64);
 
-        Ok(AuctionCreatedRecord {
-            account_addr: get_account_addr(event),
+        Ok(AuctionCreated {
+            address: get_address(event),
             created_lt: get_created_lt(event)?,
             created_at: get_created_at(event)?,
 
-            auction_subject: to_str("auctionSubject")?,
-            subject_owner: to_str("subjectOwner")?,
-            payment_token_root: to_str("paymentTokenRoot")?,
-            wallet_for_bids: to_str("walletForBids")?,
+            auction_subject: to_address("auctionSubject")?,
+            subject_owner: to_address("subjectOwner")?,
+            payment_token_root: to_address("paymentTokenRoot")?,
+            wallet_for_bids: to_address("walletForBids")?,
             start_time: to_i64("startTime")?,
             duration: to_i64("duration")?,
             finish_time: to_i64("finishTime")?,
@@ -164,8 +164,8 @@ impl Build for AuctionCreatedRecord {
     }
 }
 
-impl Build for AuctionActiveRecord {
-    fn build_record(event: &ExtractedOwned) -> Result<Self>
+impl EventRecord for AuctionActive {
+    fn build_from(event: &ExtractedOwned) -> Result<Self>
     where
         Self: Sized,
     {
@@ -180,18 +180,18 @@ impl Build for AuctionActiveRecord {
         }
         .ok_or_else(|| anyhow!("value2 token value is not tuple"))?;
 
-        let to_str = get_token_processor(tokens, token_to_str);
+        let to_address = get_token_processor(tokens, token_to_addr);
         let to_i64 = get_token_processor(tokens, token_to_i64);
 
-        Ok(AuctionActiveRecord {
-            account_addr: get_account_addr(event),
+        Ok(AuctionActive {
+            address: get_address(event),
             created_lt: get_created_lt(event)?,
             created_at: get_created_at(event)?,
 
-            auction_subject: to_str("auctionSubject")?,
-            subject_owner: to_str("subjectOwner")?,
-            payment_token_root: to_str("paymentTokenRoot")?,
-            wallet_for_bids: to_str("walletForBids")?,
+            auction_subject: to_address("auctionSubject")?,
+            subject_owner: to_address("subjectOwner")?,
+            payment_token_root: to_address("paymentTokenRoot")?,
+            wallet_for_bids: to_address("walletForBids")?,
             start_time: to_i64("startTime")?,
             duration: to_i64("duration")?,
             finish_time: to_i64("finishTime")?,
@@ -200,8 +200,8 @@ impl Build for AuctionActiveRecord {
     }
 }
 
-impl Build for BidPlacedRecord {
-    fn build_record(event: &ExtractedOwned) -> Result<Self>
+impl EventRecord for BidPlaced {
+    fn build_from(event: &ExtractedOwned) -> Result<Self>
     where
         Self: Sized,
     {
@@ -221,22 +221,22 @@ impl Build for BidPlacedRecord {
 
         let tokens = vec![buyer_address_token, value_token];
 
-        let to_str = get_token_processor(&tokens, token_to_str);
+        let to_address = get_token_processor(&tokens, token_to_addr);
         let to_bigdecimal = get_token_processor(&tokens, token_to_big_decimal);
 
-        Ok(BidPlacedRecord {
-            account_addr: get_account_addr(event),
+        Ok(BidPlaced {
+            address: get_address(event),
             created_lt: get_created_lt(event)?,
             created_at: get_created_at(event)?,
 
-            buyer_address: to_str("buyerAddress")?,
+            buyer_address: to_address("buyerAddress")?,
             value: to_bigdecimal("value")?,
         })
     }
 }
 
-impl Build for BidDeclinedRecord {
-    fn build_record(event: &ExtractedOwned) -> Result<Self>
+impl EventRecord for BidDeclined {
+    fn build_from(event: &ExtractedOwned) -> Result<Self>
     where
         Self: Sized,
     {
@@ -256,22 +256,22 @@ impl Build for BidDeclinedRecord {
 
         let tokens = vec![buyer_address_token, value_token];
 
-        let to_str = get_token_processor(&tokens, token_to_str);
+        let to_address = get_token_processor(&tokens, token_to_addr);
         let to_bigdecimal = get_token_processor(&tokens, token_to_big_decimal);
 
-        Ok(BidDeclinedRecord {
-            account_addr: get_account_addr(event),
+        Ok(BidDeclined {
+            address: get_address(event),
             created_lt: get_created_lt(event)?,
             created_at: get_created_at(event)?,
 
-            buyer_address: to_str("buyerAddress")?,
+            buyer_address: to_address("buyerAddress")?,
             value: to_bigdecimal("value")?,
         })
     }
 }
 
-impl Build for AuctionCompleteRecord {
-    fn build_record(event: &ExtractedOwned) -> Result<Self>
+impl EventRecord for AuctionComplete {
+    fn build_from(event: &ExtractedOwned) -> Result<Self>
     where
         Self: Sized,
     {
@@ -291,35 +291,35 @@ impl Build for AuctionCompleteRecord {
 
         let tokens = vec![buyer_address_token, value_token];
 
-        let to_str = get_token_processor(&tokens, token_to_str);
+        let to_address = get_token_processor(&tokens, token_to_addr);
         let to_bigdecimal = get_token_processor(&tokens, token_to_big_decimal);
 
-        Ok(AuctionCompleteRecord {
-            account_addr: get_account_addr(event),
+        Ok(AuctionComplete {
+            address: get_address(event),
             created_lt: get_created_lt(event)?,
             created_at: get_created_at(event)?,
 
-            buyer_address: to_str("buyerAddress")?,
+            buyer_address: to_address("buyerAddress")?,
             value: to_bigdecimal("value")?,
         })
     }
 }
 
-impl Build for AuctionCancelledRecord {
-    fn build_record(event: &ExtractedOwned) -> Result<Self>
+impl EventRecord for AuctionCancelled {
+    fn build_from(event: &ExtractedOwned) -> Result<Self>
     where
         Self: Sized,
     {
-        Ok(AuctionCancelledRecord {
-            account_addr: get_account_addr(event),
+        Ok(AuctionCancelled {
+            address: get_address(event),
             created_lt: get_created_lt(event)?,
             created_at: get_created_at(event)?,
         })
     }
 }
 
-impl Build for DirectBuyDeployedRecord {
-    fn build_record(event: &ExtractedOwned) -> Result<Self>
+impl EventRecord for DirectBuyDeployed {
+    fn build_from(event: &ExtractedOwned) -> Result<Self>
     where
         Self: Sized,
     {
@@ -374,30 +374,30 @@ impl Build for DirectBuyDeployedRecord {
             amount_token,
         ];
 
-        let to_str = get_token_processor(&tokens, token_to_str);
+        let to_address = get_token_processor(&tokens, token_to_addr);
         let to_bigdecimal = get_token_processor(&tokens, token_to_big_decimal);
 
-        Ok(DirectBuyDeployedRecord {
-            account_addr: get_account_addr(event),
+        Ok(DirectBuyDeployed {
+            address: get_address(event),
             created_lt: get_created_lt(event)?,
             created_at: get_created_at(event)?,
 
-            direct_buy_address: to_str("directBuyAddress")?,
-            sender: to_str("sender")?,
-            token_root: to_str("tokenRoot")?,
-            nft: to_str("nft")?,
+            direct_buy_address: to_address("directBuyAddress")?,
+            sender: to_address("sender")?,
+            token_root: to_address("tokenRoot")?,
+            nft: to_address("nft")?,
             nonce: to_bigdecimal("nonce")?,
             amount: to_bigdecimal("amount")?,
         })
     }
 
     fn get_nft(&self) -> Option<ton_block::MsgAddressInt> {
-        Some(MsgAddressInt::from_str(&("0:".to_owned() + &self.nft)).unwrap())
+        Some(MsgAddressInt::from_str(&("0:".to_owned() + &self.nft.0)).unwrap())
     }
 }
 
-impl Build for DirectBuyDeclinedRecord {
-    fn build_record(event: &ExtractedOwned) -> Result<Self>
+impl EventRecord for DirectBuyDeclined {
+    fn build_from(event: &ExtractedOwned) -> Result<Self>
     where
         Self: Sized,
     {
@@ -424,23 +424,23 @@ impl Build for DirectBuyDeclinedRecord {
 
         let tokens = vec![sender_token, token_root_token, amount_token];
 
-        let to_str = get_token_processor(&tokens, token_to_str);
+        let to_address = get_token_processor(&tokens, token_to_addr);
         let to_bigdecimal = get_token_processor(&tokens, token_to_big_decimal);
 
-        Ok(DirectBuyDeclinedRecord {
-            account_addr: get_account_addr(event),
+        Ok(DirectBuyDeclined {
+            address: get_address(event),
             created_lt: get_created_lt(event)?,
             created_at: get_created_at(event)?,
 
-            sender: to_str("sender")?,
-            token_root: to_str("tokenRoot")?,
+            sender: to_address("sender")?,
+            token_root: to_address("tokenRoot")?,
             amount: to_bigdecimal("amount")?,
         })
     }
 }
 
-impl Build for DirectBuyOwnershipTransferredRecord {
-    fn build_record(event: &ExtractedOwned) -> Result<Self>
+impl EventRecord for DirectBuyOwnershipTransferred {
+    fn build_from(event: &ExtractedOwned) -> Result<Self>
     where
         Self: Sized,
     {
@@ -460,21 +460,21 @@ impl Build for DirectBuyOwnershipTransferredRecord {
 
         let tokens = vec![old_owner_token, new_owner_token];
 
-        let to_str = get_token_processor(&tokens, token_to_str);
+        let to_address = get_token_processor(&tokens, token_to_addr);
 
-        Ok(DirectBuyOwnershipTransferredRecord {
-            account_addr: get_account_addr(event),
+        Ok(DirectBuyOwnershipTransferred {
+            address: get_address(event),
             created_lt: get_created_lt(event)?,
             created_at: get_created_at(event)?,
 
-            old_owner: to_str("oldOwner")?,
-            new_owner: to_str("newOwner")?,
+            old_owner: to_address("oldOwner")?,
+            new_owner: to_address("newOwner")?,
         })
     }
 }
 
-impl Build for DirectSellDeployedRecord {
-    fn build_record(event: &ExtractedOwned) -> Result<Self>
+impl EventRecord for DirectSellDeployed {
+    fn build_from(event: &ExtractedOwned) -> Result<Self>
     where
         Self: Sized,
     {
@@ -529,30 +529,30 @@ impl Build for DirectSellDeployedRecord {
             price_token,
         ];
 
-        let to_str = get_token_processor(&tokens, token_to_str);
+        let to_address = get_token_processor(&tokens, token_to_addr);
         let to_bigdecimal = get_token_processor(&tokens, token_to_big_decimal);
 
-        Ok(DirectSellDeployedRecord {
-            account_addr: get_account_addr(event),
+        Ok(DirectSellDeployed {
+            address: get_address(event),
             created_lt: get_created_lt(event)?,
             created_at: get_created_at(event)?,
 
-            _direct_sell_address: to_str("_directSellAddress")?,
-            sender: to_str("sender")?,
-            payment_token: to_str("paymentToken")?,
-            nft: to_str("nft")?,
+            _direct_sell_address: to_address("_directSellAddress")?,
+            sender: to_address("sender")?,
+            payment_token: to_address("paymentToken")?,
+            nft: to_address("nft")?,
             _nonce: to_bigdecimal("_nonce")?,
             price: to_bigdecimal("price")?,
         })
     }
 
     fn get_nft(&self) -> Option<ton_block::MsgAddressInt> {
-        Some(MsgAddressInt::from_str(&("0:".to_owned() + &self.nft)).unwrap())
+        Some(MsgAddressInt::from_str(&("0:".to_owned() + &self.nft.0)).unwrap())
     }
 }
 
-impl Build for DirectSellDeclinedRecord {
-    fn build_record(event: &ExtractedOwned) -> Result<Self>
+impl EventRecord for DirectSellDeclined {
+    fn build_from(event: &ExtractedOwned) -> Result<Self>
     where
         Self: Sized,
     {
@@ -572,21 +572,21 @@ impl Build for DirectSellDeclinedRecord {
 
         let tokens = vec![sender_token, _nft_address_token];
 
-        let to_str = get_token_processor(&tokens, token_to_str);
+        let to_address = get_token_processor(&tokens, token_to_addr);
 
-        Ok(DirectSellDeclinedRecord {
-            account_addr: get_account_addr(event),
+        Ok(DirectSellDeclined {
+            address: get_address(event),
             created_lt: get_created_lt(event)?,
             created_at: get_created_at(event)?,
 
-            sender: to_str("sender")?,
-            _nft_address: to_str("_nftAddress")?,
+            sender: to_address("sender")?,
+            _nft_address: to_address("_nftAddress")?,
         })
     }
 }
 
-impl Build for DirectSellOwnershipTransferredRecord {
-    fn build_record(event: &ExtractedOwned) -> Result<Self>
+impl EventRecord for DirectSellOwnershipTransferred {
+    fn build_from(event: &ExtractedOwned) -> Result<Self>
     where
         Self: Sized,
     {
@@ -606,21 +606,21 @@ impl Build for DirectSellOwnershipTransferredRecord {
 
         let tokens = vec![old_owner_token, new_owner_token];
 
-        let to_str = get_token_processor(&tokens, token_to_str);
+        let to_address = get_token_processor(&tokens, token_to_addr);
 
-        Ok(DirectSellOwnershipTransferredRecord {
-            account_addr: get_account_addr(event),
+        Ok(DirectSellOwnershipTransferred {
+            address: get_address(event),
             created_lt: get_created_lt(event)?,
             created_at: get_created_at(event)?,
 
-            old_owner: to_str("oldOwner")?,
-            new_owner: to_str("newOwner")?,
+            old_owner: to_address("oldOwner")?,
+            new_owner: to_address("newOwner")?,
         })
     }
 }
 
-impl Build for DirectBuyStateChangedRecord {
-    fn build_record(event: &ExtractedOwned) -> Result<Self>
+impl EventRecord for DirectBuyStateChanged {
+    fn build_from(event: &ExtractedOwned) -> Result<Self>
     where
         Self: Sized,
     {
@@ -651,28 +651,28 @@ impl Build for DirectBuyStateChangedRecord {
 
         tokens.extend_from_slice(&[from_token, to_token]);
 
-        let to_str = get_token_processor(&tokens, token_to_str);
+        let to_address = get_token_processor(&tokens, token_to_addr);
         let to_big_decimal = get_token_processor(&tokens, token_to_big_decimal);
         let to_i16 = get_token_processor(&tokens, token_to_i16);
         let to_i64 = get_token_processor(&tokens, token_to_i64);
 
-        Ok(DirectBuyStateChangedRecord {
-            account_addr: get_account_addr(event),
+        Ok(DirectBuyStateChanged {
+            address: get_address(event),
             created_lt: get_created_lt(event)?,
             created_at: get_created_at(event)?,
 
             from: to_i16("from")?,
             to: to_i16("to")?,
 
-            factory: to_str("factory")?,
-            creator: to_str("creator")?,
-            spent_token: to_str("spentToken")?,
-            nft: to_str("nft")?,
+            factory: to_address("factory")?,
+            creator: to_address("creator")?,
+            spent_token: to_address("spentToken")?,
+            nft: to_address("nft")?,
             _time_tx: to_i64("_timeTx")?,
             _price: to_big_decimal("_price")?,
-            spent_wallet: to_str("spentWallet")?,
+            spent_wallet: to_address("spentWallet")?,
             status: to_i16("status")?,
-            sender: to_str("sender")?,
+            sender: to_address("sender")?,
             start_time_buy: to_i64("startTimeBuy")?,
             duration_time_buy: to_i64("durationTimeBuy")?,
             end_time_buy: to_i64("endTimeBuy")?,
@@ -680,12 +680,12 @@ impl Build for DirectBuyStateChangedRecord {
     }
 
     fn get_nft(&self) -> Option<ton_block::MsgAddressInt> {
-        Some(MsgAddressInt::from_str(&("0:".to_owned() + &self.nft)).unwrap())
+        Some(MsgAddressInt::from_str(&("0:".to_owned() + &self.nft.0)).unwrap())
     }
 }
 
-impl Build for DirectSellStateChangedRecord {
-    fn build_record(event: &ExtractedOwned) -> Result<Self>
+impl EventRecord for DirectSellStateChanged {
+    fn build_from(event: &ExtractedOwned) -> Result<Self>
     where
         Self: Sized,
     {
@@ -716,40 +716,40 @@ impl Build for DirectSellStateChangedRecord {
 
         tokens.extend_from_slice(&[from_token, to_token]);
 
-        let to_str = get_token_processor(&tokens, token_to_str);
+        let to_address = get_token_processor(&tokens, token_to_addr);
         let to_big_decimal = get_token_processor(&tokens, token_to_big_decimal);
         let to_i16 = get_token_processor(&tokens, token_to_i16);
         let to_i64 = get_token_processor(&tokens, token_to_i64);
 
-        Ok(DirectSellStateChangedRecord {
-            account_addr: get_account_addr(event),
+        Ok(DirectSellStateChanged {
+            address: get_address(event),
             created_lt: get_created_lt(event)?,
             created_at: get_created_at(event)?,
 
             from: to_i16("from")?,
             to: to_i16("to")?,
 
-            factory: to_str("factory")?,
-            creator: to_str("creator")?,
-            token: to_str("token")?,
-            nft: to_str("nft")?,
+            factory: to_address("factory")?,
+            creator: to_address("creator")?,
+            token: to_address("token")?,
+            nft: to_address("nft")?,
             _time_tx: to_i64("_timeTx")?,
             start: to_i64("start")?,
             end: to_i64("end")?,
             _price: to_big_decimal("_price")?,
-            wallet: to_str("wallet")?,
+            wallet: to_address("wallet")?,
             status: to_i16("status")?,
-            sender: to_str("sender")?,
+            sender: to_address("sender")?,
         })
     }
 
     fn get_nft(&self) -> Option<ton_block::MsgAddressInt> {
-        Some(MsgAddressInt::from_str(&("0:".to_owned() + &self.nft)).unwrap())
+        Some(MsgAddressInt::from_str(&("0:".to_owned() + &self.nft.0)).unwrap())
     }
 }
 
-fn get_account_addr(event: &ExtractedOwned) -> String {
-    event.tx.account_id().to_hex_string()
+fn get_address(event: &ExtractedOwned) -> Address {
+    event.tx.account_id().to_hex_string().into()
 }
 
 fn get_created_at(event: &ExtractedOwned) -> Result<i64> {
@@ -757,7 +757,7 @@ fn get_created_at(event: &ExtractedOwned) -> Result<i64> {
         CommonMsgInfo::ExtOutMsgInfo(info) => Some(info.created_at.0 as i64),
         _ => None,
     }
-    .ok_or_else(|| anyhow!("Couldn't get crated_at of event"))
+    .ok_or_else(|| anyhow!("Couldn't get created_at of event"))
 }
 
 fn get_created_lt(event: &ExtractedOwned) -> Result<i64> {
@@ -765,7 +765,7 @@ fn get_created_lt(event: &ExtractedOwned) -> Result<i64> {
         CommonMsgInfo::ExtOutMsgInfo(info) => Some(info.created_lt as i64),
         _ => None,
     }
-    .ok_or_else(|| anyhow!("Couldn't get crated_lt of event"))
+    .ok_or_else(|| anyhow!("Couldn't get created_lt of event"))
 }
 
 fn get_token_processor<'a, T>(
@@ -782,9 +782,9 @@ fn token_to_big_decimal(token: &TokenValue) -> Option<BigDecimal> {
     }
 }
 
-fn token_to_str(token: &TokenValue) -> Option<String> {
+fn token_to_addr(token: &TokenValue) -> Option<Address> {
     match token.token_value() {
-        ton_abi::TokenValue::Address(addr) => Some(addr.get_address().as_hex_string()),
+        ton_abi::TokenValue::Address(addr) => Some(addr.get_address().as_hex_string().into()),
         _ => None,
     }
 }
