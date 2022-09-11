@@ -6,14 +6,15 @@ use std::sync::Arc;
 use storage::{
     actions::{self, add_whitelist_address},
     records::*,
+    traits::*,
 };
 use ton_block::MsgAddressInt;
 use transaction_consumer::{StreamFrom, TransactionConsumer};
 
-const AUCTION_ROOT_TIP3: &str = "9b10e4ab6be3ad33ce621d2c7aec866bdf81983e7e2ce660423fae9b29f0ca65";
-const FACTORY_DIRECT_BUY: &str = "e7df75e4a0dafe74179ae8c588d02f98283d4fe73a2f08e0da9e6d9184bbe2ee";
+const AUCTION_ROOT_TIP3: &str = "57254b68950120413f38d14ef4944772d5a729c3c3d352fecc892d67280ac180";
+const FACTORY_DIRECT_BUY: &str = "fd44c88376033bed4f686711c7dadc0f25b6fa1b1d9193d2a6041112ae98cbd2";
 const FACTORY_DIRECT_SELL: &str =
-    "0ff6c5cc1dc1888b8d74a5ec13d652815e8f25043c22a2d8895c6d4b4d1dbe52";
+    "3eec916163fd1826f085c291777d1d8316fab7eaa70990dfd0c9254c1450f2df";
 
 pub async fn serve(pool: PgPool, consumer: Arc<TransactionConsumer>) -> Result<()> {
     let stream = consumer.stream_transactions(StreamFrom::Beginning).await?;
@@ -26,10 +27,6 @@ pub async fn serve(pool: PgPool, consumer: Arc<TransactionConsumer>) -> Result<(
     while let Some(tx) = fs.next().await {
         for (parser, handler) in parsers_and_handlers.iter() {
             if let Ok(extracted) = parser.parse(&tx.transaction) {
-                for e in extracted.iter() {
-                    println!("{}", e.name);
-                }
-
                 if let Some(e) = handler(
                     extracted.into_iter().map(|ex| ex.into_owned()).collect(),
                     pool.clone(),

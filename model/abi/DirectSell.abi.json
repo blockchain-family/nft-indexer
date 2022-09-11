@@ -30,7 +30,7 @@
 			]
 		},
 		{
-			"name": "getDetails",
+			"name": "getInfo",
 			"inputs": [
 			],
 			"outputs": [
@@ -46,20 +46,6 @@
 				{"name":"value3","type":"address"},
 				{"name":"original_gas_to","type":"address"},
 				{"name":"payload","type":"cell"}
-			],
-			"outputs": [
-			]
-		},
-		{
-			"name": "onNftChangeManager",
-			"inputs": [
-				{"name":"value0","type":"uint256"},
-				{"name":"nftOwner","type":"address"},
-				{"name":"value2","type":"address"},
-				{"name":"newManager","type":"address"},
-				{"name":"value4","type":"address"},
-				{"name":"sendGasTo","type":"address"},
-				{"name":"value6","type":"cell"}
 			],
 			"outputs": [
 			]
@@ -130,7 +116,6 @@
 		{"name":"price","type":"uint128"},
 		{"name":"tokenWallet","type":"address"},
 		{"name":"currentStatus","type":"uint8"},
-		{"name":"receivedNFT","type":"bool"},
 		{"name":"currentVersion","type":"uint32"}
 	]
 }

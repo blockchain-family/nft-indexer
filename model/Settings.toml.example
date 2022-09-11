@@ -6,4 +6,4 @@ kafka_consumer_group = "nft"
 kafka_topic = "everscale-transactions"
 states_rpc_endpoints = ["http://0.0.0.0:3087"]
 
-kafka_settings = { "bootstrap.servers" = "127.0.0.1:9092", "acks" = "0", "security.protocol" = "PLAINTEXT" }
+kafka_settings = { "bootstrap.servers" = "127.0.0.1:9092", "security.protocol" = "PLAINTEXT" }
