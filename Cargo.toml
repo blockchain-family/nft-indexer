@@ -1,6 +1,7 @@
 [workspace]
 
 members = [
-    "model",
+    "api",
     "storage",
+    "model",
 ]
