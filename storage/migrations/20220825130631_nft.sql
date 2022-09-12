@@ -18,18 +18,17 @@ create table nft_collection(
 
 create table nft(
     address t_address PRIMARY KEY,
-    collection t_address NOT NULL references nft_collection(address),
+    collection t_address NOT NULL,
     owner t_address,
     manager t_address,
     name text,
     description text,
-    created timestamp NOT NULL,
-    updated timestamp
+    created timestamp NOT NULL
 );
 
 create table nft_metadata(
 	id bigint not null generated always as identity,
-    nft t_address references nft(address),
+    nft t_address,
     meta jsonb not null,
     ts timestamp not null,
 
@@ -40,20 +39,19 @@ create table nft_metadata(
 create table nft_auction(
     address t_address,
     owner t_address,
-    nft t_address references nft(address),
+    nft t_address,
     price_token t_address,
     start_price bigint NOT NULL,
     max_bid bigint NOT NULL,
     created timestamp NOT NULL,
-    finished_at timestamp,
-    updated timestamp,
+    finished_at timestamp
 
     constraint nft_auction_pk primary key (address)
 );
 
 create table nft_auction_bid(
     auction t_address references nft_auction(address),
-    nft t_address references nft(address),
+    nft t_address,
     owner t_address,
     created timestamp NOT NULL,
     price_token t_address NOT NULL,
@@ -64,7 +62,7 @@ create table nft_auction_bid(
 
 create table nft_forsale(
     address t_address PRIMARY KEY,
-    nft t_address NOT NULL references nft(address),
+    nft t_address NOT NULL,
     created timestamp NOT NULL,
     price_token t_address,
     price bigint NOT NULL
@@ -72,7 +70,7 @@ create table nft_forsale(
 
 create table nft_offer(
     address t_address PRIMARY KEY,
-    nft t_address NOT NULL references nft(address),
+    nft t_address NOT NULL,
     owner t_address,
     created timestamp NOT NULL,
     price_token t_address NOT NULL,
