@@ -1,10 +1,10 @@
 pub mod actions;
-pub mod record_builder;
 pub mod event_records;
+pub mod nft_records;
+pub mod record_builder;
 pub mod requests;
 pub mod traits;
 pub mod types;
-pub mod nft_records;
 
 use anyhow::Result;
 use log::LevelFilter;

@@ -1,5 +1,5 @@
-use sqlx::types::chrono;
 use crate::types::Address;
+use sqlx::types::chrono;
 
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub struct NftCollection {
