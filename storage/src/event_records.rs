@@ -1,28 +1,6 @@
 use crate::types::Address;
-use anyhow::Result;
-use async_trait::async_trait;
 use bigdecimal::BigDecimal;
-use nekoton_abi::transaction_parser::ExtractedOwned;
 use serde::Serialize;
-use sqlx::{postgres::PgQueryResult, PgPool};
-use ton_block::MsgAddressInt;
-
-pub trait EventRecord {
-    fn build_from(event: &ExtractedOwned) -> Result<Self>
-    where
-        Self: Sized;
-
-    fn get_nft(&self) -> Option<MsgAddressInt> {
-        None
-    }
-}
-
-#[async_trait]
-pub trait DatabaseRecord {
-    async fn put_in(&self, pool: &PgPool) -> Result<PgQueryResult>
-    where
-        Self: Sync;
-}
 
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub struct NftMetadata {
@@ -96,7 +74,8 @@ pub struct AuctionCreated {
     pub start_time: i64,
     pub duration: i64,
     pub finish_time: i64,
-    pub now_time: i64,
+    pub _price: BigDecimal,
+    pub _nonce: BigDecimal,
 }
 
 #[derive(Clone, Debug, PartialEq, Eq, Serialize)]
@@ -115,7 +94,8 @@ pub struct AuctionActive {
     pub start_time: i64,
     pub duration: i64,
     pub finish_time: i64,
-    pub now_time: i64,
+    pub _price: BigDecimal,
+    pub _nonce: BigDecimal,
 }
 
 #[derive(Clone, Debug, PartialEq, Eq, Serialize)]
@@ -127,7 +107,7 @@ pub struct BidPlaced {
     #[serde(skip_serializing)]
     pub created_at: i64,
 
-    pub buyer_address: Address,
+    pub buyer: Address,
     pub value: BigDecimal,
 }
 
@@ -140,7 +120,7 @@ pub struct BidDeclined {
     #[serde(skip_serializing)]
     pub created_at: i64,
 
-    pub buyer_address: Address,
+    pub buyer: Address,
     pub value: BigDecimal,
 }
 
@@ -153,7 +133,8 @@ pub struct AuctionComplete {
     #[serde(skip_serializing)]
     pub created_at: i64,
 
-    pub buyer_address: Address,
+    pub seller: Address,
+    pub buyer: Address,
     pub value: BigDecimal,
 }
 

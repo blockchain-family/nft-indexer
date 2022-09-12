@@ -1,4 +1,4 @@
-use crate::{records::*, types::Address};
+use crate::{event_records::*, traits::DatabaseRecord, types::Address};
 use anyhow::Result;
 use async_trait::async_trait;
 use sqlx::{postgres::PgQueryResult, PgPool};

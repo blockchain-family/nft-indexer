@@ -1,4 +1,4 @@
-use crate::{records::*, types::Address};
+use crate::{event_records::*, traits::EventRecord, types::Address};
 use anyhow::{anyhow, Result};
 use bigdecimal::{BigDecimal, ToPrimitive};
 use nekoton_abi::{transaction_parser::ExtractedOwned, BuildTokenValue};
@@ -146,6 +146,7 @@ impl EventRecord for AuctionCreated {
 
         let to_address = get_token_processor(tokens, token_to_addr);
         let to_i64 = get_token_processor(tokens, token_to_i64);
+        let to_bigdecimal = get_token_processor(tokens, token_to_big_decimal);
 
         Ok(AuctionCreated {
             address: get_address(event),
@@ -159,7 +160,8 @@ impl EventRecord for AuctionCreated {
             start_time: to_i64("startTime")?,
             duration: to_i64("duration")?,
             finish_time: to_i64("finishTime")?,
-            now_time: to_i64("nowTime")?,
+            _price: to_bigdecimal("_price")?,
+            _nonce: to_bigdecimal("_nonce")?,
         })
     }
 }
@@ -182,6 +184,7 @@ impl EventRecord for AuctionActive {
 
         let to_address = get_token_processor(tokens, token_to_addr);
         let to_i64 = get_token_processor(tokens, token_to_i64);
+        let to_bigdecimal = get_token_processor(tokens, token_to_big_decimal);
 
         Ok(AuctionActive {
             address: get_address(event),
@@ -195,7 +198,8 @@ impl EventRecord for AuctionActive {
             start_time: to_i64("startTime")?,
             duration: to_i64("duration")?,
             finish_time: to_i64("finishTime")?,
-            now_time: to_i64("nowTime")?,
+            _price: to_bigdecimal("_price")?,
+            _nonce: to_bigdecimal("_nonce")?,
         })
     }
 }
@@ -205,11 +209,11 @@ impl EventRecord for BidPlaced {
     where
         Self: Sized,
     {
-        let buyer_address_token = event
+        let buyer_token = event
             .tokens
             .iter()
-            .find(|t| t.name == "buyerAddress")
-            .ok_or_else(|| anyhow!("Couldn't find buyerAddress token"))?
+            .find(|t| t.name == "buyer")
+            .ok_or_else(|| anyhow!("Couldn't find buyer token"))?
             .clone();
 
         let value_token = event
@@ -219,7 +223,7 @@ impl EventRecord for BidPlaced {
             .ok_or_else(|| anyhow!("Couldn't find value token"))?
             .clone();
 
-        let tokens = vec![buyer_address_token, value_token];
+        let tokens = vec![buyer_token, value_token];
 
         let to_address = get_token_processor(&tokens, token_to_addr);
         let to_bigdecimal = get_token_processor(&tokens, token_to_big_decimal);
@@ -229,7 +233,7 @@ impl EventRecord for BidPlaced {
             created_lt: get_created_lt(event)?,
             created_at: get_created_at(event)?,
 
-            buyer_address: to_address("buyerAddress")?,
+            buyer: to_address("buyer")?,
             value: to_bigdecimal("value")?,
         })
     }
@@ -240,11 +244,11 @@ impl EventRecord for BidDeclined {
     where
         Self: Sized,
     {
-        let buyer_address_token = event
+        let buyer_token = event
             .tokens
             .iter()
-            .find(|t| t.name == "buyerAddress")
-            .ok_or_else(|| anyhow!("Couldn't find buyerAddress token"))?
+            .find(|t| t.name == "buyer")
+            .ok_or_else(|| anyhow!("Couldn't find buyer token"))?
             .clone();
 
         let value_token = event
@@ -254,7 +258,7 @@ impl EventRecord for BidDeclined {
             .ok_or_else(|| anyhow!("Couldn't find value token"))?
             .clone();
 
-        let tokens = vec![buyer_address_token, value_token];
+        let tokens = vec![buyer_token, value_token];
 
         let to_address = get_token_processor(&tokens, token_to_addr);
         let to_bigdecimal = get_token_processor(&tokens, token_to_big_decimal);
@@ -264,7 +268,7 @@ impl EventRecord for BidDeclined {
             created_lt: get_created_lt(event)?,
             created_at: get_created_at(event)?,
 
-            buyer_address: to_address("buyerAddress")?,
+            buyer: to_address("buyer")?,
             value: to_bigdecimal("value")?,
         })
     }
@@ -275,11 +279,18 @@ impl EventRecord for AuctionComplete {
     where
         Self: Sized,
     {
-        let buyer_address_token = event
+        let seller_token = event
             .tokens
             .iter()
-            .find(|t| t.name == "buyerAddress")
-            .ok_or_else(|| anyhow!("Couldn't find buyerAddress token"))?
+            .find(|t| t.name == "seller")
+            .ok_or_else(|| anyhow!("Couldn't find seller token"))?
+            .clone();
+
+        let buyer_token = event
+            .tokens
+            .iter()
+            .find(|t| t.name == "buyer")
+            .ok_or_else(|| anyhow!("Couldn't find buyer token"))?
             .clone();
 
         let value_token = event
@@ -289,7 +300,7 @@ impl EventRecord for AuctionComplete {
             .ok_or_else(|| anyhow!("Couldn't find value token"))?
             .clone();
 
-        let tokens = vec![buyer_address_token, value_token];
+        let tokens = vec![seller_token, buyer_token, value_token];
 
         let to_address = get_token_processor(&tokens, token_to_addr);
         let to_bigdecimal = get_token_processor(&tokens, token_to_big_decimal);
@@ -299,7 +310,8 @@ impl EventRecord for AuctionComplete {
             created_lt: get_created_lt(event)?,
             created_at: get_created_at(event)?,
 
-            buyer_address: to_address("buyerAddress")?,
+            seller: to_address("seller")?,
+            buyer: to_address("buyer")?,
             value: to_bigdecimal("value")?,
         })
     }
@@ -582,6 +594,10 @@ impl EventRecord for DirectSellDeclined {
             sender: to_address("sender")?,
             _nft_address: to_address("_nftAddress")?,
         })
+    }
+
+    fn get_nft(&self) -> Option<MsgAddressInt> {
+        Some(MsgAddressInt::from_str(&("0:".to_owned() + &self._nft_address.0)).unwrap())
     }
 }
 

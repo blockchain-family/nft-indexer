@@ -17,7 +17,8 @@ sqlx = { version = "0.5.10", features = [
     "postgres",
     "offline",
     "bigdecimal",
-    "json"
+    "json",
+    "chrono"
 ] }
 ton_abi = { git = "https://github.com/broxus/ton-labs-abi" }
 ton_block = { git = "https://github.com/broxus/ton-labs-block" }

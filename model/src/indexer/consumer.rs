@@ -5,7 +5,7 @@ use sqlx::PgPool;
 use std::sync::Arc;
 use storage::{
     actions::{self, add_whitelist_address},
-    records::*,
+    event_records::*,
     traits::*,
 };
 use ton_block::MsgAddressInt;
