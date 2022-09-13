@@ -7,7 +7,7 @@ create table nft_collection(
     name text,
     description text,
     created timestamp not null,
-    updated timestamp,
+    updated timestamp not null,
     verified boolean not null,
     wallpaper t_uri,
     logo t_uri,

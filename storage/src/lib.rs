@@ -3,6 +3,7 @@ pub mod record_builder;
 pub mod records;
 pub mod requests;
 pub mod types;
+pub mod tables;
 
 use anyhow::Result;
 use log::LevelFilter;
