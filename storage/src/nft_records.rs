@@ -7,6 +7,17 @@ pub struct NftCollection {
     pub owner: Address,
     pub name: String,
     pub description: String,
-    pub created: chrono::DateTime<chrono::Utc>,
-    pub updated: chrono::DateTime<chrono::Utc>,
+    pub updated: chrono::NaiveDateTime,
+}
+
+#[derive(Clone, Debug, PartialEq, Eq)]
+pub struct Nft {
+    pub address: Address,
+    pub collection: Address,
+    pub owner: Address,
+    pub manager: Address,
+    pub name: String,
+    pub description: String,
+    pub data: serde_json::Value,
+    pub updated: chrono::NaiveDateTime,
 }

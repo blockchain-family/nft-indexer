@@ -176,6 +176,27 @@
     },
     "query": "\n            insert into nft_events (event_cat, event_type, address, created_lt, created_at, args)\n            values ('auction', 'auction_complete', $1, $2, $3, $4)\n            "
   },
+  "5a371185621c2207da543cf98ac666268678aa53b32ce6af1228f9ec812db204": {
+    "describe": {
+      "columns": [],
+      "nullable": [],
+      "parameters": {
+        "Left": [
+          {
+            "Custom": {
+              "kind": {
+                "Domain": "Varchar"
+              },
+              "name": "t_address"
+            }
+          },
+          "Jsonb",
+          "Timestamp"
+        ]
+      }
+    },
+    "query": "\n            insert into nft_metadata (nft, meta, ts)\n            values ($1, $2, $3)\n            "
+  },
   "7e223d0a5389548c626b692f6a7f58442e73b2216f85dfcd4c8ae66583c1eabb": {
     "describe": {
       "columns": [],
@@ -219,26 +240,6 @@
       }
     },
     "query": "\n            insert into nft_events (event_cat, event_type, address, created_lt, created_at, args)\n            values ('direct_buy', 'direct_buy_deployed', $1, $2, $3, $4)\n            "
-  },
-  "87000152202a9d68c9064ee703d4cbcf9ede7fe498a621dc34ab65ae20e7f08c": {
-    "describe": {
-      "columns": [],
-      "nullable": [],
-      "parameters": {
-        "Left": [
-          {
-            "Custom": {
-              "kind": {
-                "Domain": "Varchar"
-              },
-              "name": "t_address"
-            }
-          },
-          "Jsonb"
-        ]
-      }
-    },
-    "query": "\n            insert into nft_metadata (nft, meta)\n            values ($1, $2)\n            "
   },
   "8ac40819aef0397b57db633e02777323f312f77a8f91283a3e7d46a36923d3c4": {
     "describe": {
@@ -306,6 +307,36 @@
     },
     "query": "\n            insert into nft_events (event_cat, event_type, address, created_lt, created_at, args)\n            values ('direct_sell', 'direct_sell_deployed', $1, $2, $3, $4)\n            "
   },
+  "d03b174dc1f672f6addf79947d4c516487e8bc333cd7de78bad41b1b46cf11db": {
+    "describe": {
+      "columns": [],
+      "nullable": [],
+      "parameters": {
+        "Left": [
+          {
+            "Custom": {
+              "kind": {
+                "Domain": "Varchar"
+              },
+              "name": "t_address"
+            }
+          },
+          {
+            "Custom": {
+              "kind": {
+                "Domain": "Varchar"
+              },
+              "name": "t_address"
+            }
+          },
+          "Text",
+          "Text",
+          "Timestamp"
+        ]
+      }
+    },
+    "query": "\n            insert into nft_collection (address, owner, name, description, updated)\n            values ($1, $2, $3, $4, $5)\n            "
+  },
   "df84a78ebfc01420a7f9b36bb773b21c34b88c703576f7c52b32cdb3d72bad6a": {
     "describe": {
       "columns": [],
@@ -349,6 +380,52 @@
       }
     },
     "query": "\n            insert into nft_events (event_cat, event_type, address, created_lt, created_at, args)\n            values ('direct_buy', 'direct_buy_declined', $1, $2, $3, $4)\n            "
+  },
+  "e615a99c76955f629c73be088c934b06945032d82d1f5d8ef739a52bf3b22ab9": {
+    "describe": {
+      "columns": [],
+      "nullable": [],
+      "parameters": {
+        "Left": [
+          {
+            "Custom": {
+              "kind": {
+                "Domain": "Varchar"
+              },
+              "name": "t_address"
+            }
+          },
+          {
+            "Custom": {
+              "kind": {
+                "Domain": "Varchar"
+              },
+              "name": "t_address"
+            }
+          },
+          {
+            "Custom": {
+              "kind": {
+                "Domain": "Varchar"
+              },
+              "name": "t_address"
+            }
+          },
+          {
+            "Custom": {
+              "kind": {
+                "Domain": "Varchar"
+              },
+              "name": "t_address"
+            }
+          },
+          "Text",
+          "Text",
+          "Timestamp"
+        ]
+      }
+    },
+    "query": "\n            insert into nft (address, collection, owner, manager, name, description, updated)\n            values ($1, $2, $3, $4, $5, $6, $7)\n            "
   },
   "e9e797b063eb0ddc5ddc001219b00734bf9387b4689af64a0c0efd263e2c9e13": {
     "describe": {

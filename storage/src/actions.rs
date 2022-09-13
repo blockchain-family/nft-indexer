@@ -1,26 +1,7 @@
-use crate::{event_records::*, traits::DatabaseRecord, types::Address};
+use crate::{event_records::*, nft_records::*, traits::DatabaseRecord, types::Address};
 use anyhow::Result;
 use async_trait::async_trait;
 use sqlx::{postgres::PgQueryResult, PgPool};
-
-#[async_trait]
-impl DatabaseRecord for NftMetadata {
-    async fn put_in(&self, pool: &PgPool) -> Result<PgQueryResult>
-    where
-        Self: Sync,
-    {
-        Ok(sqlx::query!(
-            r#"
-            insert into nft_metadata (nft, meta)
-            values ($1, $2)
-            "#,
-            &self.nft as &Address,
-            self.data,
-        )
-        .execute(pool)
-        .await?)
-    }
-}
 
 #[async_trait]
 impl DatabaseRecord for AuctionCreated {
@@ -363,6 +344,7 @@ impl DatabaseRecord for DirectSellStateChanged {
     where
         Self: Sync,
     {
+        // TODO: upsert
         Ok(sqlx::query!(
             r#"
             insert into nft_events (event_cat, event_type, address, created_lt, created_at, args)
@@ -372,6 +354,65 @@ impl DatabaseRecord for DirectSellStateChanged {
             self.created_lt,
             self.created_at,
             serde_json::to_value(&self)?,
+        )
+        .execute(pool)
+        .await?)
+    }
+}
+
+#[async_trait]
+impl DatabaseRecord for Nft {
+    async fn put_in(&self, pool: &PgPool) -> Result<PgQueryResult>
+    where
+        Self: Sync,
+    {
+        // TODO: upsert
+        sqlx::query!(
+            r#"
+            insert into nft (address, collection, owner, manager, name, description, updated)
+            values ($1, $2, $3, $4, $5, $6, $7)
+            "#,
+            &self.address as &Address,
+            &self.collection as &Address,
+            &self.owner as &Address,
+            &self.manager as &Address,
+            self.name,
+            self.description,
+            self.updated,
+        )
+        .execute(pool)
+        .await?;
+
+        Ok(sqlx::query!(
+            r#"
+            insert into nft_metadata (nft, meta, ts)
+            values ($1, $2, $3)
+            "#,
+            &self.address as &Address,
+            self.data,
+            self.updated,
+        )
+        .execute(pool)
+        .await?)
+    }
+}
+
+#[async_trait]
+impl DatabaseRecord for NftCollection {
+    async fn put_in(&self, pool: &PgPool) -> Result<PgQueryResult>
+    where
+        Self: Sync,
+    {
+        Ok(sqlx::query!(
+            r#"
+            insert into nft_collection (address, owner, name, description, updated)
+            values ($1, $2, $3, $4, $5)
+            "#,
+            &self.address as &Address,
+            &self.owner as &Address,
+            self.name,
+            self.description,
+            self.updated,
         )
         .execute(pool)
         .await?)

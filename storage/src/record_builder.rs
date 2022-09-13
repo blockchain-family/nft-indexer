@@ -1,13 +1,14 @@
-use crate::{event_records::*, traits::EventRecord, types::Address};
+use crate::{event_records::*, nft_records::*, traits::EventRecord, types::Address};
 use anyhow::{anyhow, Result};
 use bigdecimal::{BigDecimal, ToPrimitive};
 use nekoton_abi::{transaction_parser::ExtractedOwned, BuildTokenValue};
-use std::str::FromStr;
+use std::{str::FromStr, sync::Arc};
 use ton_abi::{
     Token,
     TokenValue::{self, Tuple, Uint as UintEnum},
 };
 use ton_block::{CommonMsgInfo, MsgAddressInt};
+use transaction_consumer::TransactionConsumer;
 
 impl EventRecord for AuctionDeployed {
     fn build_from(event: &ExtractedOwned) -> Result<Self>
@@ -55,8 +56,8 @@ impl EventRecord for AuctionDeployed {
         })
     }
 
-    fn get_nft(&self) -> Option<ton_block::MsgAddressInt> {
-        Some(MsgAddressInt::from_str(&("0:".to_owned() + &self.nft.0)).unwrap())
+    fn get_nft(&self) -> Option<MsgAddressInt> {
+        Some(MsgAddressInt::from_str(&self.nft.0).unwrap())
     }
 }
 
@@ -403,8 +404,8 @@ impl EventRecord for DirectBuyDeployed {
         })
     }
 
-    fn get_nft(&self) -> Option<ton_block::MsgAddressInt> {
-        Some(MsgAddressInt::from_str(&("0:".to_owned() + &self.nft.0)).unwrap())
+    fn get_nft(&self) -> Option<MsgAddressInt> {
+        Some(MsgAddressInt::from_str(&self.nft.0).unwrap())
     }
 }
 
@@ -558,8 +559,8 @@ impl EventRecord for DirectSellDeployed {
         })
     }
 
-    fn get_nft(&self) -> Option<ton_block::MsgAddressInt> {
-        Some(MsgAddressInt::from_str(&("0:".to_owned() + &self.nft.0)).unwrap())
+    fn get_nft(&self) -> Option<MsgAddressInt> {
+        Some(MsgAddressInt::from_str(&self.nft.0).unwrap())
     }
 }
 
@@ -597,7 +598,7 @@ impl EventRecord for DirectSellDeclined {
     }
 
     fn get_nft(&self) -> Option<MsgAddressInt> {
-        Some(MsgAddressInt::from_str(&("0:".to_owned() + &self._nft_address.0)).unwrap())
+        Some(MsgAddressInt::from_str(&self._nft_address.0).unwrap())
     }
 }
 
@@ -695,8 +696,8 @@ impl EventRecord for DirectBuyStateChanged {
         })
     }
 
-    fn get_nft(&self) -> Option<ton_block::MsgAddressInt> {
-        Some(MsgAddressInt::from_str(&("0:".to_owned() + &self.nft.0)).unwrap())
+    fn get_nft(&self) -> Option<MsgAddressInt> {
+        Some(MsgAddressInt::from_str(&self.nft.0).unwrap())
     }
 }
 
@@ -759,13 +760,58 @@ impl EventRecord for DirectSellStateChanged {
         })
     }
 
-    fn get_nft(&self) -> Option<ton_block::MsgAddressInt> {
-        Some(MsgAddressInt::from_str(&("0:".to_owned() + &self.nft.0)).unwrap())
+    fn get_nft(&self) -> Option<MsgAddressInt> {
+        Some(MsgAddressInt::from_str(&self.nft.0).unwrap())
     }
 }
 
+pub async fn build_nft_data(
+    nft: MsgAddressInt,
+    consumer: Arc<TransactionConsumer>,
+) -> Result<(NftCollection, Nft)> {
+    let nft_info = rpc::get_info(&nft, consumer.clone()).await?;
+
+    let address = nft.to_string().into();
+    let collection = nft_info.collection.to_string().into();
+    let owner = nft_info.owner.to_string().into();
+    let manager = nft_info.manager.to_string().into();
+    let data = rpc::get_json(&nft, consumer.clone()).await?;
+    let name = data["name"].to_string();
+    let description = data["description"].to_string();
+    let updated = chrono::offset::Utc::now().naive_utc();
+
+    let nft = Nft {
+        address,
+        collection,
+        owner,
+        manager,
+        name,
+        description,
+        data,
+        updated,
+    };
+
+    let data = rpc::get_json(&nft_info.collection, consumer.clone()).await?;
+
+    let address = nft_info.collection.to_string().into();
+    let owner = rpc::owner(&nft_info.collection, consumer).await?.into();
+    let name = data["name"].to_string();
+    let description = data["description"].to_string();
+    let updated = chrono::offset::Utc::now().naive_utc();
+
+    let collection = NftCollection {
+        address,
+        owner,
+        name,
+        description,
+        updated,
+    };
+
+    Ok((collection, nft))
+}
+
 fn get_address(event: &ExtractedOwned) -> Address {
-    event.tx.account_id().to_hex_string().into()
+    ("0:".to_string() + &event.tx.account_id().as_hex_string()).into()
 }
 
 fn get_created_at(event: &ExtractedOwned) -> Result<i64> {
@@ -800,7 +846,9 @@ fn token_to_big_decimal(token: &TokenValue) -> Option<BigDecimal> {
 
 fn token_to_addr(token: &TokenValue) -> Option<Address> {
     match token.token_value() {
-        ton_abi::TokenValue::Address(addr) => Some(addr.get_address().as_hex_string().into()),
+        ton_abi::TokenValue::Address(addr) => {
+            Some(("0:".to_string() + &addr.get_address().as_hex_string()).into())
+        }
         _ => None,
     }
 }

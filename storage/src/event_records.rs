@@ -2,12 +2,6 @@ use crate::types::Address;
 use bigdecimal::BigDecimal;
 use serde::Serialize;
 
-#[derive(Clone, Debug, PartialEq, Eq)]
-pub struct NftMetadata {
-    pub nft: Address,
-    pub data: serde_json::Value,
-}
-
 /// AuctionRootTip3 events
 
 #[derive(Clone, Debug, PartialEq, Eq, Serialize)]

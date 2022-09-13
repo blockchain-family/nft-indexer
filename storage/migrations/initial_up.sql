@@ -28,13 +28,32 @@ create type event_category as enum (
 
 create domain t_address as varchar(67) not null;
 
-create table nft_metadata(
-	id bigint not null generated always as identity,
+CREATE TABLE nft_collection(
+    address t_address PRIMARY KEY,
+    owner t_address,
+    name text,
+    description text,
+    updated timestamp NOT NULL
+);
+
+CREATE TABLE nft(
+    address t_address PRIMARY KEY,
+    collection t_address NOT NULL,
+    owner t_address,
+    manager t_address,
+    name text,
+    description text,
+    updated timestamp NOT NULL
+);
+
+CREATE TABLE nft_metadata(
+    id bigint not null generated always as identity,
     nft t_address,
     meta jsonb not null,
+    ts timestamp not null,
 
     constraint nft_metadata_pk primary key (id),
-	constraint nft_metadata_unique unique (nft)
+    constraint nft_metadata_unique unique (nft)
 );
 
 create table events_whitelist(
