@@ -1,4 +1,4 @@
-use anyhow::{anyhow, Result};
+use anyhow::Result;
 use futures::{future::BoxFuture, StreamExt};
 use nekoton_abi::{transaction_parser::ExtractedOwned, TransactionParser};
 use sqlx::PgPool;
@@ -6,6 +6,7 @@ use std::sync::Arc;
 use storage::{
     actions::{self, add_whitelist_address},
     event_records::*,
+    record_builder,
     traits::*,
 };
 use ton_block::MsgAddressInt;
@@ -62,40 +63,47 @@ fn get_contract_parser(abi_path: &str) -> Result<TransactionParser> {
         .build_with_external_in()
 }
 
-type Handler =
-    fn(Vec<ExtractedOwned>, PgPool, Arc<TransactionConsumer>) -> BoxFuture<'static, Result<()>>;
+type Handler = Box<
+    dyn Fn(Vec<ExtractedOwned>, PgPool, Arc<TransactionConsumer>) -> BoxFuture<'static, Result<()>>,
+>;
 
 fn initialize_parsers_and_handlers() -> Result<Vec<(TransactionParser, Handler)>> {
     Ok(vec![
         (
             get_contract_parser("./abi/AuctionTip3.abi.json")?,
-            |extracted, pool, consumer| Box::pin(handle_auction_tip3(extracted, pool, consumer)),
+            Box::new(move |extracted, pool, consumer| {
+                Box::pin(handle_auction_tip3(extracted, pool, consumer))
+            }),
         ),
         (
             get_contract_parser("./abi/AuctionRootTip3.abi.json")?,
-            |extracted, pool, consumer| {
+            Box::new(move |extracted, pool, consumer| {
                 Box::pin(handle_auction_root_tip3(extracted, pool, consumer))
-            },
+            }),
         ),
         (
             get_contract_parser("./abi/DirectBuy.abi.json")?,
-            |extracted, pool, consumer| Box::pin(handle_direct_buy(extracted, pool, consumer)),
+            Box::new(move |extracted, pool, consumer| {
+                Box::pin(handle_direct_buy(extracted, pool, consumer))
+            }),
         ),
         (
             get_contract_parser("./abi/DirectSell.abi.json")?,
-            |extracted, pool, consumer| Box::pin(handle_direct_sell(extracted, pool, consumer)),
+            Box::new(move |extracted, pool, consumer| {
+                Box::pin(handle_direct_sell(extracted, pool, consumer))
+            }),
         ),
         (
             get_contract_parser("./abi/FactoryDirectBuy.abi.json")?,
-            |extracted, pool, consumer| {
+            Box::new(move |extracted, pool, consumer| {
                 Box::pin(handle_factory_direct_buy(extracted, pool, consumer))
-            },
+            }),
         ),
         (
             get_contract_parser("./abi/FactoryDirectSell.abi.json")?,
-            |extracted, pool, consumer| {
+            Box::new(move |extracted, pool, consumer| {
                 Box::pin(handle_factory_direct_sell(extracted, pool, consumer))
-            },
+            }),
         ),
     ])
 }
@@ -110,54 +118,30 @@ where
     EventType: EventRecord + DatabaseRecord + Sync,
 {
     if let Some(event) = extracted.iter().find(|e| e.name == event_name) {
-        return match EventType::build_from(event) {
-            Ok(record) => {
-                {
-                    let pool = pool.clone();
-                    if let Some(nft) = record.get_nft() {
-                        tokio::spawn(async move {
-                            match fetch_metadata(&nft, consumer.clone()).await {
-                                Ok(data) => {
-                                    if let Err(e) = (NftMetadata {
-                                        nft: nft.to_string().into(),
-                                        data,
-                                    }
-                                    .put_in(&pool)
-                                    .await)
-                                    {
-                                        log::error!(
-                                            "Couldn't save metadata for {}: {:#?}",
-                                            nft.to_string(),
-                                            e
-                                        );
-                                    }
-                                }
-                                Err(e) => {
-                                    log::error!(
-                                        "Error fetching metadata for {}: {:#?}",
-                                        nft.to_string(),
-                                        e
-                                    );
-                                }
-                            }
-                        });
+        let record = EventType::build_from(event)
+            .map_err(|e| e.context(format!("Error creating {event_name} record")))?;
+
+        {
+            let pool = pool.clone();
+            if let Some(nft) = record.get_nft() {
+                tokio::spawn(async move {
+                    if let Err(e) = handle_nft(nft.clone(), pool, consumer).await {
+                        log::error!("Error fetching data for nft {}: {:#?}", nft.to_string(), e);
                     }
-                }
-
-                record
-                    .put_in(&pool)
-                    .await
-                    .map(|_| {})
-                    .map_err(|e| e.context(format!("Couldn't save {event_name}")))?;
-
-                Ok(Some(record))
+                });
             }
+        }
 
-            Err(e) => Err(e.context(format!("Error creating {event_name} record"))),
-        };
+        record
+            .put_in(&pool)
+            .await
+            .map(|_| {})
+            .map_err(|e| e.context(format!("Couldn't save {event_name}")))?;
+
+        Ok(Some(record))
+    } else {
+        Ok(None)
     }
-
-    Ok(None)
 }
 
 async fn handle_auction_root_tip3(
@@ -174,7 +158,6 @@ async fn handle_auction_root_tip3(
     .await?
     {
         if record.address == AUCTION_ROOT_TIP3.into() {
-            // TODO?
             if let Err(e) = add_whitelist_address(&record.offer_address, &pool).await {
                 log::error!("Failed adding address in whitelist: {:#?}", e);
             }
@@ -211,14 +194,9 @@ async fn handle_auction_tip3(
         consumer.clone(),
     )
     .await?;
-    handle_event::<AuctionCancelled>(
-        "AuctionCancelled",
-        &extracted,
-        pool.clone(),
-        consumer.clone(),
-    )
-    .await
-    .map(|_| {})
+    handle_event::<AuctionCancelled>("AuctionCancelled", &extracted, pool, consumer)
+        .await
+        .map(|_| {})
 }
 
 async fn handle_direct_buy(
@@ -313,22 +291,24 @@ async fn handle_factory_direct_sell(
     .map(|_| {})
 }
 
-async fn fetch_metadata(
-    nft: &MsgAddressInt,
+async fn handle_nft(
+    nft: MsgAddressInt,
+    pool: PgPool,
     consumer: Arc<TransactionConsumer>,
-) -> Result<serde_json::Value> {
-    let contract = consumer
-        .get_contract_state(nft)
-        .await?
-        .ok_or_else(|| anyhow!("Contract state is none!"))?;
+) -> Result<()> {
+    let (collection, nft) = record_builder::build_nft_data(nft, consumer).await?;
+    if let Err(e) = collection.put_in(&pool).await {
+        log::error!(
+            "Couldn't save collection {:?}: {:#?}",
+            collection.address,
+            e
+        );
+    }
+    if let Err(e) = nft.put_in(&pool).await {
+        log::error!("Couldn't save nft {:?}: {:#?}", nft.address, e);
+    }
 
-    let metadata = nekoton_contracts::tip4_2::MetadataContract(
-        contract.as_context(&nekoton_utils::SimpleClock),
-    );
-
-    Ok(serde_json::from_str::<serde_json::Value>(
-        &metadata.get_json()?,
-    )?)
+    Ok(())
 }
 
 async fn initialize_whitelist_addresses(pool: &PgPool) {
