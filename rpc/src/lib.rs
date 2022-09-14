@@ -6,6 +6,8 @@ use std::sync::Arc;
 use ton_block::{MsgAddrStd, MsgAddressInt};
 use transaction_consumer::TransactionConsumer;
 
+pub mod retrier;
+
 pub async fn get_json(
     address: &MsgAddressInt,
     consumer: Arc<TransactionConsumer>,

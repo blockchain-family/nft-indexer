@@ -5,6 +5,7 @@ edition = "2021"
 
 [dependencies]
 anyhow = "^1.0.44"
+log = { version = "0.4", features = ["std", "serde"] }
 nekoton-abi = { git = "https://github.com/broxus/nekoton.git" }
 nekoton-contracts = { git = "https://github.com/broxus/nekoton.git" }
 nekoton-utils =  { git = "https://github.com/broxus/nekoton.git" }
