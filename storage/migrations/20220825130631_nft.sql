@@ -1,6 +1,7 @@
 create domain t_address as varchar(67) not null;
 create domain t_uri as varchar(200);
 
+
 create table nft_collection(
     address t_address PRIMARY KEY,
     owner t_address,

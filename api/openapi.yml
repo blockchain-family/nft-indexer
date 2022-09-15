@@ -254,6 +254,7 @@ components:
 paths:
   /nft/{address}/offers:
     get:
+      operationId: nftOffers
       parameters:
         - name: address
           required: true
@@ -369,19 +370,19 @@ paths:
             type: array
             items:
               $ref: '#/components/schemas/address'
-        - name: price-from
+        - name: priceFrom
           required: false
           in: query
           schema:
             type: integer
             format: int64
-        - name: price-to
+        - name: priceTo
           required: false
           in: query
           schema:
             type: integer
             format: int64
-        - name: price-token
+        - name: priceToken
           required: false
           in: query
           schema:

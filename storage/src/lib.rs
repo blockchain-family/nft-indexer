@@ -4,6 +4,8 @@ pub mod records;
 pub mod requests;
 pub mod types;
 pub mod tables;
+pub mod api_service;
+pub mod cfg;
 
 use anyhow::Result;
 use log::LevelFilter;

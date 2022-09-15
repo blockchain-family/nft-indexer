@@ -1,7 +1,8 @@
 use chrono::{DateTime, Utc};
 use crate::types::Address;
+use serde::{Serialize, Deserialize};
 
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 pub struct Event {
     pub id: i64,
     pub address: Address,
@@ -15,7 +16,7 @@ pub struct Event {
     pub args: serde_json::Value,
 }
 
-#[derive(sqlx::Type, Debug)]
+#[derive(sqlx::Type, Debug, Clone, Serialize, Deserialize)]
 pub enum EventCategory {
     #[sqlx(rename = "auction")]
     Auction,
@@ -25,9 +26,8 @@ pub enum EventCategory {
     DirectSell,
 }
 
-#[derive(sqlx::Type, Debug)]
+#[derive(sqlx::Type, Debug, Clone, Serialize, Deserialize)]
 pub enum EventType {
-    auction_deployed,
     auction_deployed,
     auction_created,
     auction_ownership_transferred,
