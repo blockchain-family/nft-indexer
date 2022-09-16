@@ -1156,6 +1156,7 @@ name = "model"
 version = "0.1.0"
 dependencies = [
  "anyhow",
+ "bigdecimal",
  "config",
  "env_logger",
  "futures",
@@ -1846,6 +1847,7 @@ name = "rpc"
 version = "0.1.0"
 dependencies = [
  "anyhow",
+ "log",
  "nekoton-abi",
  "nekoton-contracts",
  "nekoton-utils",

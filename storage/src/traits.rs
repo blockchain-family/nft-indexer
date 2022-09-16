@@ -1,22 +1,9 @@
-use anyhow::Result;
-use async_trait::async_trait;
-use nekoton_abi::transaction_parser::ExtractedOwned;
-use sqlx::{postgres::PgQueryResult, PgPool};
-use ton_block::MsgAddressInt;
+use crate::types::*;
 
 pub trait EventRecord {
-    fn build_from(event: &ExtractedOwned) -> Result<Self>
-    where
-        Self: Sized;
-
-    fn get_nft(&self) -> Option<MsgAddressInt> {
-        None
-    }
-}
-
-#[async_trait]
-pub trait DatabaseRecord {
-    async fn put_in(&self, pool: &PgPool) -> Result<PgQueryResult>
-    where
-        Self: Sync;
+    fn get_address(&self) -> Address;
+    fn get_created_at(&self) -> i64;
+    fn get_created_lt(&self) -> i64;
+    fn get_event_category(&self) -> EventCategory;
+    fn get_event_type(&self) -> EventType;
 }

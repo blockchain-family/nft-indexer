@@ -1,418 +1,115 @@
-use crate::{event_records::*, nft_records::*, traits::DatabaseRecord, types::Address};
+use crate::{traits::EventRecord, types::*};
 use anyhow::Result;
-use async_trait::async_trait;
+use serde::Serialize;
 use sqlx::{postgres::PgQueryResult, PgPool};
 
-#[async_trait]
-impl DatabaseRecord for AuctionCreated {
-    async fn put_in(&self, pool: &PgPool) -> Result<PgQueryResult>
-    where
-        Self: Sync,
-    {
-        Ok(sqlx::query!(
-            r#"
-            insert into nft_events (event_cat, event_type, address, created_lt, created_at, args)
-            values ('auction', 'auction_created', $1, $2, $3, $4)
-            "#,
-            &self.address as &Address,
-            self.created_lt,
-            self.created_at,
-            serde_json::to_value(&self)?,
-        )
-        .execute(pool)
-        .await?)
-    }
+pub async fn save_event<T: EventRecord + Serialize>(
+    record: &T,
+    pool: &PgPool,
+) -> Result<PgQueryResult> {
+    Ok(sqlx::query!(
+        r#"
+        insert into nft_events (event_cat, event_type, address, created_lt, created_at, args)
+        values ($1, $2, $3, $4, $5, $6)
+        "#,
+        record.get_event_category() as EventCategory,
+        record.get_event_type() as EventType,
+        record.get_address() as Address,
+        record.get_created_lt(),
+        record.get_created_at(),
+        serde_json::to_value(record)?,
+    )
+    .execute(pool)
+    .await?)
 }
 
-#[async_trait]
-impl DatabaseRecord for AuctionActive {
-    async fn put_in(&self, pool: &PgPool) -> Result<PgQueryResult>
-    where
-        Self: Sync,
+pub async fn upsert_nft(nft: &Nft, pool: &PgPool) -> Result<PgQueryResult> {
+    if let Some(mut saved_nft) = sqlx::query_as!(
+        Nft,
+        r#"
+        select address as "address!: Address", 
+            collection as "collection?: Address",
+            owner as "owner?: Address", 
+            manager as "manager?: Address",
+            name as "name?", 
+            description as "description?",
+            burned as "burned!", 
+            updated as "updated!", 
+            tx_lt as "tx_lt!"
+        from nft where address = $1
+        "#,
+        &nft.address as &Address
+    )
+    .fetch_optional(pool)
+    .await?
     {
-        Ok(sqlx::query!(
-            r#"
-            insert into nft_events (event_cat, event_type, address, created_lt, created_at, args)
-            values ('auction', 'auction_active', $1, $2, $3, $4)
-            "#,
-            &self.address as &Address,
-            self.created_lt,
-            self.created_at,
-            serde_json::to_value(&self)?,
-        )
-        .execute(pool)
-        .await?)
-    }
-}
+        // TODO: name? description? collection?
+        if nft.tx_lt > saved_nft.tx_lt {
+            if nft.owner.is_some() {
+                saved_nft.owner = nft.owner.clone();
+            }
 
-#[async_trait]
-impl DatabaseRecord for AuctionDeployed {
-    async fn put_in(&self, pool: &PgPool) -> Result<PgQueryResult>
-    where
-        Self: Sync,
-    {
-        Ok(sqlx::query!(
-            r#"
-            insert into nft_events (event_cat, event_type, address, created_lt, created_at, args)
-            values ('auction', 'auction_deployed', $1, $2, $3, $4)
-            "#,
-            &self.address as &Address,
-            self.created_lt,
-            self.created_at,
-            serde_json::to_value(&self)?,
-        )
-        .execute(pool)
-        .await?)
-    }
-}
+            if nft.manager.is_some() {
+                saved_nft.manager = nft.manager.clone();
+            }
 
-#[async_trait]
-impl DatabaseRecord for AuctionDeclined {
-    async fn put_in(&self, pool: &PgPool) -> Result<PgQueryResult>
-    where
-        Self: Sync,
-    {
-        Ok(sqlx::query!(
-            r#"
-            insert into nft_events (event_cat, event_type, address, created_lt, created_at, args)
-            values ('auction', 'auction_declined', $1, $2, $3, $4)
-            "#,
-            &self.address as &Address,
-            self.created_lt,
-            self.created_at,
-            serde_json::to_value(&self)?,
-        )
-        .execute(pool)
-        .await?)
-    }
-}
+            saved_nft.burned = nft.burned;
+            saved_nft.updated = nft.updated;
+            saved_nft.tx_lt = nft.tx_lt;
+        }
 
-#[async_trait]
-impl DatabaseRecord for AuctionOwnershipTransferred {
-    async fn put_in(&self, pool: &PgPool) -> Result<PgQueryResult>
-    where
-        Self: Sync,
-    {
-        Ok(sqlx::query!(
-            r#"
-            insert into nft_events (event_cat, event_type, address, created_lt, created_at, args)
-            values ('auction', 'auction_ownership_transferred', $1, $2, $3, $4)
-            "#,
-            &self.address as &Address,
-            self.created_lt,
-            self.created_at,
-            serde_json::to_value(&self)?,
-        )
-        .execute(pool)
-        .await?)
-    }
-}
+        if saved_nft.collection.is_none() {
+            saved_nft.collection = nft.collection.clone();
+        }
 
-#[async_trait]
-impl DatabaseRecord for BidPlaced {
-    async fn put_in(&self, pool: &PgPool) -> Result<PgQueryResult>
-    where
-        Self: Sync,
-    {
-        Ok(sqlx::query!(
-            r#"
-            insert into nft_events (event_cat, event_type, address, created_lt, created_at, args)
-            values ('auction', 'auction_bid_placed', $1, $2, $3, $4)
-            "#,
-            &self.address as &Address,
-            self.created_lt,
-            self.created_at,
-            serde_json::to_value(&self)?,
-        )
-        .execute(pool)
-        .await?)
-    }
-}
+        if saved_nft.owner.is_none() {
+            saved_nft.owner = nft.owner.clone();
+        }
 
-#[async_trait]
-impl DatabaseRecord for BidDeclined {
-    async fn put_in(&self, pool: &PgPool) -> Result<PgQueryResult>
-    where
-        Self: Sync,
-    {
-        Ok(sqlx::query!(
-            r#"
-            insert into nft_events (event_cat, event_type, address, created_lt, created_at, args)
-            values ('auction', 'auction_bid_declined', $1, $2, $3, $4)
-            "#,
-            &self.address as &Address,
-            self.created_lt,
-            self.created_at,
-            serde_json::to_value(&self)?,
-        )
-        .execute(pool)
-        .await?)
-    }
-}
-
-#[async_trait]
-impl DatabaseRecord for AuctionComplete {
-    async fn put_in(&self, pool: &PgPool) -> Result<PgQueryResult>
-    where
-        Self: Sync,
-    {
-        Ok(sqlx::query!(
-            r#"
-            insert into nft_events (event_cat, event_type, address, created_lt, created_at, args)
-            values ('auction', 'auction_complete', $1, $2, $3, $4)
-            "#,
-            &self.address as &Address,
-            self.created_lt,
-            self.created_at,
-            serde_json::to_value(&self)?,
-        )
-        .execute(pool)
-        .await?)
-    }
-}
-
-#[async_trait]
-impl DatabaseRecord for AuctionCancelled {
-    async fn put_in(&self, pool: &PgPool) -> Result<PgQueryResult>
-    where
-        Self: Sync,
-    {
-        Ok(sqlx::query!(
-            r#"
-            insert into nft_events (event_cat, event_type, address, created_lt, created_at, args)
-            values ('auction', 'auction_cancelled', $1, $2, $3, $4)
-            "#,
-            &self.address as &Address,
-            self.created_lt,
-            self.created_at,
-            serde_json::to_value(&self)?,
-        )
-        .execute(pool)
-        .await?)
-    }
-}
-
-#[async_trait]
-impl DatabaseRecord for DirectBuyDeployed {
-    async fn put_in(&self, pool: &PgPool) -> Result<PgQueryResult>
-    where
-        Self: Sync,
-    {
-        Ok(sqlx::query!(
-            r#"
-            insert into nft_events (event_cat, event_type, address, created_lt, created_at, args)
-            values ('direct_buy', 'direct_buy_deployed', $1, $2, $3, $4)
-            "#,
-            &self.address as &Address,
-            self.created_lt,
-            self.created_at,
-            serde_json::to_value(&self)?,
-        )
-        .execute(pool)
-        .await?)
-    }
-}
-
-#[async_trait]
-impl DatabaseRecord for DirectBuyDeclined {
-    async fn put_in(&self, pool: &PgPool) -> Result<PgQueryResult>
-    where
-        Self: Sync,
-    {
-        Ok(sqlx::query!(
-            r#"
-            insert into nft_events (event_cat, event_type, address, created_lt, created_at, args)
-            values ('direct_buy', 'direct_buy_declined', $1, $2, $3, $4)
-            "#,
-            &self.address as &Address,
-            self.created_lt,
-            self.created_at,
-            serde_json::to_value(&self)?,
-        )
-        .execute(pool)
-        .await?)
-    }
-}
-
-#[async_trait]
-impl DatabaseRecord for DirectBuyOwnershipTransferred {
-    async fn put_in(&self, pool: &PgPool) -> Result<PgQueryResult>
-    where
-        Self: Sync,
-    {
-        Ok(sqlx::query!(
-            r#"
-            insert into nft_events (event_cat, event_type, address, created_lt, created_at, args)
-            values ('direct_buy', 'direct_buy_ownership_transferred', $1, $2, $3, $4)
-            "#,
-            &self.address as &Address,
-            self.created_lt,
-            self.created_at,
-            serde_json::to_value(&self)?,
-        )
-        .execute(pool)
-        .await?)
-    }
-}
-
-#[async_trait]
-impl DatabaseRecord for DirectSellDeployed {
-    async fn put_in(&self, pool: &PgPool) -> Result<PgQueryResult>
-    where
-        Self: Sync,
-    {
-        Ok(sqlx::query!(
-            r#"
-            insert into nft_events (event_cat, event_type, address, created_lt, created_at, args)
-            values ('direct_sell', 'direct_sell_deployed', $1, $2, $3, $4)
-            "#,
-            &self.address as &Address,
-            self.created_lt,
-            self.created_at,
-            serde_json::to_value(&self)?,
-        )
-        .execute(pool)
-        .await?)
-    }
-}
-
-#[async_trait]
-impl DatabaseRecord for DirectSellDeclined {
-    async fn put_in(&self, pool: &PgPool) -> Result<PgQueryResult>
-    where
-        Self: Sync,
-    {
-        Ok(sqlx::query!(
-            r#"
-            insert into nft_events (event_cat, event_type, address, created_lt, created_at, args)
-            values ('direct_sell', 'direct_sell_declined', $1, $2, $3, $4)
-            "#,
-            &self.address as &Address,
-            self.created_lt,
-            self.created_at,
-            serde_json::to_value(&self)?,
-        )
-        .execute(pool)
-        .await?)
-    }
-}
-
-#[async_trait]
-impl DatabaseRecord for DirectSellOwnershipTransferred {
-    async fn put_in(&self, pool: &PgPool) -> Result<PgQueryResult>
-    where
-        Self: Sync,
-    {
-        Ok(sqlx::query!(
-            r#"
-            insert into nft_events (event_cat, event_type, address, created_lt, created_at, args)
-            values ('direct_sell', 'direct_sell_ownership_transferred', $1, $2, $3, $4)
-            "#,
-            &self.address as &Address,
-            self.created_lt,
-            self.created_at,
-            serde_json::to_value(&self)?,
-        )
-        .execute(pool)
-        .await?)
-    }
-}
-#[async_trait]
-impl DatabaseRecord for DirectBuyStateChanged {
-    async fn put_in(&self, pool: &PgPool) -> Result<PgQueryResult>
-    where
-        Self: Sync,
-    {
-        Ok(sqlx::query!(
-            r#"
-            insert into nft_events (event_cat, event_type, address, created_lt, created_at, args)
-            values ('direct_buy', 'direct_buy_state_changed', $1, $2, $3, $4)
-            "#,
-            &self.address as &Address,
-            self.created_lt,
-            self.created_at,
-            serde_json::to_value(&self)?,
-        )
-        .execute(pool)
-        .await?)
-    }
-}
-
-#[async_trait]
-impl DatabaseRecord for DirectSellStateChanged {
-    async fn put_in(&self, pool: &PgPool) -> Result<PgQueryResult>
-    where
-        Self: Sync,
-    {
-        // TODO: upsert
-        Ok(sqlx::query!(
-            r#"
-            insert into nft_events (event_cat, event_type, address, created_lt, created_at, args)
-            values ('direct_sell', 'direct_sell_state_changed', $1, $2, $3, $4)
-            "#,
-            &self.address as &Address,
-            self.created_lt,
-            self.created_at,
-            serde_json::to_value(&self)?,
-        )
-        .execute(pool)
-        .await?)
-    }
-}
-
-#[async_trait]
-impl DatabaseRecord for Nft {
-    async fn put_in(&self, pool: &PgPool) -> Result<PgQueryResult>
-    where
-        Self: Sync,
-    {
-        // TODO: upsert
-        sqlx::query!(
-            r#"
-            insert into nft (address, collection, owner, manager, name, description, updated)
-            values ($1, $2, $3, $4, $5, $6, $7)
-            "#,
-            &self.address as &Address,
-            &self.collection as &Address,
-            &self.owner as &Address,
-            &self.manager as &Address,
-            self.name,
-            self.description,
-            self.updated,
-        )
-        .execute(pool)
-        .await?;
+        if saved_nft.manager.is_none() {
+            saved_nft.manager = nft.manager.clone();
+        }
 
         Ok(sqlx::query!(
             r#"
-            insert into nft_metadata (nft, meta, ts)
-            values ($1, $2, $3)
+            update nft 
+            set collection = $2,
+                owner = $3,
+                manager = $4,
+                name = $5,
+                description = $6,
+                burned = $7,
+                updated = $8,
+                tx_lt = $9
+            where address = $1
             "#,
-            &self.address as &Address,
-            self.data,
-            self.updated,
+            saved_nft.address as Address,
+            saved_nft.collection as Option<Address>,
+            saved_nft.owner as Option<Address>,
+            saved_nft.manager as Option<Address>,
+            saved_nft.name,
+            saved_nft.description,
+            saved_nft.burned,
+            saved_nft.updated,
+            saved_nft.tx_lt
         )
         .execute(pool)
         .await?)
-    }
-}
-
-#[async_trait]
-impl DatabaseRecord for NftCollection {
-    async fn put_in(&self, pool: &PgPool) -> Result<PgQueryResult>
-    where
-        Self: Sync,
-    {
+    } else {
         Ok(sqlx::query!(
             r#"
-            insert into nft_collection (address, owner, name, description, updated)
-            values ($1, $2, $3, $4, $5)
+            insert into nft (address, collection, owner, manager, name, description, burned, updated, tx_lt)
+            values ($1, $2, $3, $4, $5, $6, $7, $8, $9)
             "#,
-            &self.address as &Address,
-            &self.owner as &Address,
-            self.name,
-            self.description,
-            self.updated,
+            &nft.address as &Address,
+            &nft.collection as &Option<Address>,
+            &nft.owner as &Option<Address>,
+            &nft.manager as &Option<Address>,
+            nft.name,
+            nft.description,
+            nft.burned,
+            nft.updated,
+            nft.tx_lt
         )
         .execute(pool)
         .await?)

@@ -42,10 +42,14 @@ where
     }
 
     pub async fn run(mut self) -> Result<T> {
-        for _ in 0..self.attempts {
+        for attempt in 1..=self.attempts {
             match (self.routine)().await {
                 Err(e) => {
-                    log::error!("Retrying after error: {:#?}", e);
+                    log::error!(
+                        "Error occured: {:#?}, attempts left: {}",
+                        e,
+                        self.attempts - attempt
+                    );
 
                     let duration = std::time::Duration::from_millis(self.backoff);
                     std::thread::sleep(duration);

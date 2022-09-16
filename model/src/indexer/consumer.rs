@@ -1,23 +1,27 @@
+use crate::indexer::{events::*, traits::ContractEvent};
 use anyhow::Result;
 use futures::{future::BoxFuture, StreamExt};
 use nekoton_abi::{transaction_parser::ExtractedOwned, TransactionParser};
-use sqlx::PgPool;
+use serde::Serialize;
+use sqlx::{types::chrono::NaiveDateTime, PgPool};
 use std::sync::Arc;
 use storage::{
     actions::{self, add_whitelist_address},
-    event_records::*,
-    record_builder,
     traits::*,
+    types::Nft,
 };
-use ton_block::MsgAddressInt;
 use transaction_consumer::{StreamFrom, TransactionConsumer};
 
+// TODO: make enum for Direct{Buy\Sell}StateChanged status?
+// TODO: check for updates
+// TODO: nft\collection whitelist?
 const AUCTION_ROOT_TIP3: &str = "57254b68950120413f38d14ef4944772d5a729c3c3d352fecc892d67280ac180";
 const FACTORY_DIRECT_BUY: &str = "fd44c88376033bed4f686711c7dadc0f25b6fa1b1d9193d2a6041112ae98cbd2";
 const FACTORY_DIRECT_SELL: &str =
     "3eec916163fd1826f085c291777d1d8316fab7eaa70990dfd0c9254c1450f2df";
 
 pub async fn serve(pool: PgPool, consumer: Arc<TransactionConsumer>) -> Result<()> {
+    // TODO: StreamFrom::Stored
     let stream = consumer.stream_transactions(StreamFrom::Beginning).await?;
     let mut fs = futures::stream::StreamExt::fuse(stream);
 
@@ -105,35 +109,47 @@ fn initialize_parsers_and_handlers() -> Result<Vec<(TransactionParser, Handler)>
                 Box::pin(handle_factory_direct_sell(extracted, pool, consumer))
             }),
         ),
+        (
+            get_contract_parser("./abi/Nft.abi.json")?,
+            Box::new(move |extracted, pool, consumer| {
+                Box::pin(handle_nft(extracted, pool, consumer))
+            }),
+        ),
+        (
+            get_contract_parser("./abi/Collection.abi.json")?,
+            Box::new(move |extracted, pool, consumer| {
+                Box::pin(handle_collection(extracted, pool, consumer))
+            }),
+        ),
     ])
 }
 
+// TODO: remove consumer?
 async fn handle_event<EventType>(
     event_name: &str,
     extracted: &[ExtractedOwned],
     pool: PgPool,
-    consumer: Arc<TransactionConsumer>,
+    _consumer: Arc<TransactionConsumer>,
 ) -> Result<Option<EventType>>
 where
-    EventType: EventRecord + DatabaseRecord + Sync,
+    EventType: ContractEvent + EventRecord + Serialize + Sync,
 {
     if let Some(event) = extracted.iter().find(|e| e.name == event_name) {
         let record = EventType::build_from(event)
             .map_err(|e| e.context(format!("Error creating {event_name} record")))?;
 
-        {
-            let pool = pool.clone();
-            if let Some(nft) = record.get_nft() {
-                tokio::spawn(async move {
-                    if let Err(e) = handle_nft(nft.clone(), pool, consumer).await {
-                        log::error!("Error fetching data for nft {}: {:#?}", nft.to_string(), e);
-                    }
-                });
-            }
-        }
+        // {
+        //     let pool = pool.clone();
+        //     if let Some(nft) = record.get_nft() {
+        //         tokio::spawn(async move {
+        //             if let Err(e) = handle_nft(nft.clone(), pool, consumer).await {
+        //                 log::error!("Error fetching data for nft {}: {:#?}", nft.to_string(), e);
+        //             }
+        //         });
+        //     }
+        // }
 
-        record
-            .put_in(&pool)
+        actions::save_event(&record, &pool)
             .await
             .map(|_| {})
             .map_err(|e| e.context(format!("Couldn't save {event_name}")))?;
@@ -292,20 +308,95 @@ async fn handle_factory_direct_sell(
 }
 
 async fn handle_nft(
-    nft: MsgAddressInt,
+    extracted: Vec<ExtractedOwned>,
     pool: PgPool,
     consumer: Arc<TransactionConsumer>,
 ) -> Result<()> {
-    let (collection, nft) = record_builder::build_nft_data(nft, consumer).await?;
-    if let Err(e) = collection.put_in(&pool).await {
-        log::error!(
-            "Couldn't save collection {:?}: {:#?}",
-            collection.address,
-            e
-        );
+    if let Some(record) =
+        handle_event::<NftOwnerChanged>("OwnerChanged", &extracted, pool.clone(), consumer.clone())
+            .await?
+    {
+        let nft = Nft {
+            address: record.address,
+            collection: None,
+            owner: Some(record.new_owner),
+            manager: None,
+            name: None,        // TODO:
+            description: None, // TODO:
+            burned: false,
+            updated: NaiveDateTime::from_timestamp(record.created_at, 0),
+            tx_lt: record.created_lt,
+        };
+
+        actions::upsert_nft(&nft, &pool).await?;
     }
-    if let Err(e) = nft.put_in(&pool).await {
-        log::error!("Couldn't save nft {:?}: {:#?}", nft.address, e);
+    if let Some(record) =
+        handle_event::<NftManagerChanged>("ManagerChanged", &extracted, pool.clone(), consumer)
+            .await?
+    {
+        let nft = Nft {
+            address: record.address,
+            collection: None,
+            owner: None,
+            manager: Some(record.new_manager),
+            name: None,        // TODO:
+            description: None, // TODO:
+            burned: false,
+            updated: NaiveDateTime::from_timestamp(record.created_at, 0),
+            tx_lt: record.created_lt,
+        };
+
+        actions::upsert_nft(&nft, &pool).await?;
+    }
+
+    Ok(())
+}
+
+async fn handle_collection(
+    extracted: Vec<ExtractedOwned>,
+    pool: PgPool,
+    consumer: Arc<TransactionConsumer>,
+) -> Result<()> {
+    handle_event::<CollectionOwnershipTransferred>(
+        "OwnershipTransferred",
+        &extracted,
+        pool.clone(),
+        consumer.clone(),
+    )
+    .await?;
+    if let Some(record) =
+        handle_event::<NftCreated>("NftCreated", &extracted, pool.clone(), consumer.clone()).await?
+    {
+        let nft = Nft {
+            address: record.nft,
+            collection: Some(record.address),
+            owner: Some(record.owner),
+            manager: Some(record.manager),
+            name: None,        // TODO:
+            description: None, // TODO:
+            burned: false,
+            updated: NaiveDateTime::from_timestamp(record.created_at, 0),
+            tx_lt: record.created_lt,
+        };
+
+        actions::upsert_nft(&nft, &pool).await?;
+    }
+    if let Some(record) =
+        handle_event::<NftBurned>("NftBurned", &extracted, pool.clone(), consumer).await?
+    {
+        let nft = Nft {
+            address: record.nft,
+            collection: Some(record.address),
+            owner: Some(record.owner),
+            manager: Some(record.manager),
+            name: None,        // TODO:
+            description: None, // TODO:
+            burned: true,
+            updated: NaiveDateTime::from_timestamp(record.created_at, 0),
+            tx_lt: record.created_lt,
+        };
+
+        actions::upsert_nft(&nft, &pool).await?;
     }
 
     Ok(())
