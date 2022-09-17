@@ -64,11 +64,17 @@ create table nft(
     collection t_address,
     owner t_address,
     manager t_address,
-    name text,
-    description text,
+    name text not null,
+    description text not null,
     burned boolean default false,
     updated timestamp not null,
     tx_lt bigint not null
+);
+
+create table nft_metadata(
+    nft t_address primary key,
+    meta jsonb not null,
+    updated timestamp not null
 );
 
 create table nft_collection(
@@ -78,14 +84,4 @@ create table nft_collection(
     description text not null,
     updated timestamp not null,
     tx_lt bigint not null
-);
-
-create table nft_metadata(
-    id bigint not null generated always as identity,
-    nft t_address,
-    meta jsonb not null,
-    ts timestamp not null,
-
-    constraint nft_metadata_pk primary key (id),
-    constraint nft_metadata_unique unique (nft)
 );

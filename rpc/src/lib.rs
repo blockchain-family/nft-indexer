@@ -9,11 +9,11 @@ use transaction_consumer::TransactionConsumer;
 pub mod retrier;
 
 pub async fn get_json(
-    address: &MsgAddressInt,
+    address: MsgAddressInt,
     consumer: Arc<TransactionConsumer>,
 ) -> Result<serde_json::Value> {
     let contract = consumer
-        .get_contract_state(address)
+        .get_contract_state(&address)
         .await?
         .ok_or_else(|| anyhow!("Contract state is none!"))?;
 
@@ -27,11 +27,11 @@ pub async fn get_json(
 }
 
 pub async fn get_info(
-    nft: &MsgAddressInt,
+    nft: MsgAddressInt,
     consumer: Arc<TransactionConsumer>,
 ) -> Result<GetInfoOutputs> {
     let contract = consumer
-        .get_contract_state(nft)
+        .get_contract_state(&nft)
         .await?
         .ok_or_else(|| anyhow!("Contract state is none!"))?;
 
@@ -50,11 +50,11 @@ fn get_owner_function() -> ton_abi::Function {
 }
 
 pub async fn owner(
-    collection: &MsgAddressInt,
+    collection: MsgAddressInt,
     consumer: Arc<TransactionConsumer>,
 ) -> Result<String> {
     let contract = consumer
-        .get_contract_state(collection)
+        .get_contract_state(&collection)
         .await?
         .ok_or_else(|| anyhow!("Contract state is none!"))?;
 

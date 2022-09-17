@@ -1157,6 +1157,7 @@ version = "0.1.0"
 dependencies = [
  "anyhow",
  "bigdecimal",
+ "chrono",
  "config",
  "env_logger",
  "futures",
@@ -1164,6 +1165,7 @@ dependencies = [
  "nekoton-abi",
  "nekoton-contracts",
  "nekoton-utils",
+ "rpc",
  "serde 1.0.144",
  "serde_json",
  "sqlx",

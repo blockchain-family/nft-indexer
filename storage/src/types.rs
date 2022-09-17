@@ -64,9 +64,15 @@ pub struct Nft {
     pub collection: Option<Address>,
     pub owner: Option<Address>,
     pub manager: Option<Address>,
-    pub name: Option<String>,
-    pub description: Option<String>,
+    pub name: String,
+    pub description: String,
     pub burned: bool,
     pub updated: NaiveDateTime,
     pub tx_lt: i64,
+}
+
+pub struct NftMeta {
+    pub nft: Address,
+    pub meta: serde_json::Value,
+    pub updated: NaiveDateTime,
 }

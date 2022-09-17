@@ -23,6 +23,23 @@ pub async fn save_event<T: EventRecord + Serialize>(
     .await?)
 }
 
+pub async fn upsert_nft_meta(nft_meta: &NftMeta, pool: &PgPool) -> Result<PgQueryResult> {
+    Ok(sqlx::query!(
+        r#"
+        insert into nft_metadata (nft, meta, updated)
+        values ($1, $2, $3)
+        on conflict (nft) where updated < $3 do update
+        set meta = $2,
+            updated = $3
+        "#,
+        &nft_meta.nft as &Address,
+        nft_meta.meta,
+        nft_meta.updated
+    )
+    .execute(pool)
+    .await?)
+}
+
 pub async fn upsert_nft(nft: &Nft, pool: &PgPool) -> Result<PgQueryResult> {
     if let Some(mut saved_nft) = sqlx::query_as!(
         Nft,
@@ -31,8 +48,8 @@ pub async fn upsert_nft(nft: &Nft, pool: &PgPool) -> Result<PgQueryResult> {
             collection as "collection?: Address",
             owner as "owner?: Address", 
             manager as "manager?: Address",
-            name as "name?", 
-            description as "description?",
+            name as "name!", 
+            description as "description!",
             burned as "burned!", 
             updated as "updated!", 
             tx_lt as "tx_lt!"
@@ -69,6 +86,9 @@ pub async fn upsert_nft(nft: &Nft, pool: &PgPool) -> Result<PgQueryResult> {
         if saved_nft.manager.is_none() {
             saved_nft.manager = nft.manager.clone();
         }
+
+        saved_nft.name = nft.name.clone();
+        saved_nft.description = nft.description.clone();
 
         Ok(sqlx::query!(
             r#"
