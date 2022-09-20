@@ -3,23 +3,18 @@ use anyhow::Result;
 use futures::{future::BoxFuture, StreamExt};
 use nekoton_abi::{transaction_parser::ExtractedOwned, TransactionParser};
 use serde::Serialize;
-use sqlx::{types::chrono::NaiveDateTime, PgPool};
-use std::{str::FromStr, sync::Arc};
-use storage::{
-    actions::{self, add_whitelist_address},
-    traits::*,
-    types::{Nft, NftMeta},
-};
-use ton_block::MsgAddressInt;
+use sqlx::PgPool;
+use std::sync::Arc;
+use storage::{actions, traits::*};
 use transaction_consumer::{StreamFrom, TransactionConsumer};
 
-// TODO: make enum for Direct{Buy\Sell}StateChanged status?
-// TODO: check for updates
-// TODO: nft\collection whitelist?
+// TODO: check for abi updates
 const AUCTION_ROOT_TIP3: &str = "57254b68950120413f38d14ef4944772d5a729c3c3d352fecc892d67280ac180";
 const FACTORY_DIRECT_BUY: &str = "fd44c88376033bed4f686711c7dadc0f25b6fa1b1d9193d2a6041112ae98cbd2";
 const FACTORY_DIRECT_SELL: &str =
     "3eec916163fd1826f085c291777d1d8316fab7eaa70990dfd0c9254c1450f2df";
+
+// TODO: async tx processing
 
 pub async fn serve(pool: PgPool, consumer: Arc<TransactionConsumer>) -> Result<()> {
     // TODO: StreamFrom::Stored
@@ -33,14 +28,8 @@ pub async fn serve(pool: PgPool, consumer: Arc<TransactionConsumer>) -> Result<(
     while let Some(tx) = fs.next().await {
         for (parser, handler) in parsers_and_handlers.iter() {
             if let Ok(extracted) = parser.parse(&tx.transaction) {
-                if let Some(e) = handler(
-                    extracted.into_iter().map(|ex| ex.into_owned()).collect(),
-                    pool.clone(),
-                    consumer.clone(),
-                )
-                .await
-                .err()
-                {
+                let extracted = extracted.into_iter().map(|ex| ex.into_owned()).collect();
+                if let Err(e) = handler(extracted, pool.clone(), consumer.clone()).await {
                     log::error!("Error processing transaction: {:#?}", e);
                 }
             }
@@ -68,57 +57,59 @@ fn get_contract_parser(abi_path: &str) -> Result<TransactionParser> {
         .build_with_external_in()
 }
 
-type Handler = Box<
-    dyn Fn(Vec<ExtractedOwned>, PgPool, Arc<TransactionConsumer>) -> BoxFuture<'static, Result<()>>,
+type Handler = Arc<
+    dyn Fn(Vec<ExtractedOwned>, PgPool, Arc<TransactionConsumer>) -> BoxFuture<'static, Result<()>>
+        + Send
+        + Sync,
 >;
 
 fn initialize_parsers_and_handlers() -> Result<Vec<(TransactionParser, Handler)>> {
     Ok(vec![
         (
             get_contract_parser("./abi/AuctionTip3.abi.json")?,
-            Box::new(move |extracted, pool, consumer| {
+            Arc::new(move |extracted, pool, consumer| {
                 Box::pin(handle_auction_tip3(extracted, pool, consumer))
             }),
         ),
         (
             get_contract_parser("./abi/AuctionRootTip3.abi.json")?,
-            Box::new(move |extracted, pool, consumer| {
+            Arc::new(move |extracted, pool, consumer| {
                 Box::pin(handle_auction_root_tip3(extracted, pool, consumer))
             }),
         ),
         (
             get_contract_parser("./abi/DirectBuy.abi.json")?,
-            Box::new(move |extracted, pool, consumer| {
+            Arc::new(move |extracted, pool, consumer| {
                 Box::pin(handle_direct_buy(extracted, pool, consumer))
             }),
         ),
         (
             get_contract_parser("./abi/DirectSell.abi.json")?,
-            Box::new(move |extracted, pool, consumer| {
+            Arc::new(move |extracted, pool, consumer| {
                 Box::pin(handle_direct_sell(extracted, pool, consumer))
             }),
         ),
         (
             get_contract_parser("./abi/FactoryDirectBuy.abi.json")?,
-            Box::new(move |extracted, pool, consumer| {
+            Arc::new(move |extracted, pool, consumer| {
                 Box::pin(handle_factory_direct_buy(extracted, pool, consumer))
             }),
         ),
         (
             get_contract_parser("./abi/FactoryDirectSell.abi.json")?,
-            Box::new(move |extracted, pool, consumer| {
+            Arc::new(move |extracted, pool, consumer| {
                 Box::pin(handle_factory_direct_sell(extracted, pool, consumer))
             }),
         ),
         (
             get_contract_parser("./abi/Nft.abi.json")?,
-            Box::new(move |extracted, pool, consumer| {
+            Arc::new(move |extracted, pool, consumer| {
                 Box::pin(handle_nft(extracted, pool, consumer))
             }),
         ),
         (
             get_contract_parser("./abi/Collection.abi.json")?,
-            Box::new(move |extracted, pool, consumer| {
+            Arc::new(move |extracted, pool, consumer| {
                 Box::pin(handle_collection(extracted, pool, consumer))
             }),
         ),
@@ -128,18 +119,18 @@ fn initialize_parsers_and_handlers() -> Result<Vec<(TransactionParser, Handler)>
 async fn handle_event<EventType>(
     event_name: &str,
     extracted: &[ExtractedOwned],
-    pool: PgPool,
+    pool: &PgPool,
+    consumer: &Arc<TransactionConsumer>,
 ) -> Result<Option<EventType>>
 where
     EventType: ContractEvent + EventRecord + Serialize + Sync,
 {
     if let Some(event) = extracted.iter().find(|e| e.name == event_name) {
-        let record = EventType::build_from(event)
+        let record = EventType::build_from(event, pool, consumer)
             .map_err(|e| e.context(format!("Error creating {event_name} record")))?;
 
-        actions::save_event(&record, &pool)
+        actions::save_event(&record, pool)
             .await
-            .map(|_| {})
             .map_err(|e| e.context(format!("Couldn't save {event_name}")))?;
 
         Ok(Some(record))
@@ -151,97 +142,160 @@ where
 async fn handle_auction_root_tip3(
     extracted: Vec<ExtractedOwned>,
     pool: PgPool,
-    _consumer: Arc<TransactionConsumer>,
+    consumer: Arc<TransactionConsumer>,
 ) -> Result<()> {
     if let Some(record) =
-        handle_event::<AuctionDeployed>("AuctionDeployed", &extracted, pool.clone()).await?
+        handle_event::<AuctionDeployed>("AuctionDeployed", &extracted, &pool, &consumer).await?
     {
         if record.address == AUCTION_ROOT_TIP3.into() {
-            if let Err(e) = add_whitelist_address(&record.offer_address, &pool).await {
+            if let Err(e) = actions::add_whitelist_address(&record.offer_address, &pool).await {
                 log::error!("Failed adding address in whitelist: {:#?}", e);
             }
         }
     }
 
-    handle_event::<AuctionDeclined>("AuctionDeclined", &extracted, pool.clone()).await?;
-    handle_event::<AuctionOwnershipTransferred>("OwnershipTransferred", &extracted, pool)
-        .await
-        .map(|_| {})
+    handle_event::<AuctionDeclined>("AuctionDeclined", &extracted, &pool, &consumer).await?;
+    handle_event::<AuctionOwnershipTransferred>(
+        "OwnershipTransferred",
+        &extracted,
+        &pool,
+        &consumer,
+    )
+    .await?;
+
+    Ok(())
 }
 
 async fn handle_auction_tip3(
     extracted: Vec<ExtractedOwned>,
     pool: PgPool,
-    _consumer: Arc<TransactionConsumer>,
+    consumer: Arc<TransactionConsumer>,
 ) -> Result<()> {
-    handle_event::<AuctionCreated>("AuctionCreated", &extracted, pool.clone()).await?;
-    handle_event::<AuctionActive>("AuctionActive", &extracted, pool.clone()).await?;
-    handle_event::<BidPlaced>("BidPlaced", &extracted, pool.clone()).await?;
-    handle_event::<BidDeclined>("BidDeclined", &extracted, pool.clone()).await?;
-    handle_event::<AuctionComplete>("AuctionComplete", &extracted, pool.clone()).await?;
-    handle_event::<AuctionCancelled>("AuctionCancelled", &extracted, pool)
-        .await
-        .map(|_| {})
+    handle_event::<AuctionCreated>("AuctionCreated", &extracted, &pool, &consumer).await?;
+
+    if let Some(record) =
+        handle_event::<AuctionActive>("AuctionActive", &extracted, &pool, &consumer).await?
+    {
+        record.upsert_auction().await?;
+    }
+
+    if let Some(record) =
+        handle_event::<BidPlaced>("BidPlaced", &extracted, &pool, &consumer).await?
+    {
+        record.upsert_bid().await?;
+        record.upsert_auction().await?;
+    }
+
+    if let Some(record) =
+        handle_event::<BidDeclined>("BidDeclined", &extracted, &pool, &consumer).await?
+    {
+        record.upsert_bid().await?;
+        record.upsert_auction().await?;
+    }
+
+    if let Some(record) =
+        handle_event::<AuctionComplete>("AuctionComplete", &extracted, &pool, &consumer).await?
+    {
+        record.upsert_auction().await?;
+    }
+
+    if let Some(record) =
+        handle_event::<AuctionCancelled>("AuctionCancelled", &extracted, &pool, &consumer).await?
+    {
+        record.upsert_auction().await?;
+    }
+
+    Ok(())
 }
 
 async fn handle_direct_buy(
     extracted: Vec<ExtractedOwned>,
     pool: PgPool,
-    _consumer: Arc<TransactionConsumer>,
+    consumer: Arc<TransactionConsumer>,
 ) -> Result<()> {
-    handle_event::<DirectBuyStateChanged>("DirectBuyStateChanged", &extracted, pool)
-        .await
-        .map(|_| {})
+    if let Some(record) =
+        handle_event::<DirectBuyStateChanged>("DirectBuyStateChanged", &extracted, &pool, &consumer)
+            .await?
+    {
+        record.upsert_direct_buy().await?;
+    }
+
+    Ok(())
 }
 
 async fn handle_direct_sell(
     extracted: Vec<ExtractedOwned>,
     pool: PgPool,
-    _consumer: Arc<TransactionConsumer>,
+    consumer: Arc<TransactionConsumer>,
 ) -> Result<()> {
-    handle_event::<DirectSellStateChanged>("DirectSellStateChanged", &extracted, pool)
-        .await
-        .map(|_| {})
+    if let Some(record) = handle_event::<DirectSellStateChanged>(
+        "DirectSellStateChanged",
+        &extracted,
+        &pool,
+        &consumer,
+    )
+    .await?
+    {
+        record.upsert_direct_sell().await?;
+    }
+
+    Ok(())
 }
 
 async fn handle_factory_direct_buy(
     extracted: Vec<ExtractedOwned>,
     pool: PgPool,
-    _consumer: Arc<TransactionConsumer>,
+    consumer: Arc<TransactionConsumer>,
 ) -> Result<()> {
     if let Some(record) =
-        handle_event::<DirectBuyDeployed>("DirectBuyDeployed", &extracted, pool.clone()).await?
+        handle_event::<DirectBuyDeployed>("DirectBuyDeployed", &extracted, &pool, &consumer).await?
     {
         if record.address == FACTORY_DIRECT_BUY.into() {
-            if let Err(e) = add_whitelist_address(&record.direct_buy_address, &pool).await {
+            if let Err(e) = actions::add_whitelist_address(&record.direct_buy_address, &pool).await
+            {
                 log::error!("Failed adding address in whitelist: {:#?}", e);
             }
         }
     }
-    handle_event::<DirectBuyDeclined>("DirectBuyDeclined", &extracted, pool.clone()).await?;
-    handle_event::<DirectBuyOwnershipTransferred>("OwnershipTransferred", &extracted, pool)
-        .await
-        .map(|_| {})
+    handle_event::<DirectBuyDeclined>("DirectBuyDeclined", &extracted, &pool, &consumer).await?;
+    handle_event::<DirectBuyOwnershipTransferred>(
+        "OwnershipTransferred",
+        &extracted,
+        &pool,
+        &consumer,
+    )
+    .await?;
+
+    Ok(())
 }
 
 async fn handle_factory_direct_sell(
     extracted: Vec<ExtractedOwned>,
     pool: PgPool,
-    _consumer: Arc<TransactionConsumer>,
+    consumer: Arc<TransactionConsumer>,
 ) -> Result<()> {
     if let Some(record) =
-        handle_event::<DirectSellDeployed>("DirectSellDeployed", &extracted, pool.clone()).await?
+        handle_event::<DirectSellDeployed>("DirectSellDeployed", &extracted, &pool, &consumer)
+            .await?
     {
         if record.address == FACTORY_DIRECT_SELL.into() {
-            if let Err(e) = add_whitelist_address(&record._direct_sell_address, &pool).await {
+            if let Err(e) =
+                actions::add_whitelist_address(&record._direct_sell_address, &pool).await
+            {
                 log::error!("Failed adding address in whitelist: {:#?}", e);
             }
         }
     }
-    handle_event::<DirectSellDeclined>("DirectSellDeclined", &extracted, pool.clone()).await?;
-    handle_event::<DirectSellOwnershipTransferred>("OwnershipTransferred", &extracted, pool)
-        .await
-        .map(|_| {})
+    handle_event::<DirectSellDeclined>("DirectSellDeclined", &extracted, &pool, &consumer).await?;
+    handle_event::<DirectSellOwnershipTransferred>(
+        "OwnershipTransferred",
+        &extracted,
+        &pool,
+        &consumer,
+    )
+    .await?;
+
+    Ok(())
 }
 
 async fn handle_nft(
@@ -250,72 +304,15 @@ async fn handle_nft(
     consumer: Arc<TransactionConsumer>,
 ) -> Result<()> {
     if let Some(record) =
-        handle_event::<NftOwnerChanged>("OwnerChanged", &extracted, pool.clone()).await?
+        handle_event::<NftOwnerChanged>("OwnerChanged", &extracted, &pool, &consumer).await?
     {
-        let nft_meta = fetch_metadata(
-            MsgAddressInt::from_str(record.address.0.as_str())?,
-            consumer.clone(),
-        )
-        .await;
-
-        let nft = Nft {
-            address: record.address.clone(),
-            collection: None,
-            owner: Some(record.new_owner),
-            manager: None,
-            name: nft_meta
-                .meta
-                .get("name")
-                .cloned()
-                .unwrap_or_default()
-                .to_string(),
-            description: nft_meta
-                .meta
-                .get("description")
-                .cloned()
-                .unwrap_or_default()
-                .to_string(),
-            burned: false,
-            updated: NaiveDateTime::from_timestamp(record.created_at, 0),
-            tx_lt: record.created_lt,
-        };
-
-        actions::upsert_nft(&nft, &pool).await?;
-        actions::upsert_nft_meta(&nft_meta, &pool).await?;
+        record.upsert_nft().await?;
     }
+
     if let Some(record) =
-        handle_event::<NftManagerChanged>("ManagerChanged", &extracted, pool.clone()).await?
+        handle_event::<NftManagerChanged>("ManagerChanged", &extracted, &pool, &consumer).await?
     {
-        let nft_meta = fetch_metadata(
-            MsgAddressInt::from_str(record.address.0.as_str())?,
-            consumer,
-        )
-        .await;
-
-        let nft = Nft {
-            address: record.address,
-            collection: None,
-            owner: None,
-            manager: Some(record.new_manager),
-            name: nft_meta
-                .meta
-                .get("name")
-                .cloned()
-                .unwrap_or_default()
-                .to_string(),
-            description: nft_meta
-                .meta
-                .get("description")
-                .cloned()
-                .unwrap_or_default()
-                .to_string(),
-            burned: false,
-            updated: NaiveDateTime::from_timestamp(record.created_at, 0),
-            tx_lt: record.created_lt,
-        };
-
-        actions::upsert_nft(&nft, &pool).await?;
-        actions::upsert_nft_meta(&nft_meta, &pool).await?;
+        record.upsert_nft().await?;
     }
 
     Ok(())
@@ -326,77 +323,29 @@ async fn handle_collection(
     pool: PgPool,
     consumer: Arc<TransactionConsumer>,
 ) -> Result<()> {
-    handle_event::<CollectionOwnershipTransferred>(
+    if let Some(record) = handle_event::<CollectionOwnershipTransferred>(
         "OwnershipTransferred",
         &extracted,
-        pool.clone(),
+        &pool,
+        &consumer,
     )
-    .await?;
-    if let Some(record) = handle_event::<NftCreated>("NftCreated", &extracted, pool.clone()).await?
+    .await?
     {
-        let nft_meta = fetch_metadata(
-            MsgAddressInt::from_str(record.nft.0.as_str())?,
-            consumer.clone(),
-        )
-        .await;
-
-        let nft = Nft {
-            address: record.nft,
-            collection: Some(record.address),
-            owner: Some(record.owner),
-            manager: Some(record.manager),
-            name: nft_meta
-                .meta
-                .get("name")
-                .cloned()
-                .unwrap_or_default()
-                .to_string(),
-            description: nft_meta
-                .meta
-                .get("description")
-                .cloned()
-                .unwrap_or_default()
-                .to_string(),
-            burned: false,
-            updated: NaiveDateTime::from_timestamp(record.created_at, 0),
-            tx_lt: record.created_lt,
-        };
-
-        actions::upsert_nft(&nft, &pool).await?;
-        actions::upsert_nft_meta(&nft_meta, &pool).await?;
+        record.upsert_collection().await?;
     }
 
-    if let Some(record) = handle_event::<NftBurned>("NftBurned", &extracted, pool.clone()).await? {
-        let nft_meta = fetch_metadata(
-            MsgAddressInt::from_str(record.nft.0.as_str())?,
-            consumer.clone(),
-        )
-        .await;
+    if let Some(record) =
+        handle_event::<NftCreated>("NftCreated", &extracted, &pool, &consumer).await?
+    {
+        record.upsert_collection().await?;
+        record.upsert_nft().await?;
+    }
 
-        let nft = Nft {
-            address: record.nft,
-            collection: Some(record.address),
-            owner: Some(record.owner),
-            manager: Some(record.manager),
-            name: nft_meta
-                .meta
-                .get("name")
-                .cloned()
-                .unwrap_or_default()
-                .to_string(),
-            description: nft_meta
-                .meta
-                .get("description")
-                .cloned()
-                .unwrap_or_default()
-                .to_string(),
-            burned: true,
-            updated: NaiveDateTime::from_timestamp(record.created_at, 0),
-            tx_lt: record.created_lt,
-        };
-
-        actions::upsert_nft(&nft, &pool).await?;
-        actions::upsert_nft_meta(&nft_meta, &pool).await?;
+    if let Some(record) =
+        handle_event::<NftBurned>("NftBurned", &extracted, &pool, &consumer).await?
+    {
+        record.upsert_collection().await?;
+        record.upsert_nft().await?;
     }
 
     Ok(())
@@ -419,31 +368,5 @@ async fn initialize_whitelist_addresses(pool: &PgPool) {
             "Failed adding FactoryDirectSell address in whitelist: {:#?}",
             e
         );
-    }
-}
-
-async fn fetch_metadata(nft: MsgAddressInt, consumer: Arc<TransactionConsumer>) -> NftMeta {
-    match rpc::retrier::Retrier::new(|| Box::pin(rpc::get_json(nft.clone(), consumer.clone())))
-        .attempts(3)
-        .backoff(100)
-        .factor(2)
-        .run()
-        .await
-    {
-        Ok(meta) => NftMeta {
-            nft: ("0:".to_string() + &nft.get_address().as_hex_string()).into(),
-            meta,
-            updated: chrono::Utc::now().naive_utc(),
-        },
-
-        Err(e) => {
-            log::error!("Error fetching metadata for {}: {:#?}", nft, e);
-
-            NftMeta {
-                nft: ("0:".to_string() + &nft.get_address().as_hex_string()).into(),
-                meta: serde_json::Value::default(),
-                updated: chrono::Utc::now().naive_utc(),
-            }
-        }
     }
 }

@@ -1,18 +1,25 @@
 use crate::indexer::{record_build_utils::*, traits::ContractEvent};
 use anyhow::{anyhow, Result};
 use bigdecimal::BigDecimal;
+use chrono::NaiveDateTime;
 use nekoton_abi::transaction_parser::ExtractedOwned;
 use serde::Serialize;
-use storage::{
-    traits::EventRecord,
-    types::{Address, EventCategory, EventType},
-};
+use sqlx::PgPool;
+use std::{str::FromStr, sync::Arc};
+use storage::{actions, traits::EventRecord, types::*};
 use ton_abi::TokenValue::Tuple;
+use ton_block::MsgAddressInt;
+use transaction_consumer::TransactionConsumer;
 
 /// AuctionRootTip3 events
 
-#[derive(Clone, Debug, PartialEq, Eq, Serialize)]
+#[derive(Clone, Serialize)]
 pub struct AuctionDeployed {
+    #[serde(skip_serializing)]
+    pub pool: PgPool,
+    #[serde(skip_serializing)]
+    pub consumer: Arc<TransactionConsumer>,
+
     #[serde(skip_serializing)]
     pub address: Address,
     #[serde(skip_serializing)]
@@ -31,8 +38,13 @@ pub struct AuctionDeployed {
     pub deploy_nonce: BigDecimal,
 }
 
-#[derive(Clone, Debug, PartialEq, Eq, Serialize)]
+#[derive(Clone, Serialize)]
 pub struct AuctionDeclined {
+    #[serde(skip_serializing)]
+    pub pool: PgPool,
+    #[serde(skip_serializing)]
+    pub consumer: Arc<TransactionConsumer>,
+
     #[serde(skip_serializing)]
     pub address: Address,
     #[serde(skip_serializing)]
@@ -44,8 +56,13 @@ pub struct AuctionDeclined {
     pub data_address: Address,
 }
 
-#[derive(Clone, Debug, PartialEq, Eq, Serialize)]
+#[derive(Clone, Serialize)]
 pub struct AuctionOwnershipTransferred {
+    #[serde(skip_serializing)]
+    pub pool: PgPool,
+    #[serde(skip_serializing)]
+    pub consumer: Arc<TransactionConsumer>,
+
     #[serde(skip_serializing)]
     pub address: Address,
     #[serde(skip_serializing)]
@@ -59,9 +76,14 @@ pub struct AuctionOwnershipTransferred {
 
 /// AuctionTip3 events
 
-#[derive(Clone, Debug, PartialEq, Eq, Serialize)]
+#[derive(Clone, Serialize)]
 pub struct AuctionCreated {
     #[serde(skip_serializing)]
+    pub pool: PgPool,
+    #[serde(skip_serializing)]
+    pub consumer: Arc<TransactionConsumer>,
+
+    #[serde(skip_serializing)]
     pub address: Address,
     #[serde(skip_serializing)]
     pub created_lt: i64,
@@ -79,9 +101,14 @@ pub struct AuctionCreated {
     pub _nonce: BigDecimal,
 }
 
-#[derive(Clone, Debug, PartialEq, Eq, Serialize)]
+#[derive(Clone, Serialize)]
 pub struct AuctionActive {
     #[serde(skip_serializing)]
+    pub pool: PgPool,
+    #[serde(skip_serializing)]
+    pub consumer: Arc<TransactionConsumer>,
+
+    #[serde(skip_serializing)]
     pub address: Address,
     #[serde(skip_serializing)]
     pub created_lt: i64,
@@ -99,9 +126,14 @@ pub struct AuctionActive {
     pub _nonce: BigDecimal,
 }
 
-#[derive(Clone, Debug, PartialEq, Eq, Serialize)]
+#[derive(Clone, Serialize)]
 pub struct BidPlaced {
     #[serde(skip_serializing)]
+    pub pool: PgPool,
+    #[serde(skip_serializing)]
+    pub consumer: Arc<TransactionConsumer>,
+
+    #[serde(skip_serializing)]
     pub address: Address,
     #[serde(skip_serializing)]
     pub created_lt: i64,
@@ -112,9 +144,14 @@ pub struct BidPlaced {
     pub value: BigDecimal,
 }
 
-#[derive(Clone, Debug, PartialEq, Eq, Serialize)]
+#[derive(Clone, Serialize)]
 pub struct BidDeclined {
     #[serde(skip_serializing)]
+    pub pool: PgPool,
+    #[serde(skip_serializing)]
+    pub consumer: Arc<TransactionConsumer>,
+
+    #[serde(skip_serializing)]
     pub address: Address,
     #[serde(skip_serializing)]
     pub created_lt: i64,
@@ -125,8 +162,13 @@ pub struct BidDeclined {
     pub value: BigDecimal,
 }
 
-#[derive(Clone, Debug, PartialEq, Eq, Serialize)]
+#[derive(Clone, Serialize)]
 pub struct AuctionComplete {
+    #[serde(skip_serializing)]
+    pub pool: PgPool,
+    #[serde(skip_serializing)]
+    pub consumer: Arc<TransactionConsumer>,
+
     #[serde(skip_serializing)]
     pub address: Address,
     #[serde(skip_serializing)]
@@ -139,8 +181,13 @@ pub struct AuctionComplete {
     pub value: BigDecimal,
 }
 
-#[derive(Clone, Debug, PartialEq, Eq, Serialize)]
+#[derive(Clone, Serialize)]
 pub struct AuctionCancelled {
+    #[serde(skip_serializing)]
+    pub pool: PgPool,
+    #[serde(skip_serializing)]
+    pub consumer: Arc<TransactionConsumer>,
+
     #[serde(skip_serializing)]
     pub address: Address,
     #[serde(skip_serializing)]
@@ -151,8 +198,13 @@ pub struct AuctionCancelled {
 
 /// FactoryDirectBuy events
 
-#[derive(Clone, Debug, PartialEq, Eq, Serialize)]
+#[derive(Clone, Serialize)]
 pub struct DirectBuyDeployed {
+    #[serde(skip_serializing)]
+    pub pool: PgPool,
+    #[serde(skip_serializing)]
+    pub consumer: Arc<TransactionConsumer>,
+
     #[serde(skip_serializing)]
     pub address: Address,
     #[serde(skip_serializing)]
@@ -168,8 +220,13 @@ pub struct DirectBuyDeployed {
     pub amount: BigDecimal,
 }
 
-#[derive(Clone, Debug, PartialEq, Eq, Serialize)]
+#[derive(Clone, Serialize)]
 pub struct DirectBuyDeclined {
+    #[serde(skip_serializing)]
+    pub pool: PgPool,
+    #[serde(skip_serializing)]
+    pub consumer: Arc<TransactionConsumer>,
+
     #[serde(skip_serializing)]
     pub address: Address,
     #[serde(skip_serializing)]
@@ -182,8 +239,13 @@ pub struct DirectBuyDeclined {
     pub amount: BigDecimal,
 }
 
-#[derive(Clone, Debug, PartialEq, Eq, Serialize)]
+#[derive(Clone, Serialize)]
 pub struct DirectBuyOwnershipTransferred {
+    #[serde(skip_serializing)]
+    pub pool: PgPool,
+    #[serde(skip_serializing)]
+    pub consumer: Arc<TransactionConsumer>,
+
     #[serde(skip_serializing)]
     pub address: Address,
     #[serde(skip_serializing)]
@@ -197,8 +259,13 @@ pub struct DirectBuyOwnershipTransferred {
 
 /// FactoryDirectSell events
 
-#[derive(Clone, Debug, PartialEq, Eq, Serialize)]
+#[derive(Clone, Serialize)]
 pub struct DirectSellDeployed {
+    #[serde(skip_serializing)]
+    pub pool: PgPool,
+    #[serde(skip_serializing)]
+    pub consumer: Arc<TransactionConsumer>,
+
     #[serde(skip_serializing)]
     pub address: Address,
     #[serde(skip_serializing)]
@@ -214,8 +281,13 @@ pub struct DirectSellDeployed {
     pub price: BigDecimal,
 }
 
-#[derive(Clone, Debug, PartialEq, Eq, Serialize)]
+#[derive(Clone, Serialize)]
 pub struct DirectSellDeclined {
+    #[serde(skip_serializing)]
+    pub pool: PgPool,
+    #[serde(skip_serializing)]
+    pub consumer: Arc<TransactionConsumer>,
+
     #[serde(skip_serializing)]
     pub address: Address,
     #[serde(skip_serializing)]
@@ -227,8 +299,13 @@ pub struct DirectSellDeclined {
     pub _nft_address: Address,
 }
 
-#[derive(Clone, Debug, PartialEq, Eq, Serialize)]
+#[derive(Clone, Serialize)]
 pub struct DirectSellOwnershipTransferred {
+    #[serde(skip_serializing)]
+    pub pool: PgPool,
+    #[serde(skip_serializing)]
+    pub consumer: Arc<TransactionConsumer>,
+
     #[serde(skip_serializing)]
     pub address: Address,
     #[serde(skip_serializing)]
@@ -242,8 +319,13 @@ pub struct DirectSellOwnershipTransferred {
 
 /// DirectBuy events
 
-#[derive(Clone, Debug, PartialEq, Eq, Serialize)]
+#[derive(Clone, Serialize)]
 pub struct DirectBuyStateChanged {
+    #[serde(skip_serializing)]
+    pub pool: PgPool,
+    #[serde(skip_serializing)]
+    pub consumer: Arc<TransactionConsumer>,
+
     #[serde(skip_serializing)]
     pub address: Address,
     #[serde(skip_serializing)]
@@ -270,8 +352,13 @@ pub struct DirectBuyStateChanged {
 
 /// DirectSell events
 
-#[derive(Clone, Debug, PartialEq, Eq, Serialize)]
+#[derive(Clone, Serialize)]
 pub struct DirectSellStateChanged {
+    #[serde(skip_serializing)]
+    pub pool: PgPool,
+    #[serde(skip_serializing)]
+    pub consumer: Arc<TransactionConsumer>,
+
     #[serde(skip_serializing)]
     pub address: Address,
     #[serde(skip_serializing)]
@@ -297,8 +384,13 @@ pub struct DirectSellStateChanged {
 
 // Nft events
 
-#[derive(Clone, Debug, PartialEq, Eq, Serialize)]
+#[derive(Clone, Serialize)]
 pub struct NftOwnerChanged {
+    #[serde(skip_serializing)]
+    pub pool: PgPool,
+    #[serde(skip_serializing)]
+    pub consumer: Arc<TransactionConsumer>,
+
     #[serde(skip_serializing)]
     pub address: Address,
     #[serde(skip_serializing)]
@@ -310,8 +402,13 @@ pub struct NftOwnerChanged {
     pub new_owner: Address,
 }
 
-#[derive(Clone, Debug, PartialEq, Eq, Serialize)]
+#[derive(Clone, Serialize)]
 pub struct NftManagerChanged {
+    #[serde(skip_serializing)]
+    pub pool: PgPool,
+    #[serde(skip_serializing)]
+    pub consumer: Arc<TransactionConsumer>,
+
     #[serde(skip_serializing)]
     pub address: Address,
     #[serde(skip_serializing)]
@@ -325,8 +422,13 @@ pub struct NftManagerChanged {
 
 // Collection events
 
-#[derive(Clone, Debug, PartialEq, Eq, Serialize)]
+#[derive(Clone, Serialize)]
 pub struct CollectionOwnershipTransferred {
+    #[serde(skip_serializing)]
+    pub pool: PgPool,
+    #[serde(skip_serializing)]
+    pub consumer: Arc<TransactionConsumer>,
+
     #[serde(skip_serializing)]
     pub address: Address,
     #[serde(skip_serializing)]
@@ -338,8 +440,13 @@ pub struct CollectionOwnershipTransferred {
     pub new_owner: Address,
 }
 
-#[derive(Clone, Debug, PartialEq, Eq, Serialize)]
+#[derive(Clone, Serialize)]
 pub struct NftCreated {
+    #[serde(skip_serializing)]
+    pub pool: PgPool,
+    #[serde(skip_serializing)]
+    pub consumer: Arc<TransactionConsumer>,
+
     #[serde(skip_serializing)]
     pub address: Address,
     #[serde(skip_serializing)]
@@ -354,8 +461,13 @@ pub struct NftCreated {
     pub creator: Address,
 }
 
-#[derive(Clone, Debug, PartialEq, Eq, Serialize)]
+#[derive(Clone, Serialize)]
 pub struct NftBurned {
+    #[serde(skip_serializing)]
+    pub pool: PgPool,
+    #[serde(skip_serializing)]
+    pub consumer: Arc<TransactionConsumer>,
+
     #[serde(skip_serializing)]
     pub address: Address,
     #[serde(skip_serializing)]
@@ -370,7 +482,11 @@ pub struct NftBurned {
 }
 
 impl ContractEvent for AuctionDeployed {
-    fn build_from(event: &ExtractedOwned) -> Result<Self>
+    fn build_from(
+        event: &ExtractedOwned,
+        pool: &PgPool,
+        consumer: &Arc<TransactionConsumer>,
+    ) -> Result<Self>
     where
         Self: Sized,
     {
@@ -399,6 +515,9 @@ impl ContractEvent for AuctionDeployed {
         let to_big_decimal = get_token_processor(&tokens, token_to_big_decimal);
 
         Ok(AuctionDeployed {
+            pool: pool.clone(),
+            consumer: consumer.clone(),
+
             address: get_address(event),
             created_lt: get_created_lt(event)?,
             created_at: get_created_at(event)?,
@@ -439,7 +558,11 @@ impl EventRecord for AuctionDeployed {
 }
 
 impl ContractEvent for AuctionDeclined {
-    fn build_from(event: &ExtractedOwned) -> Result<Self>
+    fn build_from(
+        event: &ExtractedOwned,
+        pool: &PgPool,
+        consumer: &Arc<TransactionConsumer>,
+    ) -> Result<Self>
     where
         Self: Sized,
     {
@@ -462,6 +585,9 @@ impl ContractEvent for AuctionDeclined {
         let to_address = get_token_processor(&tokens, token_to_addr);
 
         Ok(AuctionDeclined {
+            pool: pool.clone(),
+            consumer: consumer.clone(),
+
             address: get_address(event),
             created_lt: get_created_lt(event)?,
             created_at: get_created_at(event)?,
@@ -495,7 +621,11 @@ impl EventRecord for AuctionDeclined {
 }
 
 impl ContractEvent for AuctionOwnershipTransferred {
-    fn build_from(event: &ExtractedOwned) -> Result<Self>
+    fn build_from(
+        event: &ExtractedOwned,
+        pool: &PgPool,
+        consumer: &Arc<TransactionConsumer>,
+    ) -> Result<Self>
     where
         Self: Sized,
     {
@@ -518,6 +648,9 @@ impl ContractEvent for AuctionOwnershipTransferred {
         let to_address = get_token_processor(&tokens, token_to_addr);
 
         Ok(AuctionOwnershipTransferred {
+            pool: pool.clone(),
+            consumer: consumer.clone(),
+
             address: get_address(event),
             created_lt: get_created_lt(event)?,
             created_at: get_created_at(event)?,
@@ -551,7 +684,11 @@ impl EventRecord for AuctionOwnershipTransferred {
 }
 
 impl ContractEvent for AuctionCreated {
-    fn build_from(event: &ExtractedOwned) -> Result<Self>
+    fn build_from(
+        event: &ExtractedOwned,
+        pool: &PgPool,
+        consumer: &Arc<TransactionConsumer>,
+    ) -> Result<Self>
     where
         Self: Sized,
     {
@@ -571,6 +708,9 @@ impl ContractEvent for AuctionCreated {
         let to_bigdecimal = get_token_processor(tokens, token_to_big_decimal);
 
         Ok(AuctionCreated {
+            pool: pool.clone(),
+            consumer: consumer.clone(),
+
             address: get_address(event),
             created_lt: get_created_lt(event)?,
             created_at: get_created_at(event)?,
@@ -611,7 +751,11 @@ impl EventRecord for AuctionCreated {
 }
 
 impl ContractEvent for AuctionActive {
-    fn build_from(event: &ExtractedOwned) -> Result<Self>
+    fn build_from(
+        event: &ExtractedOwned,
+        pool: &PgPool,
+        consumer: &Arc<TransactionConsumer>,
+    ) -> Result<Self>
     where
         Self: Sized,
     {
@@ -631,6 +775,9 @@ impl ContractEvent for AuctionActive {
         let to_bigdecimal = get_token_processor(tokens, token_to_big_decimal);
 
         Ok(AuctionActive {
+            pool: pool.clone(),
+            consumer: consumer.clone(),
+
             address: get_address(event),
             created_lt: get_created_lt(event)?,
             created_at: get_created_at(event)?,
@@ -670,8 +817,30 @@ impl EventRecord for AuctionActive {
     }
 }
 
+impl AuctionActive {
+    pub async fn upsert_auction(&self) -> Result<()> {
+        let auction = NftAuction {
+            address: self.address.clone(),
+            nft: Some(self.auction_subject.clone()),
+            price_token: Some(self.payment_token_root.clone()),
+            start_price: Some(self._price.clone()),
+            max_bid: Some(self._price.clone()),
+            status: Some(AuctionStatus::Active),
+            created_at: Some(NaiveDateTime::from_timestamp(self.start_time, 0)),
+            finished_at: Some(NaiveDateTime::from_timestamp(self.finish_time, 0)),
+            tx_lt: self.created_lt,
+        };
+
+        actions::upsert_auction(&auction, &self.pool).await
+    }
+}
+
 impl ContractEvent for BidPlaced {
-    fn build_from(event: &ExtractedOwned) -> Result<Self>
+    fn build_from(
+        event: &ExtractedOwned,
+        pool: &PgPool,
+        consumer: &Arc<TransactionConsumer>,
+    ) -> Result<Self>
     where
         Self: Sized,
     {
@@ -695,6 +864,9 @@ impl ContractEvent for BidPlaced {
         let to_bigdecimal = get_token_processor(&tokens, token_to_big_decimal);
 
         Ok(BidPlaced {
+            pool: pool.clone(),
+            consumer: consumer.clone(),
+
             address: get_address(event),
             created_lt: get_created_lt(event)?,
             created_at: get_created_at(event)?,
@@ -727,8 +899,42 @@ impl EventRecord for BidPlaced {
     }
 }
 
+impl BidPlaced {
+    pub async fn upsert_bid(&self) -> Result<()> {
+        let bid = NftAuctionBid {
+            auction: self.address.clone(),
+            buyer: self.buyer.clone(),
+            price: self.value.clone(),
+            declined: false,
+            created_at: NaiveDateTime::from_timestamp(self.created_at, 0),
+        };
+
+        actions::upsert_bid(&bid, &self.pool).await
+    }
+
+    pub async fn upsert_auction(&self) -> Result<()> {
+        let auction = NftAuction {
+            address: self.address.clone(),
+            nft: None,
+            price_token: None,
+            start_price: None,
+            max_bid: Some(self.value.clone()),
+            status: None,
+            created_at: None,
+            finished_at: None,
+            tx_lt: self.created_lt,
+        };
+
+        actions::upsert_auction(&auction, &self.pool).await
+    }
+}
+
 impl ContractEvent for BidDeclined {
-    fn build_from(event: &ExtractedOwned) -> Result<Self>
+    fn build_from(
+        event: &ExtractedOwned,
+        pool: &PgPool,
+        consumer: &Arc<TransactionConsumer>,
+    ) -> Result<Self>
     where
         Self: Sized,
     {
@@ -752,6 +958,9 @@ impl ContractEvent for BidDeclined {
         let to_bigdecimal = get_token_processor(&tokens, token_to_big_decimal);
 
         Ok(BidDeclined {
+            pool: pool.clone(),
+            consumer: consumer.clone(),
+
             address: get_address(event),
             created_lt: get_created_lt(event)?,
             created_at: get_created_at(event)?,
@@ -784,8 +993,42 @@ impl EventRecord for BidDeclined {
     }
 }
 
+impl BidDeclined {
+    pub async fn upsert_bid(&self) -> Result<()> {
+        let bid = NftAuctionBid {
+            auction: self.address.clone(),
+            buyer: self.buyer.clone(),
+            price: self.value.clone(),
+            declined: true,
+            created_at: NaiveDateTime::from_timestamp(self.created_at, 0),
+        };
+
+        actions::upsert_bid(&bid, &self.pool).await
+    }
+
+    pub async fn upsert_auction(&self) -> Result<()> {
+        let auction = NftAuction {
+            address: self.address.clone(),
+            nft: None,
+            price_token: None,
+            start_price: None,
+            max_bid: None,
+            status: None,
+            created_at: None,
+            finished_at: None,
+            tx_lt: self.created_lt,
+        };
+
+        actions::upsert_auction(&auction, &self.pool).await
+    }
+}
+
 impl ContractEvent for AuctionComplete {
-    fn build_from(event: &ExtractedOwned) -> Result<Self>
+    fn build_from(
+        event: &ExtractedOwned,
+        pool: &PgPool,
+        consumer: &Arc<TransactionConsumer>,
+    ) -> Result<Self>
     where
         Self: Sized,
     {
@@ -816,6 +1059,9 @@ impl ContractEvent for AuctionComplete {
         let to_bigdecimal = get_token_processor(&tokens, token_to_big_decimal);
 
         Ok(AuctionComplete {
+            pool: pool.clone(),
+            consumer: consumer.clone(),
+
             address: get_address(event),
             created_lt: get_created_lt(event)?,
             created_at: get_created_at(event)?,
@@ -849,12 +1095,37 @@ impl EventRecord for AuctionComplete {
     }
 }
 
+impl AuctionComplete {
+    pub async fn upsert_auction(&self) -> Result<()> {
+        let auction = NftAuction {
+            address: self.address.clone(),
+            nft: None,
+            price_token: None,
+            start_price: None,
+            max_bid: Some(self.value.clone()),
+            status: Some(AuctionStatus::Completed),
+            created_at: None,
+            finished_at: None,
+            tx_lt: self.created_lt,
+        };
+
+        actions::upsert_auction(&auction, &self.pool).await
+    }
+}
+
 impl ContractEvent for AuctionCancelled {
-    fn build_from(event: &ExtractedOwned) -> Result<Self>
+    fn build_from(
+        event: &ExtractedOwned,
+        pool: &PgPool,
+        consumer: &Arc<TransactionConsumer>,
+    ) -> Result<Self>
     where
         Self: Sized,
     {
         Ok(AuctionCancelled {
+            pool: pool.clone(),
+            consumer: consumer.clone(),
+
             address: get_address(event),
             created_lt: get_created_lt(event)?,
             created_at: get_created_at(event)?,
@@ -884,8 +1155,30 @@ impl EventRecord for AuctionCancelled {
     }
 }
 
+impl AuctionCancelled {
+    pub async fn upsert_auction(&self) -> Result<()> {
+        let auction = NftAuction {
+            address: self.address.clone(),
+            nft: None,
+            price_token: None,
+            start_price: None,
+            max_bid: None,
+            status: Some(AuctionStatus::Cancelled),
+            created_at: None,
+            finished_at: None,
+            tx_lt: self.created_lt,
+        };
+
+        actions::upsert_auction(&auction, &self.pool).await
+    }
+}
+
 impl ContractEvent for DirectBuyDeployed {
-    fn build_from(event: &ExtractedOwned) -> Result<Self>
+    fn build_from(
+        event: &ExtractedOwned,
+        pool: &PgPool,
+        consumer: &Arc<TransactionConsumer>,
+    ) -> Result<Self>
     where
         Self: Sized,
     {
@@ -944,6 +1237,9 @@ impl ContractEvent for DirectBuyDeployed {
         let to_bigdecimal = get_token_processor(&tokens, token_to_big_decimal);
 
         Ok(DirectBuyDeployed {
+            pool: pool.clone(),
+            consumer: consumer.clone(),
+
             address: get_address(event),
             created_lt: get_created_lt(event)?,
             created_at: get_created_at(event)?,
@@ -981,7 +1277,11 @@ impl EventRecord for DirectBuyDeployed {
 }
 
 impl ContractEvent for DirectBuyDeclined {
-    fn build_from(event: &ExtractedOwned) -> Result<Self>
+    fn build_from(
+        event: &ExtractedOwned,
+        pool: &PgPool,
+        consumer: &Arc<TransactionConsumer>,
+    ) -> Result<Self>
     where
         Self: Sized,
     {
@@ -1012,6 +1312,9 @@ impl ContractEvent for DirectBuyDeclined {
         let to_bigdecimal = get_token_processor(&tokens, token_to_big_decimal);
 
         Ok(DirectBuyDeclined {
+            pool: pool.clone(),
+            consumer: consumer.clone(),
+
             address: get_address(event),
             created_lt: get_created_lt(event)?,
             created_at: get_created_at(event)?,
@@ -1046,7 +1349,11 @@ impl EventRecord for DirectBuyDeclined {
 }
 
 impl ContractEvent for DirectBuyOwnershipTransferred {
-    fn build_from(event: &ExtractedOwned) -> Result<Self>
+    fn build_from(
+        event: &ExtractedOwned,
+        pool: &PgPool,
+        consumer: &Arc<TransactionConsumer>,
+    ) -> Result<Self>
     where
         Self: Sized,
     {
@@ -1069,6 +1376,9 @@ impl ContractEvent for DirectBuyOwnershipTransferred {
         let to_address = get_token_processor(&tokens, token_to_addr);
 
         Ok(DirectBuyOwnershipTransferred {
+            pool: pool.clone(),
+            consumer: consumer.clone(),
+
             address: get_address(event),
             created_lt: get_created_lt(event)?,
             created_at: get_created_at(event)?,
@@ -1102,7 +1412,11 @@ impl EventRecord for DirectBuyOwnershipTransferred {
 }
 
 impl ContractEvent for DirectSellDeployed {
-    fn build_from(event: &ExtractedOwned) -> Result<Self>
+    fn build_from(
+        event: &ExtractedOwned,
+        pool: &PgPool,
+        consumer: &Arc<TransactionConsumer>,
+    ) -> Result<Self>
     where
         Self: Sized,
     {
@@ -1161,6 +1475,9 @@ impl ContractEvent for DirectSellDeployed {
         let to_bigdecimal = get_token_processor(&tokens, token_to_big_decimal);
 
         Ok(DirectSellDeployed {
+            pool: pool.clone(),
+            consumer: consumer.clone(),
+
             address: get_address(event),
             created_lt: get_created_lt(event)?,
             created_at: get_created_at(event)?,
@@ -1198,7 +1515,11 @@ impl EventRecord for DirectSellDeployed {
 }
 
 impl ContractEvent for DirectSellDeclined {
-    fn build_from(event: &ExtractedOwned) -> Result<Self>
+    fn build_from(
+        event: &ExtractedOwned,
+        pool: &PgPool,
+        consumer: &Arc<TransactionConsumer>,
+    ) -> Result<Self>
     where
         Self: Sized,
     {
@@ -1221,6 +1542,9 @@ impl ContractEvent for DirectSellDeclined {
         let to_address = get_token_processor(&tokens, token_to_addr);
 
         Ok(DirectSellDeclined {
+            pool: pool.clone(),
+            consumer: consumer.clone(),
+
             address: get_address(event),
             created_lt: get_created_lt(event)?,
             created_at: get_created_at(event)?,
@@ -1254,7 +1578,11 @@ impl EventRecord for DirectSellDeclined {
 }
 
 impl ContractEvent for DirectSellOwnershipTransferred {
-    fn build_from(event: &ExtractedOwned) -> Result<Self>
+    fn build_from(
+        event: &ExtractedOwned,
+        pool: &PgPool,
+        consumer: &Arc<TransactionConsumer>,
+    ) -> Result<Self>
     where
         Self: Sized,
     {
@@ -1277,6 +1605,9 @@ impl ContractEvent for DirectSellOwnershipTransferred {
         let to_address = get_token_processor(&tokens, token_to_addr);
 
         Ok(DirectSellOwnershipTransferred {
+            pool: pool.clone(),
+            consumer: consumer.clone(),
+
             address: get_address(event),
             created_lt: get_created_lt(event)?,
             created_at: get_created_at(event)?,
@@ -1310,7 +1641,11 @@ impl EventRecord for DirectSellOwnershipTransferred {
 }
 
 impl ContractEvent for DirectBuyStateChanged {
-    fn build_from(event: &ExtractedOwned) -> Result<Self>
+    fn build_from(
+        event: &ExtractedOwned,
+        pool: &PgPool,
+        consumer: &Arc<TransactionConsumer>,
+    ) -> Result<Self>
     where
         Self: Sized,
     {
@@ -1347,6 +1682,9 @@ impl ContractEvent for DirectBuyStateChanged {
         let to_i64 = get_token_processor(&tokens, token_to_i64);
 
         Ok(DirectBuyStateChanged {
+            pool: pool.clone(),
+            consumer: consumer.clone(),
+
             address: get_address(event),
             created_lt: get_created_lt(event)?,
             created_at: get_created_at(event)?,
@@ -1392,8 +1730,28 @@ impl EventRecord for DirectBuyStateChanged {
     }
 }
 
+impl DirectBuyStateChanged {
+    pub async fn upsert_direct_buy(&self) -> Result<()> {
+        let direct_buy = NftDirectBuy {
+            address: self.address.clone(),
+            nft: self.nft.clone(),
+            price_token: self.spent_token.clone(),
+            price: self._price.clone(),
+            state: self.to.into(),
+            updated: NaiveDateTime::from_timestamp(self.created_at, 0),
+            tx_lt: self.created_lt,
+        };
+
+        actions::upsert_direct_buy(&direct_buy, &self.pool).await
+    }
+}
+
 impl ContractEvent for DirectSellStateChanged {
-    fn build_from(event: &ExtractedOwned) -> Result<Self>
+    fn build_from(
+        event: &ExtractedOwned,
+        pool: &PgPool,
+        consumer: &Arc<TransactionConsumer>,
+    ) -> Result<Self>
     where
         Self: Sized,
     {
@@ -1430,6 +1788,9 @@ impl ContractEvent for DirectSellStateChanged {
         let to_i64 = get_token_processor(&tokens, token_to_i64);
 
         Ok(DirectSellStateChanged {
+            pool: pool.clone(),
+            consumer: consumer.clone(),
+
             address: get_address(event),
             created_lt: get_created_lt(event)?,
             created_at: get_created_at(event)?,
@@ -1474,8 +1835,28 @@ impl EventRecord for DirectSellStateChanged {
     }
 }
 
+impl DirectSellStateChanged {
+    pub async fn upsert_direct_sell(&self) -> Result<()> {
+        let direct_sell = NftDirectSell {
+            address: self.address.clone(),
+            nft: self.nft.clone(),
+            price_token: self.token.clone(),
+            price: self._price.clone(),
+            state: self.to.into(),
+            updated: NaiveDateTime::from_timestamp(self.created_at, 0),
+            tx_lt: self.created_lt,
+        };
+
+        actions::upsert_direct_sell(&direct_sell, &self.pool).await
+    }
+}
+
 impl ContractEvent for NftOwnerChanged {
-    fn build_from(event: &ExtractedOwned) -> Result<Self>
+    fn build_from(
+        event: &ExtractedOwned,
+        pool: &PgPool,
+        consumer: &Arc<TransactionConsumer>,
+    ) -> Result<Self>
     where
         Self: Sized,
     {
@@ -1498,6 +1879,9 @@ impl ContractEvent for NftOwnerChanged {
         let to_address = get_token_processor(&tokens, token_to_addr);
 
         Ok(NftOwnerChanged {
+            pool: pool.clone(),
+            consumer: consumer.clone(),
+
             address: get_address(event),
             created_lt: get_created_lt(event)?,
             created_at: get_created_at(event)?,
@@ -1530,8 +1914,53 @@ impl EventRecord for NftOwnerChanged {
     }
 }
 
+impl NftOwnerChanged {
+    pub async fn upsert_nft(&self) -> Result<()> {
+        let meta = fetch_metadata(
+            MsgAddressInt::from_str(self.address.0.as_str())?,
+            &self.consumer,
+        )
+        .await;
+
+        let nft_meta = NftMeta {
+            nft: self.address.clone(),
+            meta,
+            updated: chrono::Utc::now().naive_utc(),
+        };
+
+        let nft = Nft {
+            address: self.address.clone(),
+            collection: None,
+            owner: Some(self.new_owner.clone()),
+            manager: None,
+            name: nft_meta
+                .meta
+                .get("name")
+                .cloned()
+                .unwrap_or_default()
+                .to_string(),
+            description: nft_meta
+                .meta
+                .get("description")
+                .cloned()
+                .unwrap_or_default()
+                .to_string(),
+            burned: false,
+            updated: NaiveDateTime::from_timestamp(self.created_at, 0),
+            tx_lt: self.created_lt,
+        };
+
+        actions::upsert_nft(&nft, &self.pool).await?;
+        actions::upsert_nft_meta(&nft_meta, &self.pool).await
+    }
+}
+
 impl ContractEvent for NftManagerChanged {
-    fn build_from(event: &ExtractedOwned) -> Result<Self>
+    fn build_from(
+        event: &ExtractedOwned,
+        pool: &PgPool,
+        consumer: &Arc<TransactionConsumer>,
+    ) -> Result<Self>
     where
         Self: Sized,
     {
@@ -1554,6 +1983,9 @@ impl ContractEvent for NftManagerChanged {
         let to_address = get_token_processor(&tokens, token_to_addr);
 
         Ok(NftManagerChanged {
+            pool: pool.clone(),
+            consumer: consumer.clone(),
+
             address: get_address(event),
             created_lt: get_created_lt(event)?,
             created_at: get_created_at(event)?,
@@ -1586,8 +2018,53 @@ impl EventRecord for NftManagerChanged {
     }
 }
 
+impl NftManagerChanged {
+    pub async fn upsert_nft(&self) -> Result<()> {
+        let meta = fetch_metadata(
+            MsgAddressInt::from_str(self.address.0.as_str())?,
+            &self.consumer,
+        )
+        .await;
+
+        let nft_meta = NftMeta {
+            nft: self.address.clone(),
+            meta,
+            updated: chrono::Utc::now().naive_utc(),
+        };
+
+        let nft = Nft {
+            address: self.address.clone(),
+            collection: None,
+            owner: None,
+            manager: Some(self.new_manager.clone()),
+            name: nft_meta
+                .meta
+                .get("name")
+                .cloned()
+                .unwrap_or_default()
+                .to_string(),
+            description: nft_meta
+                .meta
+                .get("description")
+                .cloned()
+                .unwrap_or_default()
+                .to_string(),
+            burned: false,
+            updated: NaiveDateTime::from_timestamp(self.created_at, 0),
+            tx_lt: self.created_lt,
+        };
+
+        actions::upsert_nft(&nft, &self.pool).await?;
+        actions::upsert_nft_meta(&nft_meta, &self.pool).await
+    }
+}
+
 impl ContractEvent for CollectionOwnershipTransferred {
-    fn build_from(event: &ExtractedOwned) -> Result<Self>
+    fn build_from(
+        event: &ExtractedOwned,
+        pool: &PgPool,
+        consumer: &Arc<TransactionConsumer>,
+    ) -> Result<Self>
     where
         Self: Sized,
     {
@@ -1610,6 +2087,9 @@ impl ContractEvent for CollectionOwnershipTransferred {
         let to_address = get_token_processor(&tokens, token_to_addr);
 
         Ok(CollectionOwnershipTransferred {
+            pool: pool.clone(),
+            consumer: consumer.clone(),
+
             address: get_address(event),
             created_lt: get_created_lt(event)?,
             created_at: get_created_at(event)?,
@@ -1642,8 +2122,46 @@ impl EventRecord for CollectionOwnershipTransferred {
     }
 }
 
+impl CollectionOwnershipTransferred {
+    pub async fn upsert_collection(&self) -> Result<()> {
+        let collection_owner = get_collection_owner(
+            MsgAddressInt::from_str(self.address.0.as_str())?,
+            &self.consumer,
+        )
+        .await;
+
+        let collection_meta = fetch_metadata(
+            MsgAddressInt::from_str(self.address.0.as_str())?,
+            &self.consumer,
+        )
+        .await;
+
+        let collection = NftCollection {
+            address: self.address.clone(),
+            owner: collection_owner,
+            name: collection_meta
+                .get("name")
+                .cloned()
+                .unwrap_or_default()
+                .to_string(),
+            description: collection_meta
+                .get("description")
+                .cloned()
+                .unwrap_or_default()
+                .to_string(),
+            updated: chrono::Utc::now().naive_utc(),
+        };
+
+        actions::upsert_collection(&collection, &self.pool).await
+    }
+}
+
 impl ContractEvent for NftCreated {
-    fn build_from(event: &ExtractedOwned) -> Result<Self>
+    fn build_from(
+        event: &ExtractedOwned,
+        pool: &PgPool,
+        consumer: &Arc<TransactionConsumer>,
+    ) -> Result<Self>
     where
         Self: Sized,
     {
@@ -1694,6 +2212,9 @@ impl ContractEvent for NftCreated {
         let to_bigdecimal = get_token_processor(&tokens, token_to_big_decimal);
 
         Ok(NftCreated {
+            pool: pool.clone(),
+            consumer: consumer.clone(),
+
             address: get_address(event),
             created_lt: get_created_lt(event)?,
             created_at: get_created_at(event)?,
@@ -1729,8 +2250,85 @@ impl EventRecord for NftCreated {
     }
 }
 
+impl NftCreated {
+    pub async fn upsert_nft(&self) -> Result<()> {
+        let meta = fetch_metadata(
+            MsgAddressInt::from_str(self.nft.0.as_str())?,
+            &self.consumer,
+        )
+        .await;
+
+        let nft_meta = NftMeta {
+            nft: self.address.clone(),
+            meta,
+            updated: chrono::Utc::now().naive_utc(),
+        };
+
+        let nft = Nft {
+            address: self.nft.clone(),
+            collection: Some(self.address.clone()),
+            owner: Some(self.owner.clone()),
+            manager: Some(self.manager.clone()),
+            name: nft_meta
+                .meta
+                .get("name")
+                .cloned()
+                .unwrap_or_default()
+                .to_string(),
+            description: nft_meta
+                .meta
+                .get("description")
+                .cloned()
+                .unwrap_or_default()
+                .to_string(),
+            burned: false,
+            updated: NaiveDateTime::from_timestamp(self.created_at, 0),
+            tx_lt: self.created_lt,
+        };
+
+        actions::upsert_nft(&nft, &self.pool).await?;
+        actions::upsert_nft_meta(&nft_meta, &self.pool).await
+    }
+
+    pub async fn upsert_collection(&self) -> Result<()> {
+        let collection_owner = get_collection_owner(
+            MsgAddressInt::from_str(self.address.0.as_str())?,
+            &self.consumer,
+        )
+        .await;
+
+        let collection_meta = fetch_metadata(
+            MsgAddressInt::from_str(self.address.0.as_str())?,
+            &self.consumer,
+        )
+        .await;
+
+        let collection = NftCollection {
+            address: self.address.clone(),
+            owner: collection_owner,
+            name: collection_meta
+                .get("name")
+                .cloned()
+                .unwrap_or_default()
+                .to_string(),
+            description: collection_meta
+                .get("description")
+                .cloned()
+                .unwrap_or_default()
+                .to_string(),
+            updated: chrono::Utc::now().naive_utc(),
+        };
+
+        actions::upsert_collection(&collection, &self.pool).await
+    }
+}
+
 impl ContractEvent for NftBurned {
-    fn build_from(event: &ExtractedOwned) -> Result<Self>
+    fn build_from(
+        event: &ExtractedOwned,
+        pool: &PgPool,
+        consumer: &Arc<TransactionConsumer>,
+    ) -> Result<Self>
     where
         Self: Sized,
     {
@@ -1768,6 +2366,9 @@ impl ContractEvent for NftBurned {
         let to_bigdecimal = get_token_processor(&tokens, token_to_big_decimal);
 
         Ok(NftBurned {
+            pool: pool.clone(),
+            consumer: consumer.clone(),
+
             address: get_address(event),
             created_lt: get_created_lt(event)?,
             created_at: get_created_at(event)?,
@@ -1799,5 +2400,117 @@ impl EventRecord for NftBurned {
 
     fn get_event_type(&self) -> EventType {
         EventType::NftBurned
+    }
+}
+
+impl NftBurned {
+    pub async fn upsert_nft(&self) -> Result<()> {
+        let meta = fetch_metadata(
+            MsgAddressInt::from_str(self.nft.0.as_str())?,
+            &self.consumer,
+        )
+        .await;
+
+        let nft_meta = NftMeta {
+            nft: self.address.clone(),
+            meta,
+            updated: chrono::Utc::now().naive_utc(),
+        };
+
+        let nft = Nft {
+            address: self.nft.clone(),
+            collection: Some(self.address.clone()),
+            owner: Some(self.owner.clone()),
+            manager: Some(self.manager.clone()),
+            name: nft_meta
+                .meta
+                .get("name")
+                .cloned()
+                .unwrap_or_default()
+                .to_string(),
+            description: nft_meta
+                .meta
+                .get("description")
+                .cloned()
+                .unwrap_or_default()
+                .to_string(),
+            burned: true,
+            updated: NaiveDateTime::from_timestamp(self.created_at, 0),
+            tx_lt: self.created_lt,
+        };
+
+        actions::upsert_nft(&nft, &self.pool).await?;
+        actions::upsert_nft_meta(&nft_meta, &self.pool).await
+    }
+
+    pub async fn upsert_collection(&self) -> Result<()> {
+        let collection_owner = get_collection_owner(
+            MsgAddressInt::from_str(self.address.0.as_str())?,
+            &self.consumer,
+        )
+        .await;
+
+        let collection_meta = fetch_metadata(
+            MsgAddressInt::from_str(self.address.0.as_str())?,
+            &self.consumer,
+        )
+        .await;
+
+        let collection = NftCollection {
+            address: self.address.clone(),
+            owner: collection_owner,
+            name: collection_meta
+                .get("name")
+                .cloned()
+                .unwrap_or_default()
+                .to_string(),
+            description: collection_meta
+                .get("description")
+                .cloned()
+                .unwrap_or_default()
+                .to_string(),
+            updated: chrono::Utc::now().naive_utc(),
+        };
+
+        actions::upsert_collection(&collection, &self.pool).await
+    }
+}
+
+async fn fetch_metadata(
+    address: MsgAddressInt,
+    consumer: &Arc<TransactionConsumer>,
+) -> serde_json::Value {
+    match rpc::retrier::Retrier::new(|| Box::pin(rpc::get_json(address.clone(), consumer.clone())))
+        .attempts(3)
+        .backoff(10)
+        .factor(2)
+        .run()
+        .await
+    {
+        Ok(meta) => meta,
+
+        Err(e) => {
+            log::error!("Error fetching metadata for {}: {:#?}", address, e);
+            serde_json::Value::default()
+        }
+    }
+}
+
+async fn get_collection_owner(
+    collection: MsgAddressInt,
+    consumer: &Arc<TransactionConsumer>,
+) -> storage::types::Address {
+    match rpc::retrier::Retrier::new(|| Box::pin(rpc::owner(collection.clone(), consumer.clone())))
+        .attempts(3)
+        .backoff(10)
+        .factor(2)
+        .run()
+        .await
+    {
+        Ok(owner) => owner.into(),
+        Err(e) => {
+            log::error!("Can't get {} collection owner: {:#?}", collection, e);
+            String::default().into()
+        }
     }
 }

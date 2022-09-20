@@ -82,6 +82,75 @@ create table nft_collection(
     owner t_address not null,
     name text not null,
     description text not null,
+    updated timestamp not null
+);
+
+-- ----------------------------------
+
+create type auction_status as enum (
+    'active',
+    'cancelled',
+    'completed'
+);
+
+create table nft_auction(
+    address t_address,
+    nft t_address,
+    price_token t_address,
+    start_price numeric(40),
+    max_bid numeric(40),
+    status auction_status,
+    created_at timestamp,
+    finished_at timestamp,
+    tx_lt bigint not null,
+
+    constraint nft_auction_pk primary key (address)
+);
+
+create table nft_auction_bid(
+    auction t_address not null,
+    buyer t_address not null,
+    price numeric(40) not null,
+    declined boolean default false,
+    created_at timestamp not null,
+
+    constraint nft_auction_bid_pk primary key (auction, buyer, price)
+);
+
+create type direct_sell_state as enum (
+    'create',
+    'await_nft',
+    'active',
+    'filled',
+    'cancelled',
+    'expired'
+);
+
+create table nft_direct_sell(
+    address t_address primary key,
+    nft t_address not null,
+    price_token t_address not null,
+    price numeric(40) not null,
+    state direct_sell_state not null,
+    updated timestamp not null,
+    tx_lt bigint not null
+);
+
+create type direct_buy_state as enum (
+    'create',
+    'await_tokens',
+    'active',
+    'filled',
+    'cancelled',
+    'expired'
+);
+
+create table nft_direct_buy(
+    address t_address primary key,
+    nft t_address not null,
+    price_token t_address not null,
+    price numeric(40) not null,
+    state direct_buy_state not null,
     updated timestamp not null,
     tx_lt bigint not null
 );
