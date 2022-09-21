@@ -3,7 +3,8 @@ use warp::http::StatusCode;
 use storage::api_service::ApiService;
 use warp::Filter;
 use storage::types::Address;
-use serde::{Serialize, Deserialize};
+use crate::model::{Collection, Contract};
+use std::ops::Sub;
 
 
 /// GET /collection/{address}/details
@@ -16,8 +17,29 @@ pub fn get_collection(
         .and_then(get_collection_handler)
 }
 
-pub async fn get_collection_handler(owner: Address, _db: ApiService) -> Result<impl warp::Reply, Infallible> {
-    Ok(StatusCode::OK)
+pub async fn get_collection_handler(address: Address, db: ApiService) -> Result<Box<dyn warp::Reply>, Infallible> {
+    match db.get_collection((&address).into()).await {
+        Err(e) => Ok(Box::from(warp::reply::with_status(e.to_string(), StatusCode::INTERNAL_SERVER_ERROR))),
+        Ok(None) => Ok(Box::from(warp::reply::with_status(String::default(), StatusCode::BAD_REQUEST))),
+        Ok(Some(col)) => {
+            let ret = Collection {
+                contract: Contract { 
+                    address: Address::from(col.address),
+                    name: Some(col.name),
+                    description: Some(col.description),
+                    owner: Some(Address::from(col.owner)),
+                },
+                verified: Some(col.verified),
+                created_at: col.created.sub(time::macros::datetime!(1970-01-01 0:00)).whole_seconds() as usize,
+                logo: col.logo,
+                wallpaper: col.wallpaper,
+                owners_count: col.owners_count.unwrap_or_default() as usize,
+                total_price: None,
+                lowest_price: None,
+            };
+            Ok(Box::from(warp::reply::with_status(warp::reply::json(&ret), StatusCode::OK)))
+        }
+    }
 }
 
 /// GET /collections/by-owner/{owner}
@@ -30,6 +52,26 @@ pub fn get_collections_by_owner(
         .and_then(get_collections_by_owner_handler)
 }
 
-pub async fn get_collections_by_owner_handler(owner: Address, _db: ApiService) -> Result<impl warp::Reply, Infallible> {
-    Ok(StatusCode::OK)
+pub async fn get_collections_by_owner_handler(owner: Address, db: ApiService) -> Result<Box<dyn warp::Reply>, Infallible> {
+    match db.list_collections_by_owner((&owner).into()).await {
+        Err(e) => Ok(Box::from(warp::reply::with_status(e.to_string(), StatusCode::INTERNAL_SERVER_ERROR))),
+        Ok(mut list) => {
+            let ret: Vec<Collection> = list.drain(..).map(|col| Collection {
+                contract: Contract { 
+                    address: Address::from(col.address),
+                    name: Some(col.name),
+                    description: Some(col.description),
+                    owner: Some(Address::from(col.owner)),
+                },
+                verified: Some(col.verified),
+                created_at: col.created.sub(time::macros::datetime!(1970-01-01 0:00)).whole_seconds() as usize,
+                logo: col.logo,
+                wallpaper: col.wallpaper,
+                owners_count: col.owners_count.unwrap_or_default() as usize,
+                total_price: None,
+                lowest_price: None,
+            }).collect();
+            Ok(Box::from(warp::reply::with_status(warp::reply::json(&ret), StatusCode::OK)))
+        }
+    }
 }

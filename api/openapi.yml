@@ -21,11 +21,9 @@ components:
         priceToken:
           $ref: '#/components/schemas/address'
         price:
-          type: integer
-          format: int64
+          type: string
         usdPrice:
-          type: number
-          format: float64
+          type: string
       required:
         - price
         - priceToken
@@ -142,6 +140,7 @@ components:
       required:
         - address
         - name
+        - owner
 
     nft:
       allOf:
@@ -169,9 +168,8 @@ components:
             $ref: '#/components/schemas/address'    
         required:
           - image
-          - owner
           - collection
-          - traits
+          - attributes
 
     collection:
       allOf:
