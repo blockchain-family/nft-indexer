@@ -8,11 +8,11 @@ use std::sync::Arc;
 use storage::{actions, traits::*};
 use transaction_consumer::{StreamFrom, TransactionConsumer};
 
-// TODO: check for abi updates
-const AUCTION_ROOT_TIP3: &str = "57254b68950120413f38d14ef4944772d5a729c3c3d352fecc892d67280ac180";
-const FACTORY_DIRECT_BUY: &str = "fd44c88376033bed4f686711c7dadc0f25b6fa1b1d9193d2a6041112ae98cbd2";
+// TODO: move to config
+const AUCTION_ROOT_TIP3: &str = "0799e562ed3a26b82c2533a6f7a6e12b276084ad4d9ad3f2b3ec2a125eb7d57c";
+const FACTORY_DIRECT_BUY: &str = "63e293bcc8f1f2f311d2334e19ea9ad3633e32c3aa47dd438af7f2a8e0d92a12";
 const FACTORY_DIRECT_SELL: &str =
-    "3eec916163fd1826f085c291777d1d8316fab7eaa70990dfd0c9254c1450f2df";
+    "7574093078e57213d541ee0f7f6719f319b70228345bc2edbab2d0df1496bdf3";
 
 // TODO: async tx processing
 
@@ -279,8 +279,7 @@ async fn handle_factory_direct_sell(
             .await?
     {
         if record.address == FACTORY_DIRECT_SELL.into() {
-            if let Err(e) =
-                actions::add_whitelist_address(&record._direct_sell_address, &pool).await
+            if let Err(e) = actions::add_whitelist_address(&record.direct_sell_address, &pool).await
             {
                 log::error!("Failed adding address in whitelist: {:#?}", e);
             }

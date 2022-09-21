@@ -273,11 +273,11 @@ pub struct DirectSellDeployed {
     #[serde(skip_serializing)]
     pub created_at: i64,
 
-    pub _direct_sell_address: Address,
+    pub direct_sell_address: Address,
     pub sender: Address,
     pub payment_token: Address,
     pub nft: Address,
-    pub _nonce: BigDecimal,
+    pub nonce: BigDecimal,
     pub price: BigDecimal,
 }
 
@@ -1420,11 +1420,11 @@ impl ContractEvent for DirectSellDeployed {
     where
         Self: Sized,
     {
-        let _direct_sell_address_token = event
+        let direct_sell_address_token = event
             .tokens
             .iter()
-            .find(|t| t.name == "_directSellAddress")
-            .ok_or_else(|| anyhow!("Couldn't find _directSellAddress token"))?
+            .find(|t| t.name == "directSellAddress")
+            .ok_or_else(|| anyhow!("Couldn't find directSellAddress token"))?
             .clone();
 
         let sender_token = event
@@ -1448,11 +1448,11 @@ impl ContractEvent for DirectSellDeployed {
             .ok_or_else(|| anyhow!("Couldn't find nft token"))?
             .clone();
 
-        let _nonce_token = event
+        let nonce_token = event
             .tokens
             .iter()
-            .find(|t| t.name == "_nonce")
-            .ok_or_else(|| anyhow!("Couldn't find _nonce token"))?
+            .find(|t| t.name == "nonce")
+            .ok_or_else(|| anyhow!("Couldn't find nonce token"))?
             .clone();
 
         let price_token = event
@@ -1463,11 +1463,11 @@ impl ContractEvent for DirectSellDeployed {
             .clone();
 
         let tokens = vec![
-            _direct_sell_address_token,
+            direct_sell_address_token,
             sender_token,
             payment_token_token,
             nft_token,
-            _nonce_token,
+            nonce_token,
             price_token,
         ];
 
@@ -1482,11 +1482,11 @@ impl ContractEvent for DirectSellDeployed {
             created_lt: get_created_lt(event)?,
             created_at: get_created_at(event)?,
 
-            _direct_sell_address: to_address("_directSellAddress")?,
+            direct_sell_address: to_address("_directSellAddress")?,
             sender: to_address("sender")?,
             payment_token: to_address("paymentToken")?,
             nft: to_address("nft")?,
-            _nonce: to_bigdecimal("_nonce")?,
+            nonce: to_bigdecimal("_nonce")?,
             price: to_bigdecimal("price")?,
         })
     }
