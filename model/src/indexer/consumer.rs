@@ -17,8 +17,7 @@ const FACTORY_DIRECT_SELL: &str =
 // TODO: async tx processing
 
 pub async fn serve(pool: PgPool, consumer: Arc<TransactionConsumer>) -> Result<()> {
-    // TODO: StreamFrom::Stored
-    let stream = consumer.stream_transactions(StreamFrom::Beginning).await?;
+    let stream = consumer.stream_transactions(StreamFrom::Stored).await?;
     let mut fs = futures::stream::StreamExt::fuse(stream);
 
     let parsers_and_handlers = initialize_parsers_and_handlers()?;
