@@ -1,0 +1,40 @@
+- name: install rust and dependencies
+  hosts: all
+  become: yes
+  become_user: root
+  roles:
+  - role: rustup
+    become: yes
+    become_user: indexer-api
+  - role: librdkafka
+    become: yes
+    become_user: root
+    vars:
+      librdkafka_cleanup_if_exists: true
+      librdkafka_version: v1.4.0
+      librdkafka_checksum: sha256:ae27ea3f3d0d32d29004e7f709efbba2666c5383a107cc45b3a1949486b2eb84
+      librdkafka_build_opts: --install-deps
+
+  pre_tasks:
+  - name: create group
+    group:
+      name: indexer-api
+      state: present
+
+  - name: create user
+    user:
+      name: indexer-api
+      groups: indexer-api
+      shell: /sbin/nologin
+      append: yes
+      state: present
+      create_home: yes
+
+  - name: Copy systemd service file to server
+    copy:
+      src: indexer-api.service
+      dest: /etc/systemd/system
+      owner: root
+      group: root
+
+

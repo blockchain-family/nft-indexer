@@ -1,0 +1,4 @@
+
+[api_servers]
+34.78.85.7 ansible_connection=ssh
+

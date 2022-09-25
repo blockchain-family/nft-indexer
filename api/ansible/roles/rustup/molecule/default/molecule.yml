@@ -1,0 +1,25 @@
+---
+dependency:
+  name: galaxy
+driver:
+  name: lxd
+lint: |
+    yamllint .
+    ansible-lint
+    flake8
+platforms:
+  - name: "rustup-${MLDISTRO:-focal}"
+    alias: "${MLIMG:-ubuntu/focal}"
+provisioner:
+  name: ansible
+  playbooks:
+    create: ../resources/playbooks/create.yml
+    converge: ../resources/playbooks/converge.yml
+    destroy: ../resources/playbooks/destroy.yml
+verifier:
+  name: testinfra
+  directory: ../shared/tests
+  env:
+    MOLECULE_SCENARIO: "default"
+  options:
+    verbose: true
