@@ -1,3 +1,4 @@
+
 create type event_type as enum (
     'auction_deployed',
     'auction_created',
@@ -37,6 +38,7 @@ create type event_category as enum (
 );
 
 create domain t_address as varchar(67);
+create domain t_uri as varchar(200);
 
 create table events_whitelist(
 	address t_address primary key
@@ -47,6 +49,8 @@ create table nft_events(
     event_cat event_category not null,
 	event_type event_type not null,
 	address t_address not null,
+    nft t_address,
+    collection t_address,
     created_lt bigint not null,
     created_at bigint not null,
 	args jsonb,
@@ -60,13 +64,13 @@ create index ix_nft_events_type on nft_events using btree (event_type);
 create index ix_nft_events_cat on nft_events using btree (event_cat);
 
 create table nft(
-    address t_address primary key,
+    address t_address not null primary key,
     collection t_address,
     owner t_address,
     manager t_address,
     name text not null,
     description text not null,
-    burned boolean default false,
+    burned boolean not null default false,
     updated timestamp not null,
     tx_lt bigint not null
 );
@@ -82,8 +86,25 @@ create table nft_collection(
     owner t_address not null,
     name text not null,
     description text not null,
-    updated timestamp not null
+    created timestamp not null,
+    updated timestamp not null,
+    wallpaper t_uri,
+    logo t_uri,
+    total_price numeric(40),
+    max_price numeric(40),
+    owners_count int,
+    verified boolean not null default false
 );
+
+create view nft_details as 
+    SELECT n.*,
+        c.owner as collection_owner,
+        c.name as collection_name,
+        c.description as collection_description,
+        m.meta as meta
+    FROM nft n 
+    LEFT JOIN nft_collection c ON n.collection = c.address
+    LEFT JOIN nft_metadata m ON m.nft = n.address;
 
 -- ----------------------------------
 
@@ -117,7 +138,7 @@ create table nft_auction_bid(
     constraint nft_auction_bid_pk primary key (auction, buyer, price)
 );
 
-create type direct_sell_state as enum (
+create type direct_sell_state as enum(
     'create',
     'await_nft',
     'active',
@@ -136,7 +157,7 @@ create table nft_direct_sell(
     tx_lt bigint not null
 );
 
-create type direct_buy_state as enum (
+create type direct_buy_state as enum(
     'create',
     'await_tokens',
     'active',

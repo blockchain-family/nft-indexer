@@ -1,22 +1,19 @@
-use chrono::{DateTime, Utc};
-use crate::types::Address;
 use serde::{Serialize, Deserialize};
 
-#[derive(Debug, Clone)]
+
+#[derive(Debug, Clone, sqlx::FromRow)]
 pub struct Event {
     pub id: i64,
-    pub address: Address,
-    pub nft: Option<Address>,
-    pub collection: Option<Address>,
+    pub address: String,
     pub event_cat: EventCategory,
     pub event_type: EventType,
-    pub created_at: DateTime<Utc>,
-    pub created_lt: DateTime<Utc>,
-    pub checked: bool,
-    pub args: serde_json::Value,
+    pub created_at: i64,
+    pub created_lt: i64,
+    pub args: Option<serde_json::Value>,
 }
 
 #[derive(sqlx::Type, Debug, Clone, Serialize, Deserialize)]
+#[sqlx(type_name = "event_category")] 
 pub enum EventCategory {
     #[sqlx(rename = "auction")]
     Auction,
@@ -27,24 +24,25 @@ pub enum EventCategory {
 }
 
 #[derive(sqlx::Type, Debug, Clone, Serialize, Deserialize)]
+#[sqlx(type_name = "event_type", rename_all = "snake_case")]
 pub enum EventType {
-    auction_deployed,
-    auction_created,
-    auction_ownership_transferred,
-    auction_active,
-    auction_declined,
-    auction_bid_placed,
-    auction_bid_declined,
-    auction_cancelled,
-    auction_complete,
+    AuctionDeployed,
+    AuctionCreated,
+    AuctionOwnershipTransferred,
+    AuctionActive,
+    AuctionDeclined,
+    AuctionBidPlaced,
+    AuctionBidDeclined,
+    AuctionCancelled,
+    AuctionComplete,
 
-    direct_buy_deployed,
-    direct_buy_declined,
-    direct_buy_ownership_transferred,
-    direct_buy_state_changed,
+    DirectBuyDeployed,
+    DirectBuyDeclined,
+    DirectBuyOwnershipTransferred,
+    DirectBuyStateChanged,
 
-    direct_sell_deployed,
-    direct_sell_declined,
-    direct_sell_ownership_transferred,
-    direct_sell_state_changed,
+    DirectSellDeployed,
+    DirectSellDeclined,
+    DirectSellOwnershipTransferred,
+    DirectSellStateChanged,
 }
