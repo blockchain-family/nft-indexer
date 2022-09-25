@@ -111,7 +111,7 @@ create view nft_details as
 create type auction_status as enum (
     'active',
     'cancelled',
-    'declined'
+    'completed'
 );
 
 create table nft_auction(
@@ -123,7 +123,7 @@ create table nft_auction(
     status auction_status,
     created_at timestamp,
     finished_at timestamp,
-    tx_lt bigint,
+    tx_lt bigint not null,
 
     constraint nft_auction_pk primary key (address)
 );
@@ -151,7 +151,7 @@ create table nft_direct_sell(
     address t_address primary key,
     nft t_address not null,
     price_token t_address not null,
-    price bigint not null,
+    price numeric(40) not null,
     state direct_sell_state not null,
     updated timestamp not null,
     tx_lt bigint not null
@@ -170,7 +170,7 @@ create table nft_direct_buy(
     address t_address primary key,
     nft t_address not null,
     price_token t_address not null,
-    price bigint not null,
+    price numeric(40) not null,
     state direct_buy_state not null,
     updated timestamp not null,
     tx_lt bigint not null

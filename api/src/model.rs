@@ -3,7 +3,7 @@ use warp::http::StatusCode;
 use storage::api_service::ApiService;
 use warp::Filter;
 use storage::types::Address;
-use serde::{Serialize, Deserialize};
+use serde::{Serialize};
 
 #[derive(Debug, Clone, Serialize)]
 pub struct Contract {

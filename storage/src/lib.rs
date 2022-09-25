@@ -1,7 +1,5 @@
 pub mod actions;
-pub mod record_builder;
-pub mod records;
-pub mod requests;
+pub mod traits;
 pub mod types;
 pub mod tables;
 pub mod api_service;

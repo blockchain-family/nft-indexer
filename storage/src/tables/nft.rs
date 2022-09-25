@@ -1,4 +1,4 @@
-use time::PrimitiveDateTime;
+use chrono::NaiveDateTime;
 use sqlx::types::BigDecimal;
 
 pub type Address = String;
@@ -12,14 +12,14 @@ pub struct NFT {
     pub name: String,
     pub burned: bool,
     pub description: String,
-    pub updated: PrimitiveDateTime,
+    pub updated: NaiveDateTime,
     pub tx_lt: i64,
 }
 
 #[derive(Debug, Clone, sqlx::FromRow)]
 pub struct NFTMetadata {
     pub nft: Address,
-    pub updated: PrimitiveDateTime,
+    pub updated: NaiveDateTime,
     pub meta: serde_json::Value,
 }
 
@@ -29,8 +29,8 @@ pub struct NFTCollection {
     pub owner: Address,
     pub name: String,
     pub description: String,
-    pub created: PrimitiveDateTime,
-    pub updated: PrimitiveDateTime,
+    pub created: NaiveDateTime,
+    pub updated: NaiveDateTime,
     pub verified: bool,
     pub wallpaper: Option<String>,
     pub logo: Option<String>,
@@ -52,7 +52,7 @@ pub struct NFTDetails {
     pub name: Option<String>,
     pub burned: Option<bool>,
     pub description: Option<String>,
-    pub updated: Option<PrimitiveDateTime>,
+    pub updated: Option<NaiveDateTime>,
     pub tx_lt: Option<i64>,
 }
 
@@ -61,8 +61,8 @@ pub struct Auction {
     pub address: Address,
     pub owner: Address,
     pub nft: Address,
-    pub created: PrimitiveDateTime,
-    pub finished_at: PrimitiveDateTime,
+    pub created: NaiveDateTime,
+    pub finished_at: NaiveDateTime,
     pub price_token: Address,
     pub start_price: i64,
     pub max_bid: Option<BigDecimal>,
@@ -73,7 +73,7 @@ pub struct AuctionBid {
     pub auction: Address,
     pub nft: Address,
     pub owner: Address,
-    pub created: PrimitiveDateTime,
+    pub created: NaiveDateTime,
     pub price_token: Address,
     pub price: BigDecimal,
 }
@@ -83,8 +83,8 @@ pub struct DirectBuy {
     pub address: Address,
     pub owner: Address,
     pub nft: Address,
-    pub created: PrimitiveDateTime,
-    pub expired_at: Option<PrimitiveDateTime>,
+    pub created: NaiveDateTime,
+    pub expired_at: Option<NaiveDateTime>,
     pub price_token: Address,
     pub price: BigDecimal,
 }
@@ -94,7 +94,7 @@ pub struct DirectSale {
     pub address: Address,
     pub owner: Address,
     pub nft: Address,
-    pub created: PrimitiveDateTime,
+    pub created: NaiveDateTime,
     pub price_token: Address,
     pub price: BigDecimal,
 }
