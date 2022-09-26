@@ -1,9 +1,9 @@
 pub mod actions;
-pub mod traits;
-pub mod types;
-pub mod tables;
 pub mod api_service;
 pub mod cfg;
+pub mod tables;
+pub mod traits;
+pub mod types;
 
 use anyhow::Result;
 use log::LevelFilter;

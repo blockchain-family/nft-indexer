@@ -8,16 +8,17 @@ use std::sync::Arc;
 use storage::{actions, traits::*};
 use transaction_consumer::{StreamFrom, TransactionConsumer};
 
-// TODO: move to config
-const AUCTION_ROOT_TIP3: &str = "0799e562ed3a26b82c2533a6f7a6e12b276084ad4d9ad3f2b3ec2a125eb7d57c";
-const FACTORY_DIRECT_BUY: &str = "63e293bcc8f1f2f311d2334e19ea9ad3633e32c3aa47dd438af7f2a8e0d92a12";
+const AUCTION_ROOT_TIP3: &str =
+    "0:0799e562ed3a26b82c2533a6f7a6e12b276084ad4d9ad3f2b3ec2a125eb7d57c";
+const FACTORY_DIRECT_BUY: &str =
+    "0:63e293bcc8f1f2f311d2334e19ea9ad3633e32c3aa47dd438af7f2a8e0d92a12";
 const FACTORY_DIRECT_SELL: &str =
-    "7574093078e57213d541ee0f7f6719f319b70228345bc2edbab2d0df1496bdf3";
+    "0:7574093078e57213d541ee0f7f6719f319b70228345bc2edbab2d0df1496bdf3";
 
 // TODO: async tx processing
 
 pub async fn serve(pool: PgPool, consumer: Arc<TransactionConsumer>) -> Result<()> {
-    let stream = consumer.stream_transactions(StreamFrom::Stored).await?;
+    let stream = consumer.stream_transactions(StreamFrom::Beginning).await?;
     let mut fs = futures::stream::StreamExt::fuse(stream);
 
     let parsers_and_handlers = initialize_parsers_and_handlers()?;
@@ -176,6 +177,7 @@ async fn handle_auction_tip3(
         handle_event::<AuctionActive>("AuctionActive", &extracted, &pool, &consumer).await?
     {
         record.upsert_auction().await?;
+        record.upsert_collection().await?;
     }
 
     if let Some(record) =
@@ -183,6 +185,7 @@ async fn handle_auction_tip3(
     {
         record.upsert_bid().await?;
         record.upsert_auction().await?;
+        record.upsert_collection().await?;
     }
 
     if let Some(record) =
@@ -190,18 +193,21 @@ async fn handle_auction_tip3(
     {
         record.upsert_bid().await?;
         record.upsert_auction().await?;
+        record.upsert_collection().await?;
     }
 
     if let Some(record) =
         handle_event::<AuctionComplete>("AuctionComplete", &extracted, &pool, &consumer).await?
     {
         record.upsert_auction().await?;
+        record.upsert_collection().await?;
     }
 
     if let Some(record) =
         handle_event::<AuctionCancelled>("AuctionCancelled", &extracted, &pool, &consumer).await?
     {
         record.upsert_auction().await?;
+        record.upsert_collection().await?;
     }
 
     Ok(())
@@ -236,6 +242,7 @@ async fn handle_direct_sell(
     .await?
     {
         record.upsert_direct_sell().await?;
+        record.upsert_collection().await?;
     }
 
     Ok(())

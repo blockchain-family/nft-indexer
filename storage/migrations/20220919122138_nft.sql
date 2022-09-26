@@ -90,8 +90,8 @@ create table nft_collection(
     updated timestamp not null,
     wallpaper t_uri,
     logo t_uri,
-    total_price numeric(40),
-    max_price numeric(40),
+    total_price numeric(50, 12),
+    max_price numeric(50, 12),
     owners_count int,
     verified boolean not null default false
 );
@@ -105,8 +105,6 @@ create view nft_details as
     FROM nft n 
     LEFT JOIN nft_collection c ON n.collection = c.address
     LEFT JOIN nft_metadata m ON m.nft = n.address;
-
--- ----------------------------------
 
 create type auction_status as enum (
     'active',

@@ -9,51 +9,6 @@ use ton_abi::{
 };
 use ton_block::CommonMsgInfo;
 
-// pub async fn build_nft_data(
-//     nft: MsgAddressInt,
-//     consumer: Arc<TransactionConsumer>,
-// ) -> Result<(NftCollection, Nft)> {
-//     let nft_info = rpc::get_info(&nft, consumer.clone()).await?;
-
-//     let address = nft.to_string().into();
-//     let collection = nft_info.collection.to_string().into();
-//     let owner = nft_info.owner.to_string().into();
-//     let manager = nft_info.manager.to_string().into();
-//     let data = rpc::get_json(&nft, consumer.clone()).await?;
-//     let name = data["name"].to_string();
-//     let description = data["description"].to_string();
-//     let updated = chrono::offset::Utc::now().naive_utc();
-
-//     let nft = Nft {
-//         address,
-//         collection,
-//         owner,
-//         manager,
-//         name,
-//         description,
-//         data,
-//         updated,
-//     };
-
-//     let data = rpc::get_json(&nft_info.collection, consumer.clone()).await?;
-
-//     let address = nft_info.collection.to_string().into();
-//     let owner = rpc::owner(&nft_info.collection, consumer).await?.into();
-//     let name = data["name"].to_string();
-//     let description = data["description"].to_string();
-//     let updated = chrono::offset::Utc::now().naive_utc();
-
-//     let collection = NftCollection {
-//         address,
-//         owner,
-//         name,
-//         description,
-//         updated,
-//     };
-
-//     Ok((collection, nft))
-// }
-
 pub fn get_address(event: &ExtractedOwned) -> Address {
     ("0:".to_string() + &event.tx.account_id().as_hex_string()).into()
 }

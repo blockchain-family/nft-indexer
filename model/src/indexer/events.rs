@@ -833,6 +833,22 @@ impl AuctionActive {
 
         actions::upsert_auction(&auction, &self.pool).await
     }
+
+    pub async fn upsert_collection(&self) -> Result<()> {
+        if let Some(collection) =
+            actions::get_collection_by_nft(&self.auction_subject, &self.pool).await
+        {
+            let collection = get_collection_data(
+                MsgAddressInt::from_str(collection.0.as_str())?,
+                &self.consumer,
+            )
+            .await;
+
+            actions::upsert_collection(&collection, &self.pool).await
+        } else {
+            Ok(())
+        }
+    }
 }
 
 impl ContractEvent for BidPlaced {
@@ -926,6 +942,22 @@ impl BidPlaced {
         };
 
         actions::upsert_auction(&auction, &self.pool).await
+    }
+
+    pub async fn upsert_collection(&self) -> Result<()> {
+        if let Some(collection) =
+            actions::get_collection_by_auction(&self.address, &self.pool).await
+        {
+            let collection = get_collection_data(
+                MsgAddressInt::from_str(collection.0.as_str())?,
+                &self.consumer,
+            )
+            .await;
+
+            actions::upsert_collection(&collection, &self.pool).await
+        } else {
+            Ok(())
+        }
     }
 }
 
@@ -1021,6 +1053,22 @@ impl BidDeclined {
 
         actions::upsert_auction(&auction, &self.pool).await
     }
+
+    pub async fn upsert_collection(&self) -> Result<()> {
+        if let Some(collection) =
+            actions::get_collection_by_auction(&self.address, &self.pool).await
+        {
+            let collection = get_collection_data(
+                MsgAddressInt::from_str(collection.0.as_str())?,
+                &self.consumer,
+            )
+            .await;
+
+            actions::upsert_collection(&collection, &self.pool).await
+        } else {
+            Ok(())
+        }
+    }
 }
 
 impl ContractEvent for AuctionComplete {
@@ -1111,6 +1159,22 @@ impl AuctionComplete {
 
         actions::upsert_auction(&auction, &self.pool).await
     }
+
+    pub async fn upsert_collection(&self) -> Result<()> {
+        if let Some(collection) =
+            actions::get_collection_by_auction(&self.address, &self.pool).await
+        {
+            let collection = get_collection_data(
+                MsgAddressInt::from_str(collection.0.as_str())?,
+                &self.consumer,
+            )
+            .await;
+
+            actions::upsert_collection(&collection, &self.pool).await
+        } else {
+            Ok(())
+        }
+    }
 }
 
 impl ContractEvent for AuctionCancelled {
@@ -1170,6 +1234,22 @@ impl AuctionCancelled {
         };
 
         actions::upsert_auction(&auction, &self.pool).await
+    }
+
+    pub async fn upsert_collection(&self) -> Result<()> {
+        if let Some(collection) =
+            actions::get_collection_by_auction(&self.address, &self.pool).await
+        {
+            let collection = get_collection_data(
+                MsgAddressInt::from_str(collection.0.as_str())?,
+                &self.consumer,
+            )
+            .await;
+
+            actions::upsert_collection(&collection, &self.pool).await
+        } else {
+            Ok(())
+        }
     }
 }
 
@@ -1849,6 +1929,20 @@ impl DirectSellStateChanged {
 
         actions::upsert_direct_sell(&direct_sell, &self.pool).await
     }
+
+    pub async fn upsert_collection(&self) -> Result<()> {
+        if let Some(collection) = actions::get_collection_by_nft(&self.nft, &self.pool).await {
+            let collection = get_collection_data(
+                MsgAddressInt::from_str(collection.0.as_str())?,
+                &self.consumer,
+            )
+            .await;
+
+            actions::upsert_collection(&collection, &self.pool).await
+        } else {
+            Ok(())
+        }
+    }
 }
 
 impl ContractEvent for NftOwnerChanged {
@@ -2124,33 +2218,11 @@ impl EventRecord for CollectionOwnershipTransferred {
 
 impl CollectionOwnershipTransferred {
     pub async fn upsert_collection(&self) -> Result<()> {
-        let collection_owner = get_collection_owner(
+        let collection = get_collection_data(
             MsgAddressInt::from_str(self.address.0.as_str())?,
             &self.consumer,
         )
         .await;
-
-        let collection_meta = fetch_metadata(
-            MsgAddressInt::from_str(self.address.0.as_str())?,
-            &self.consumer,
-        )
-        .await;
-
-        let collection = NftCollection {
-            address: self.address.clone(),
-            owner: collection_owner,
-            name: collection_meta
-                .get("name")
-                .cloned()
-                .unwrap_or_default()
-                .to_string(),
-            description: collection_meta
-                .get("description")
-                .cloned()
-                .unwrap_or_default()
-                .to_string(),
-            updated: chrono::Utc::now().naive_utc(),
-        };
 
         actions::upsert_collection(&collection, &self.pool).await
     }
@@ -2291,33 +2363,11 @@ impl NftCreated {
     }
 
     pub async fn upsert_collection(&self) -> Result<()> {
-        let collection_owner = get_collection_owner(
+        let collection = get_collection_data(
             MsgAddressInt::from_str(self.address.0.as_str())?,
             &self.consumer,
         )
         .await;
-
-        let collection_meta = fetch_metadata(
-            MsgAddressInt::from_str(self.address.0.as_str())?,
-            &self.consumer,
-        )
-        .await;
-
-        let collection = NftCollection {
-            address: self.address.clone(),
-            owner: collection_owner,
-            name: collection_meta
-                .get("name")
-                .cloned()
-                .unwrap_or_default()
-                .to_string(),
-            description: collection_meta
-                .get("description")
-                .cloned()
-                .unwrap_or_default()
-                .to_string(),
-            updated: chrono::Utc::now().naive_utc(),
-        };
 
         actions::upsert_collection(&collection, &self.pool).await
     }
@@ -2444,35 +2494,40 @@ impl NftBurned {
     }
 
     pub async fn upsert_collection(&self) -> Result<()> {
-        let collection_owner = get_collection_owner(
+        let collection = get_collection_data(
             MsgAddressInt::from_str(self.address.0.as_str())?,
             &self.consumer,
         )
         .await;
-
-        let collection_meta = fetch_metadata(
-            MsgAddressInt::from_str(self.address.0.as_str())?,
-            &self.consumer,
-        )
-        .await;
-
-        let collection = NftCollection {
-            address: self.address.clone(),
-            owner: collection_owner,
-            name: collection_meta
-                .get("name")
-                .cloned()
-                .unwrap_or_default()
-                .to_string(),
-            description: collection_meta
-                .get("description")
-                .cloned()
-                .unwrap_or_default()
-                .to_string(),
-            updated: chrono::Utc::now().naive_utc(),
-        };
 
         actions::upsert_collection(&collection, &self.pool).await
+    }
+}
+
+async fn get_collection_data(
+    collection: MsgAddressInt,
+    consumer: &Arc<TransactionConsumer>,
+) -> NftCollection {
+    let collection_owner = get_collection_owner(collection.clone(), consumer).await;
+
+    let collection_meta = fetch_metadata(collection.clone(), consumer).await;
+    let now = chrono::Utc::now().naive_utc();
+
+    NftCollection {
+        address: ("0:".to_owned() + &collection.address().as_hex_string()).into(),
+        owner: collection_owner,
+        name: collection_meta
+            .get("name")
+            .cloned()
+            .unwrap_or_default()
+            .to_string(),
+        description: collection_meta
+            .get("description")
+            .cloned()
+            .unwrap_or_default()
+            .to_string(),
+        created: now,
+        updated: now,
     }
 }
 

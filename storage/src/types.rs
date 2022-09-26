@@ -1,11 +1,10 @@
 use bigdecimal::BigDecimal;
 use chrono::NaiveDateTime;
-use serde::{Serialize, Deserialize};
+use serde::{Deserialize, Serialize};
 use std::str::FromStr;
 
-
-#[derive(Clone, Debug, Hash, PartialEq, Eq, Serialize, Deserialize)]
-#[derive(sqlx::Type)]
+#[derive(Clone, Debug, Hash, PartialEq, Eq, Serialize, Deserialize, sqlx::Type)]
+#[sqlx(type_name = "t_address")]
 pub struct Address(pub String);
 
 #[derive(Clone, Debug, Serialize, sqlx::Type)]
@@ -92,21 +91,9 @@ impl From<&str> for Address {
     }
 }
 
-impl<'a> Into<&'a str> for &'a Address {
-    fn into(self) -> &'a str {
-        self.0.as_str()
-    }
-}
-
-impl Into<String> for Address {
-    fn into(self) -> String {
-        self.0
-    }
-}
-
-impl<'a> Into<&'a String> for &'a Address {
-    fn into(self) -> &'a String {
-        &self.0
+impl<'a> From<&'a Address> for &'a String {
+    fn from(address: &'a Address) -> Self {
+        &address.0
     }
 }
 
@@ -172,6 +159,7 @@ pub struct NftCollection {
     pub owner: Address,
     pub name: String,
     pub description: String,
+    pub created: NaiveDateTime,
     pub updated: NaiveDateTime,
 }
 
