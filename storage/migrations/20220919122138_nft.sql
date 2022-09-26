@@ -56,7 +56,7 @@ create table nft_events(
 	args jsonb,
 	
 	constraint nft_events_pk primary key (id),
-	constraint nft_events_unique unique (address, created_lt, created_at)
+	constraint nft_events_unique unique (address, event_type, created_lt, created_at)
 );
 
 create index ix_nft_events_address on nft_events using btree (address);
