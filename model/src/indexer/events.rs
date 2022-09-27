@@ -57,7 +57,7 @@ pub struct AuctionDeclined {
 }
 
 #[derive(Clone, Serialize)]
-pub struct AuctionOwnershipTransferred {
+pub struct AuctionRootOwnershipTransferred {
     #[serde(skip_serializing)]
     pub pool: PgPool,
     #[serde(skip_serializing)]
@@ -620,7 +620,7 @@ impl EventRecord for AuctionDeclined {
     }
 }
 
-impl ContractEvent for AuctionOwnershipTransferred {
+impl ContractEvent for AuctionRootOwnershipTransferred {
     fn build_from(
         event: &ExtractedOwned,
         pool: &PgPool,
@@ -647,7 +647,7 @@ impl ContractEvent for AuctionOwnershipTransferred {
 
         let to_address = get_token_processor(&tokens, token_to_addr);
 
-        Ok(AuctionOwnershipTransferred {
+        Ok(AuctionRootOwnershipTransferred {
             pool: pool.clone(),
             consumer: consumer.clone(),
 
@@ -661,7 +661,7 @@ impl ContractEvent for AuctionOwnershipTransferred {
     }
 }
 
-impl EventRecord for AuctionOwnershipTransferred {
+impl EventRecord for AuctionRootOwnershipTransferred {
     fn get_address(&self) -> Address {
         self.address.clone()
     }
@@ -2528,6 +2528,30 @@ async fn get_collection_data(
             .to_string(),
         created: now,
         updated: now,
+        logo: collection_meta
+            .get("preview")
+            .cloned()
+            .unwrap_or_default()
+            .get("source")
+            .cloned()
+            .unwrap_or_default()
+            .to_string()
+            .into(),
+        wallpaper: collection_meta
+            .get("files")
+            .cloned()
+            .unwrap_or_default()
+            .as_array()
+            .cloned()
+            .unwrap_or_default()
+            .first()
+            .cloned()
+            .unwrap_or_default()
+            .get("source")
+            .cloned()
+            .unwrap_or_default()
+            .to_string()
+            .into(),
     }
 }
 

@@ -18,7 +18,7 @@ const FACTORY_DIRECT_SELL: &str =
 // TODO: async tx processing
 
 pub async fn serve(pool: PgPool, consumer: Arc<TransactionConsumer>) -> Result<()> {
-    let stream = consumer.stream_transactions(StreamFrom::Beginning).await?;
+    let stream = consumer.stream_transactions(StreamFrom::Stored).await?;
     let mut fs = futures::stream::StreamExt::fuse(stream);
 
     let parsers_and_handlers = initialize_parsers_and_handlers()?;
@@ -155,7 +155,7 @@ async fn handle_auction_root_tip3(
     }
 
     handle_event::<AuctionDeclined>("AuctionDeclined", &extracted, &pool, &consumer).await?;
-    handle_event::<AuctionOwnershipTransferred>(
+    handle_event::<AuctionRootOwnershipTransferred>(
         "OwnershipTransferred",
         &extracted,
         &pool,

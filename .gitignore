@@ -1,3 +1,3 @@
 /target
 *.jks
-model/Settings.toml
+/deployment
