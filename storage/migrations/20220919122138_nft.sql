@@ -115,6 +115,7 @@ create type auction_status as enum (
 create table nft_auction(
     address t_address,
     nft t_address,
+    wallet_for_bids t_address,
     price_token t_address,
     start_price numeric(40),
     max_bid numeric(40),

@@ -185,6 +185,7 @@ pub struct NftCollection {
 pub struct NftAuction {
     pub address: Address,
     pub nft: Option<Address>,
+    pub wallet_for_bids: Option<Address>,
     pub price_token: Option<Address>,
     pub start_price: Option<BigDecimal>,
     pub max_bid: Option<BigDecimal>,

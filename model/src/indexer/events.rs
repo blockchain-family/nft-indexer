@@ -822,6 +822,7 @@ impl AuctionActive {
         let auction = NftAuction {
             address: self.address.clone(),
             nft: Some(self.auction_subject.clone()),
+            wallet_for_bids: Some(self.wallet_for_bids.clone()),
             price_token: Some(self.payment_token_root.clone()),
             start_price: Some(self._price.clone()),
             max_bid: Some(self._price.clone()),
@@ -932,6 +933,7 @@ impl BidPlaced {
         let auction = NftAuction {
             address: self.address.clone(),
             nft: None,
+            wallet_for_bids: None,
             price_token: None,
             start_price: None,
             max_bid: Some(self.value.clone()),
@@ -1042,6 +1044,7 @@ impl BidDeclined {
         let auction = NftAuction {
             address: self.address.clone(),
             nft: None,
+            wallet_for_bids: None,
             price_token: None,
             start_price: None,
             max_bid: None,
@@ -1148,6 +1151,7 @@ impl AuctionComplete {
         let auction = NftAuction {
             address: self.address.clone(),
             nft: None,
+            wallet_for_bids: None,
             price_token: None,
             start_price: None,
             max_bid: Some(self.value.clone()),
@@ -1224,6 +1228,7 @@ impl AuctionCancelled {
         let auction = NftAuction {
             address: self.address.clone(),
             nft: None,
+            wallet_for_bids: None,
             price_token: None,
             start_price: None,
             max_bid: None,

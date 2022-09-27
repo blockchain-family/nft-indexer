@@ -264,9 +264,10 @@ pub async fn upsert_auction(auction: &NftAuction, pool: &PgPool) -> Result<()> {
     let auction = if let Some(mut saved_auction) = sqlx::query_as!(
         NftAuction,
         r#"
-        select address as "address!: Address", nft as "nft?: Address", price_token as "price_token?: Address", 
-            start_price as "start_price?", max_bid as "max_bid?", status as "status?: AuctionStatus", 
-            created_at as "created_at?", finished_at as "finished_at?", tx_lt as "tx_lt!"
+        select address as "address!: Address", nft as "nft?: Address", wallet_for_bids as "wallet_for_bids?: Address",
+            price_token as "price_token?: Address", start_price as "start_price?", max_bid as "max_bid?", 
+            status as "status?: AuctionStatus", created_at as "created_at?", finished_at as "finished_at?", 
+            tx_lt as "tx_lt!"
         from nft_auction where address = $1
         "#,
         &auction.address as &Address
@@ -293,6 +294,10 @@ pub async fn upsert_auction(auction: &NftAuction, pool: &PgPool) -> Result<()> {
 
         if saved_auction.nft.is_none() {
             saved_auction.nft = auction.nft.clone();
+        }
+
+        if saved_auction.wallet_for_bids.is_none() {
+            saved_auction.wallet_for_bids = auction.wallet_for_bids.clone();
         }
 
         if saved_auction.price_token.is_none() {
@@ -335,15 +340,16 @@ pub async fn upsert_auction(auction: &NftAuction, pool: &PgPool) -> Result<()> {
 
     sqlx::query!(
         r#"
-        insert into nft_auction (address, nft, price_token, start_price, max_bid, status, created_at, finished_at, 
-            tx_lt)
-        values ($1, $2, $3, $4, $5, $6, $7, $8, $9)
-        on conflict (address) where tx_lt < $9 do update
-        set nft = $2, price_token = $3, start_price = $4, max_bid = $5, status = $6, created_at = $7, finished_at = $8,
-            tx_lt = $9
+        insert into nft_auction (address, nft, wallet_for_bids, price_token, start_price, max_bid, status,
+            created_at, finished_at, tx_lt)
+        values ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10)
+        on conflict (address) where tx_lt < $10 do update
+        set nft = $2, wallet_for_bids = $3, price_token = $4, start_price = $5, max_bid = $6, status = $7,
+            created_at = $8, finished_at = $9, tx_lt = $10
         "#,
         &auction.address as &Address,
         &auction.nft as &Option<Address>,
+        &auction.wallet_for_bids as &Option<Address>,
         &auction.price_token as &Option<Address>,
         auction.start_price,
         auction.max_bid,

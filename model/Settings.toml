@@ -1,6 +1,4 @@
 database_url = "postgresql://indexator:{M_+*SyJ>[6{<UaY@35.205.27.61:5432?dbname=indexator"
-server_addr = "0.0.0.0:3063"
-healthcheck_addr = "0.0.0.0:3034"
 database_max_connections = 5
 kafka_consumer_group = "nft"
 kafka_topic = "everscale-transactions"
