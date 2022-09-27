@@ -7,6 +7,10 @@ use std::str::FromStr;
 #[sqlx(type_name = "t_address")]
 pub struct Address(pub String);
 
+#[derive(Clone, Debug, Hash, PartialEq, Eq, Serialize, Deserialize, sqlx::Type)]
+#[sqlx(type_name = "t_uri")]
+pub struct Uri(pub String);
+
 #[derive(Clone, Debug, Serialize, sqlx::Type)]
 #[sqlx(type_name = "event_type", rename_all = "snake_case")]
 pub enum EventType {
@@ -105,6 +109,18 @@ impl FromStr for Address {
     }
 }
 
+impl From<String> for Uri {
+    fn from(str: String) -> Self {
+        Uri(str)
+    }
+}
+
+impl From<&str> for Uri {
+    fn from(str: &str) -> Self {
+        Uri(str.to_string())
+    }
+}
+
 impl From<i16> for DirectSellState {
     fn from(state: i16) -> Self {
         match state {
@@ -161,6 +177,8 @@ pub struct NftCollection {
     pub description: String,
     pub created: NaiveDateTime,
     pub updated: NaiveDateTime,
+    pub logo: Uri,
+    pub wallpaper: Uri,
 }
 
 #[derive(Clone, Debug)]

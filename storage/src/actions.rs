@@ -133,13 +133,13 @@ pub async fn upsert_collection(collection: &NftCollection, pool: &PgPool) -> Res
 
     sqlx::query!(
         r#"
-        insert into nft_collection (address, owner, name, description, created, updated, total_price, max_price,
-                owners_count)
-        values ($1, $2, $3, $4, $5, $6, $7, $8, $9)
+        insert into nft_collection (address, owner, name, description, created, updated, logo, wallpaper,
+            total_price, max_price, owners_count)
+        values ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11)
         on conflict (address) where updated <= $6 do update
         set owner = $2, name = $3, description = $4, 
             created = case when nft_collection.created < $5 then nft_collection.created else $5 end,
-            updated = $6, total_price = $7, max_price = $8, owners_count = $9
+            updated = $6, logo = $7, wallpaper = $8, total_price = $9, max_price = $10, owners_count = $11
         "#,
         &collection.address as &Address,
         &collection.owner as &Address,
@@ -147,6 +147,8 @@ pub async fn upsert_collection(collection: &NftCollection, pool: &PgPool) -> Res
         collection.description,
         collection.created,
         collection.updated,
+        &collection.logo as &Uri,
+        &collection.wallpaper as &Uri,
         total_price,
         max_price,
         owners_count as i32,
