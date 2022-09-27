@@ -1,0 +1,11 @@
+sasl.jaas.config=org.apache.kafka.common.security.scram.ScramLoginModule required username="admin" password="admin-secret";
+sasl.mechanism=SCRAM-SHA-512
+security.protocol=SASL_SSL
+ssl.key.password=confluentkeystorestorepass
+ssl.keystore.location=/home/tugunchinov/kafka_2.13-3.2.0/bf_conf/kafka_broker.keystore.jks
+ssl.keystore.password=confluentkeystorestorepass
+ssl.truststore.location=/home/tugunchinov/kafka_2.13-3.2.0/bf_conf/kafka_broker.truststore.jks
+ssl.truststore.password=confluenttruststorepass
+ssl.endpoint.identification.algorithm=
+default.api.timeout.ms=20000
+request.timeout.ms=20000
