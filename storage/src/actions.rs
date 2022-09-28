@@ -28,7 +28,7 @@ pub async fn save_event<T: EventRecord + Serialize>(record: &T, pool: &PgPool) -
 
 const USDT_TOKEN_ROOT: &str = "0:a519f99bb5d6d51ef958ed24d337ad75a1c770885dcd42d51d6663f9fcdacfb2";
 
-async fn get_owners_count(
+pub async fn get_owners_count(
     collection: &Address,
     tx: &mut Transaction<'_, Postgres>,
 ) -> Result<Option<i64>> {
@@ -46,12 +46,12 @@ async fn get_owners_count(
 }
 
 // TODO: Retry on error?
-async fn token_to_usdt(token: &str) -> Result<BigDecimal> {
+pub async fn token_to_usdt(token: &str) -> Result<BigDecimal> {
     let request_body = format!(
         r#"
         {{
             "fromCurrencyAddress": "{token}",
-            "toCurrencyAddresses": ["{USDT_TOKEN_ROOT}"],
+            "toCurrencyAddresses": ["{USDT_TOKEN_ROOT}"]
         }}
         "#
     );
@@ -81,7 +81,7 @@ async fn token_to_usdt(token: &str) -> Result<BigDecimal> {
     })?)?)
 }
 
-async fn get_prices(
+pub async fn get_prices(
     collection: &Address,
     tx: &mut Transaction<'_, Postgres>,
 ) -> Result<(BigDecimal, BigDecimal)> {

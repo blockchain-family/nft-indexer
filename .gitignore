@@ -1,3 +1,4 @@
 /target
-*.jks
 /deployment
+/kafka-creds
+/model/Settings.toml

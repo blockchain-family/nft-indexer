@@ -25,4 +25,5 @@ sqlx = { version = "0.5.10", features = [
 chrono = "0.4"
 ton_abi = { git = "https://github.com/broxus/ton-labs-abi" }
 ton_block = { git = "https://github.com/broxus/ton-labs-block" }
+tokio = { version = "1.2", features = ["macros", "rt-multi-thread"] }
 transaction-consumer = { git = "https://github.com/broxus/transaction-consumer.git" }

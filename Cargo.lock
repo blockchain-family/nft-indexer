@@ -2276,6 +2276,7 @@ dependencies = [
  "serde 1.0.145",
  "serde_json",
  "sqlx",
+ "tokio",
  "ton_abi",
  "ton_block",
  "transaction-consumer",
