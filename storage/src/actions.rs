@@ -1,8 +1,7 @@
 use crate::{traits::EventRecord, types::*};
 use anyhow::{anyhow, Result};
-use bigdecimal::BigDecimal;
 use serde::Serialize;
-use sqlx::{PgPool, Postgres, Transaction};
+use sqlx::{types::BigDecimal, PgPool, Postgres, Transaction};
 use std::str::FromStr;
 
 pub async fn save_event<T: EventRecord + Serialize>(record: &T, pool: &PgPool) -> Result<()> {
@@ -96,14 +95,14 @@ pub async fn get_prices(
         select price as "price!: BigDecimal", price_token as "price_token!: String" from nft
         inner join nft_direct_sell as direct_sell
         on nft.address = direct_sell.nft
-        where collection = $1 and direct_sell.state = 'active'
+        where nft.collection = $1 and direct_sell.state = 'active'
         union
         select price as "price!: BigDecimal", price_token as "price_token!: String" from nft
         inner join nft_auction as auction
         on nft.address = auction.nft
         inner join nft_auction_bid as bid
         on auction.address = bid.auction
-        where collection = $1 and auction.status = 'active' and bid.declined = false
+        where nft.collection = $1 and auction.status = 'active' and bid.declined = false
         "#,
         collection as &Address,
     )
@@ -179,8 +178,47 @@ pub async fn upsert_nft_meta(nft_meta: &NftMeta, pool: &PgPool) -> Result<()> {
     Ok(tx.commit().await?)
 }
 
+async fn update_direct_sell_collection(
+    nft: &Address,
+    collection: &Address,
+    tx: &mut Transaction<'_, Postgres>,
+) -> Result<()> {
+    Ok(sqlx::query!(
+        r#"
+        update nft_direct_sell set collection = $2 where nft = $1
+        "#,
+        nft as &Address,
+        collection as &Address,
+    )
+    .execute(tx)
+    .await
+    .map(|_| {})?)
+}
+
+async fn update_direct_buy_collection(
+    nft: &Address,
+    collection: &Address,
+    tx: &mut Transaction<'_, Postgres>,
+) -> Result<()> {
+    Ok(sqlx::query!(
+        r#"
+        update nft_direct_buy set collection = $2 where nft = $1
+        "#,
+        nft as &Address,
+        collection as &Address,
+    )
+    .execute(tx)
+    .await
+    .map(|_| {})?)
+}
+
 pub async fn upsert_nft(nft: &Nft, pool: &PgPool) -> Result<()> {
     let mut tx = pool.begin().await?;
+
+    if let Some(collection) = nft.collection.as_ref() {
+        update_direct_sell_collection(&nft.address, collection, &mut tx).await?;
+        update_direct_buy_collection(&nft.address, collection, &mut tx).await?;
+    }
 
     let nft = if let Some(mut saved_nft) = sqlx::query_as!(
         Nft,
@@ -391,16 +429,22 @@ pub async fn upsert_direct_sell(direct_sell: &NftDirectSell, pool: &PgPool) -> R
 
     sqlx::query!(
         r#"
-        insert into nft_direct_sell (address, nft, price_token, price, state, updated, tx_lt)
-        values ($1, $2, $3, $4, $5, $6, $7)
-        on conflict (address) where tx_lt < $7 do update
-        set state = $5, updated = $6, tx_lt = $7
+        insert into nft_direct_sell (address, nft, collection, price_token, price, seller, finished_at, expired_at,
+            state, created, updated, tx_lt)
+        values ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12)
+        on conflict (address) where tx_lt < $12 do update
+        set collection = $3, finished_at = $7, state = $9, updated = $11, tx_lt = $12
         "#,
         &direct_sell.address as &Address,
         &direct_sell.nft as &Address,
+        &direct_sell.collection as &Option<Address>,
         &direct_sell.price_token as &Address,
         direct_sell.price,
+        &direct_sell.seller as &Address,
+        direct_sell.finished_at,
+        direct_sell.expired_at,
         &direct_sell.state as &DirectSellState,
+        direct_sell.created,
         direct_sell.updated,
         direct_sell.tx_lt,
     )
@@ -415,16 +459,22 @@ pub async fn upsert_direct_buy(direct_buy: &NftDirectBuy, pool: &PgPool) -> Resu
 
     sqlx::query!(
         r#"
-        insert into nft_direct_buy (address, nft, price_token, price, state, updated, tx_lt)
-        values ($1, $2, $3, $4, $5, $6, $7)
-        on conflict (address) where tx_lt < $7 do update
-        set state = $5, updated = $6, tx_lt = $7
+        insert into nft_direct_buy (address, nft, collection, price_token, price, buyer, finished_at, expired_at,
+            state, created, updated, tx_lt)    
+        values ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12)
+        on conflict (address) where tx_lt < $12 do update
+        set collection = $3, finished_at = $7, state = $9, updated = $11, tx_lt = $12
         "#,
         &direct_buy.address as &Address,
         &direct_buy.nft as &Address,
+        &direct_buy.collection as &Option<Address>,
         &direct_buy.price_token as &Address,
         direct_buy.price,
+        &direct_buy.buyer as &Address,
+        direct_buy.finished_at,
+        direct_buy.expired_at,
         &direct_buy.state as &DirectBuyState,
+        direct_buy.created,
         direct_buy.updated,
         direct_buy.tx_lt,
     )

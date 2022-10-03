@@ -1,6 +1,6 @@
-use bigdecimal::BigDecimal;
 use chrono::NaiveDateTime;
 use serde::{Deserialize, Serialize};
+use sqlx::types::BigDecimal;
 use std::str::FromStr;
 
 #[derive(Clone, Debug, Hash, PartialEq, Eq, Serialize, Deserialize, sqlx::Type)]
@@ -61,7 +61,7 @@ pub enum AuctionStatus {
     Completed,
 }
 
-#[derive(Clone, Debug, Serialize, sqlx::Type)]
+#[derive(Clone, Debug, Serialize, PartialEq, Eq, sqlx::Type)]
 #[sqlx(type_name = "direct_sell_state", rename_all = "snake_case")]
 pub enum DirectSellState {
     Create = 0,
@@ -72,7 +72,7 @@ pub enum DirectSellState {
     Expired,
 }
 
-#[derive(Clone, Debug, Serialize, sqlx::Type)]
+#[derive(Clone, Debug, Serialize, PartialEq, Eq, sqlx::Type)]
 #[sqlx(type_name = "direct_buy_state", rename_all = "snake_case")]
 pub enum DirectBuyState {
     Create = 0,
@@ -81,6 +81,14 @@ pub enum DirectBuyState {
     Filled,
     Cancelled,
     Expired,
+}
+
+#[derive(Clone, Debug, Serialize, PartialEq, Eq, sqlx::Type)]
+#[sqlx(type_name = "nft_price_source", rename_all = "camelCase")]
+pub enum NftPriceSource {
+    AuctionBid = 0,
+    DirectBuy,
+    DirectSell,
 }
 
 impl From<String> for Address {
@@ -208,9 +216,14 @@ pub struct NftAuctionBid {
 pub struct NftDirectSell {
     pub address: Address,
     pub nft: Address,
+    pub collection: Option<Address>,
     pub price_token: Address,
     pub price: BigDecimal,
+    pub seller: Address,
+    pub finished_at: Option<NaiveDateTime>,
+    pub expired_at: NaiveDateTime,
     pub state: DirectSellState,
+    pub created: NaiveDateTime,
     pub updated: NaiveDateTime,
     pub tx_lt: i64,
 }
@@ -219,9 +232,25 @@ pub struct NftDirectSell {
 pub struct NftDirectBuy {
     pub address: Address,
     pub nft: Address,
+    pub collection: Option<Address>,
     pub price_token: Address,
     pub price: BigDecimal,
+    pub buyer: Address,
+    pub finished_at: Option<NaiveDateTime>,
+    pub expired_at: NaiveDateTime,
     pub state: DirectBuyState,
+    pub created: NaiveDateTime,
     pub updated: NaiveDateTime,
     pub tx_lt: i64,
+}
+
+#[derive(Clone, Debug)]
+pub struct NftPriceHistory {
+    pub source: Address,
+    pub source_type: NftPriceSource,
+    pub created_at: NaiveDateTime,
+    pub price: BigDecimal,
+    pub price_token: Option<Address>,
+    pub nft: Option<Address>,
+    pub collection: Option<Address>,
 }

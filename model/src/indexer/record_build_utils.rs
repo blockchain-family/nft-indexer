@@ -1,6 +1,6 @@
 use anyhow::{anyhow, Result};
-use bigdecimal::{BigDecimal, ToPrimitive};
-use nekoton_abi::{transaction_parser::ExtractedOwned, BuildTokenValue};
+use nekoton_abi::{num_traits::ToPrimitive, transaction_parser::ExtractedOwned, BuildTokenValue};
+use sqlx::types::BigDecimal;
 use std::str::FromStr;
 use storage::types::Address;
 use ton_abi::{

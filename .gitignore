@@ -2,3 +2,4 @@
 /deployment
 /kafka-creds
 /model/Settings.toml
+/.vscode

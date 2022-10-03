@@ -1,10 +1,9 @@
 use crate::indexer::{record_build_utils::*, traits::ContractEvent};
 use anyhow::{anyhow, Result};
-use bigdecimal::BigDecimal;
 use chrono::NaiveDateTime;
 use nekoton_abi::transaction_parser::ExtractedOwned;
 use serde::Serialize;
-use sqlx::PgPool;
+use sqlx::{types::BigDecimal, PgPool};
 use std::{str::FromStr, sync::Arc};
 use storage::{actions, traits::EventRecord, types::*};
 use ton_abi::TokenValue::Tuple;
@@ -1817,13 +1816,26 @@ impl EventRecord for DirectBuyStateChanged {
 
 impl DirectBuyStateChanged {
     pub async fn upsert_direct_buy(&self) -> Result<()> {
+        let collection = actions::get_collection_by_nft(&self.nft, &self.pool).await;
+        let state = self.to.into();
+        let created_ts = NaiveDateTime::from_timestamp(self.created_at, 0);
+
         let direct_buy = NftDirectBuy {
             address: self.address.clone(),
             nft: self.nft.clone(),
+            collection,
             price_token: self.spent_token.clone(),
             price: self._price.clone(),
-            state: self.to.into(),
-            updated: NaiveDateTime::from_timestamp(self.created_at, 0),
+            buyer: self.creator.clone(),
+            finished_at: if state == DirectBuyState::Filled {
+                Some(created_ts)
+            } else {
+                None
+            },
+            expired_at: NaiveDateTime::from_timestamp(self.end_time_buy, 0),
+            state,
+            created: NaiveDateTime::from_timestamp(self.start_time_buy, 0),
+            updated: created_ts,
             tx_lt: self.created_lt,
         };
 
@@ -1922,13 +1934,26 @@ impl EventRecord for DirectSellStateChanged {
 
 impl DirectSellStateChanged {
     pub async fn upsert_direct_sell(&self) -> Result<()> {
+        let collection = actions::get_collection_by_nft(&self.nft, &self.pool).await;
+        let state = self.to.into();
+        let created_ts = NaiveDateTime::from_timestamp(self.created_at, 0);
+
         let direct_sell = NftDirectSell {
             address: self.address.clone(),
             nft: self.nft.clone(),
+            collection,
             price_token: self.token.clone(),
             price: self._price.clone(),
-            state: self.to.into(),
-            updated: NaiveDateTime::from_timestamp(self.created_at, 0),
+            seller: self.creator.clone(),
+            finished_at: if state == DirectSellState::Filled {
+                Some(created_ts)
+            } else {
+                None
+            },
+            expired_at: NaiveDateTime::from_timestamp(self.end, 0),
+            state,
+            created: NaiveDateTime::from_timestamp(self.start, 0),
+            updated: created_ts,
             tx_lt: self.created_lt,
         };
 

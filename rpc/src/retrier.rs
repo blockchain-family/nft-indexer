@@ -39,6 +39,8 @@ where
         self
     }
 
+    // TODO: trace id
+
     pub async fn run(mut self) -> Result<T> {
         for attempt in 1..=self.attempts {
             match (self.routine)().await {

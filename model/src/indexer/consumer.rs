@@ -16,6 +16,7 @@ const FACTORY_DIRECT_SELL: &str =
     "0:7574093078e57213d541ee0f7f6719f319b70228345bc2edbab2d0df1496bdf3";
 
 // TODO: async tx processing
+// TODO: method execute_safe()
 
 pub async fn serve(pool: PgPool, consumer: Arc<TransactionConsumer>) -> Result<()> {
     let stream = consumer.stream_transactions(StreamFrom::Stored).await?;
@@ -30,13 +31,18 @@ pub async fn serve(pool: PgPool, consumer: Arc<TransactionConsumer>) -> Result<(
             if let Ok(extracted) = parser.parse(&tx.transaction) {
                 let extracted = extracted.into_iter().map(|ex| ex.into_owned()).collect();
                 if let Err(e) = handler(extracted, pool.clone(), consumer.clone()).await {
-                    log::error!("Error processing transaction: {:#?}", e);
+                    log::error!(
+                        "Error processing transaction {:#?}: {:#?}",
+                        tx.id.to_hex_string(),
+                        e
+                    );
                 }
             }
         }
 
         if let Err(e) = tx.commit() {
-            return Err(e.context("Failed committing consumed transacton."));
+            // TODO: just skip?
+            return Err(e.context("Failed committing transacton"));
         }
     }
 
@@ -149,7 +155,11 @@ async fn handle_auction_root_tip3(
     {
         if record.address == AUCTION_ROOT_TIP3.into() {
             if let Err(e) = actions::add_whitelist_address(&record.offer_address, &pool).await {
-                log::error!("Failed adding address in whitelist: {:#?}", e);
+                log::error!(
+                    "Failed adding address {:#?} in whitelist: {:#?}",
+                    &record.offer_address,
+                    e
+                );
             }
         }
     }
@@ -259,7 +269,11 @@ async fn handle_factory_direct_buy(
         if record.address == FACTORY_DIRECT_BUY.into() {
             if let Err(e) = actions::add_whitelist_address(&record.direct_buy_address, &pool).await
             {
-                log::error!("Failed adding address in whitelist: {:#?}", e);
+                log::error!(
+                    "Failed adding address {:#?} in whitelist: {:#?}",
+                    &record.direct_buy_address,
+                    e
+                );
             }
         }
     }
@@ -287,7 +301,11 @@ async fn handle_factory_direct_sell(
         if record.address == FACTORY_DIRECT_SELL.into() {
             if let Err(e) = actions::add_whitelist_address(&record.direct_sell_address, &pool).await
             {
-                log::error!("Failed adding address in whitelist: {:#?}", e);
+                log::error!(
+                    "Failed adding address {:#?} in whitelist: {:#?}",
+                    &record.direct_sell_address,
+                    e
+                );
             }
         }
     }

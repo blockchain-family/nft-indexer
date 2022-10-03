@@ -33,8 +33,8 @@ mod tests {
             .await
             .expect("Postgres connection failed");
 
-        let nft = "0:986f1aedf80d63b814ce9d68a90fa28e952456a8f2421069bce32c27e95155c5";
-        let collection = "0:7292647c4471a6b65460b9f3211915427e22126a0c39a5f7a4b582896389f812";
+        let nft = "0:b7c55b3f9f82a68e7f6121b49ee58709737f1e38e96288b2531e9a5dc61822e0";
+        let collection = "0:2e486ea613d1e9a0ccda5f4ca3f47c8b46de6c70ab9ddb314a3298f5bc4c6b1d";
 
         let stored_collection = crate::actions::get_collection_by_nft(&nft.into(), &pool)
             .await
@@ -61,7 +61,7 @@ mod tests {
             .await
             .expect("Postgres connection failed");
 
-        let nft = "0:986f1aedf80d63b814ce9d68a90fa28e952456a8f2421069bce32c27e95155c5";
+        let nft = "0:b7c55b3f9f82a68e7f6121b49ee58709737f1e38e96288b2531e9a5dc61822e0";
         let collection = crate::actions::get_collection_by_nft(&nft.into(), &pool)
             .await
             .unwrap();
