@@ -2626,12 +2626,14 @@ async fn get_collection_data(
             .get("name")
             .cloned()
             .unwrap_or_default()
-            .to_string(),
+            .as_str()
+            .map(str::to_string),
         description: collection_meta
             .get("description")
             .cloned()
             .unwrap_or_default()
-            .to_string(),
+            .as_str()
+            .map(str::to_string),
         created: now,
         updated: now,
         logo: collection_meta
@@ -2641,8 +2643,8 @@ async fn get_collection_data(
             .get("source")
             .cloned()
             .unwrap_or_default()
-            .to_string()
-            .into(),
+            .as_str()
+            .map(|s| s.into()),
         wallpaper: collection_meta
             .get("files")
             .cloned()
@@ -2656,8 +2658,8 @@ async fn get_collection_data(
             .get("source")
             .cloned()
             .unwrap_or_default()
-            .to_string()
-            .into(),
+            .as_str()
+            .map(|s| s.into()),
     }
 }
 
