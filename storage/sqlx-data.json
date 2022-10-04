@@ -313,6 +313,74 @@
     },
     "query": "\n        select address as \"address!: Address\", nft as \"nft?: Address\", wallet_for_bids as \"wallet_for_bids?: Address\",\n            price_token as \"price_token?: Address\", start_price as \"start_price?\", max_bid as \"max_bid?\", \n            status as \"status?: AuctionStatus\", created_at as \"created_at?\", finished_at as \"finished_at?\", \n            tx_lt as \"tx_lt!\"\n        from nft_auction where address = $1\n        "
   },
+  "4382a5bdf9ecad4fc8b4d10a65986abd950e925726c297745dbd5619e0ef7461": {
+    "describe": {
+      "columns": [
+        {
+          "name": "address!: Address",
+          "ordinal": 0,
+          "type_info": "Varchar"
+        },
+        {
+          "name": "collection?: Address",
+          "ordinal": 1,
+          "type_info": "Varchar"
+        },
+        {
+          "name": "owner?: Address",
+          "ordinal": 2,
+          "type_info": "Varchar"
+        },
+        {
+          "name": "manager?: Address",
+          "ordinal": 3,
+          "type_info": "Varchar"
+        },
+        {
+          "name": "name?",
+          "ordinal": 4,
+          "type_info": "Text"
+        },
+        {
+          "name": "description?",
+          "ordinal": 5,
+          "type_info": "Text"
+        },
+        {
+          "name": "burned!",
+          "ordinal": 6,
+          "type_info": "Bool"
+        },
+        {
+          "name": "updated!",
+          "ordinal": 7,
+          "type_info": "Timestamp"
+        },
+        {
+          "name": "tx_lt!",
+          "ordinal": 8,
+          "type_info": "Int8"
+        }
+      ],
+      "nullable": [
+        false,
+        true,
+        true,
+        true,
+        false,
+        false,
+        false,
+        false,
+        false
+      ],
+      "parameters": {
+        "Left": [
+          "Text"
+        ]
+      }
+    },
+    "query": "\n        select address as \"address!: Address\", collection as \"collection?: Address\", owner as \"owner?: Address\", \n            manager as \"manager?: Address\", name as \"name?\", description as \"description?\", burned as \"burned!\", \n            updated as \"updated!\", tx_lt as \"tx_lt!\"\n        from nft where address = $1\n        "
+  },
   "4892bd19871eabdb3159416558537a4e32ddda4ff98a48fd35a47de0490833e0": {
     "describe": {
       "columns": [],
@@ -683,74 +751,6 @@
       }
     },
     "query": "\n        insert into nft_metadata (nft, meta, updated)\n        values ($1, $2, $3)\n        on conflict (nft) where updated < $3 do update\n        set meta = $2, updated = $3\n        "
-  },
-  "fdfefa08a771ec55477b9d2126eeee33c8749f7fe9b57a0995afbbe4ca9f7066": {
-    "describe": {
-      "columns": [
-        {
-          "name": "address!: Address",
-          "ordinal": 0,
-          "type_info": "Varchar"
-        },
-        {
-          "name": "collection?: Address",
-          "ordinal": 1,
-          "type_info": "Varchar"
-        },
-        {
-          "name": "owner?: Address",
-          "ordinal": 2,
-          "type_info": "Varchar"
-        },
-        {
-          "name": "manager?: Address",
-          "ordinal": 3,
-          "type_info": "Varchar"
-        },
-        {
-          "name": "name!",
-          "ordinal": 4,
-          "type_info": "Text"
-        },
-        {
-          "name": "description!",
-          "ordinal": 5,
-          "type_info": "Text"
-        },
-        {
-          "name": "burned!",
-          "ordinal": 6,
-          "type_info": "Bool"
-        },
-        {
-          "name": "updated!",
-          "ordinal": 7,
-          "type_info": "Timestamp"
-        },
-        {
-          "name": "tx_lt!",
-          "ordinal": 8,
-          "type_info": "Int8"
-        }
-      ],
-      "nullable": [
-        false,
-        true,
-        true,
-        true,
-        false,
-        false,
-        false,
-        false,
-        false
-      ],
-      "parameters": {
-        "Left": [
-          "Text"
-        ]
-      }
-    },
-    "query": "\n        select address as \"address!: Address\", collection as \"collection?: Address\", owner as \"owner?: Address\", \n            manager as \"manager?: Address\", name as \"name!\", description as \"description!\", burned as \"burned!\", \n            updated as \"updated!\", tx_lt as \"tx_lt!\"\n        from nft where address = $1\n        "
   },
   "fe52b8cd41a93cbab36eb5466e1422c28d74bb62ad25a187a13baca47e5d5a80": {
     "describe": {

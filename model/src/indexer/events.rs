@@ -2130,13 +2130,15 @@ impl NftOwnerChanged {
                 .get("name")
                 .cloned()
                 .unwrap_or_default()
-                .to_string(),
+                .as_str()
+                .map(str::to_string),
             description: nft_meta
                 .meta
                 .get("description")
                 .cloned()
                 .unwrap_or_default()
-                .to_string(),
+                .as_str()
+                .map(str::to_string),
             burned: false,
             updated: NaiveDateTime::from_timestamp(self.created_at, 0),
             tx_lt: self.created_lt,
@@ -2234,13 +2236,15 @@ impl NftManagerChanged {
                 .get("name")
                 .cloned()
                 .unwrap_or_default()
-                .to_string(),
+                .as_str()
+                .map(str::to_string),
             description: nft_meta
                 .meta
                 .get("description")
                 .cloned()
                 .unwrap_or_default()
-                .to_string(),
+                .as_str()
+                .map(str::to_string),
             burned: false,
             updated: NaiveDateTime::from_timestamp(self.created_at, 0),
             tx_lt: self.created_lt,
@@ -2444,13 +2448,15 @@ impl NftCreated {
                 .get("name")
                 .cloned()
                 .unwrap_or_default()
-                .to_string(),
+                .as_str()
+                .map(str::to_string),
             description: nft_meta
                 .meta
                 .get("description")
                 .cloned()
                 .unwrap_or_default()
-                .to_string(),
+                .as_str()
+                .map(str::to_string),
             burned: false,
             updated: NaiveDateTime::from_timestamp(self.created_at, 0),
             tx_lt: self.created_lt,
@@ -2575,13 +2581,15 @@ impl NftBurned {
                 .get("name")
                 .cloned()
                 .unwrap_or_default()
-                .to_string(),
+                .as_str()
+                .map(str::to_string),
             description: nft_meta
                 .meta
                 .get("description")
                 .cloned()
                 .unwrap_or_default()
-                .to_string(),
+                .as_str()
+                .map(str::to_string),
             burned: true,
             updated: NaiveDateTime::from_timestamp(self.created_at, 0),
             tx_lt: self.created_lt,

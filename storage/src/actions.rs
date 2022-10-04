@@ -207,7 +207,7 @@ pub async fn upsert_nft(nft: &Nft, pool: &PgPool) -> Result<()> {
         Nft,
         r#"
         select address as "address!: Address", collection as "collection?: Address", owner as "owner?: Address", 
-            manager as "manager?: Address", name as "name!", description as "description!", burned as "burned!", 
+            manager as "manager?: Address", name as "name?", description as "description?", burned as "burned!", 
             updated as "updated!", tx_lt as "tx_lt!"
         from nft where address = $1
         "#,
@@ -242,11 +242,11 @@ pub async fn upsert_nft(nft: &Nft, pool: &PgPool) -> Result<()> {
             saved_nft.manager = nft.manager.clone();
         }
 
-        if saved_nft.name.is_empty() {
+        if saved_nft.name.is_none() {
             saved_nft.name = nft.name.clone();
         }
 
-        if saved_nft.description.is_empty() {
+        if saved_nft.description.is_none() {
             saved_nft.description = nft.description.clone();
         }
 
