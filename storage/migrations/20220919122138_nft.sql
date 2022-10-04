@@ -68,8 +68,8 @@ create table nft(
     collection t_address,
     owner t_address,
     manager t_address,
-    name text not null,
-    description text not null,
+    name text,
+    description text,
     burned boolean not null default false,
     updated timestamp not null,
     tx_lt bigint not null
@@ -84,8 +84,8 @@ create table nft_metadata(
 create table nft_collection(
     address t_address primary key,
     owner t_address not null,
-    name text not null,
-    description text not null,
+    name text,
+    description text,
     created timestamp not null,
     updated timestamp not null,
     wallpaper t_uri,

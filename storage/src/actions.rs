@@ -200,7 +200,7 @@ pub async fn upsert_nft(nft: &Nft, pool: &PgPool) -> Result<()> {
     if let Some(collection) = nft.collection.as_ref() {
         update_table_collection("nft_direct_sell", &nft.address, collection, &mut tx).await?;
         update_table_collection("nft_direct_buy", &nft.address, collection, &mut tx).await?;
-        update_table_collection("nft_price_hisory", &nft.address, collection, &mut tx).await?;
+        update_table_collection("nft_price_history", &nft.address, collection, &mut tx).await?;
     }
 
     let nft = if let Some(mut saved_nft) = sqlx::query_as!(
