@@ -849,6 +849,22 @@ impl AuctionActive {
             Ok(())
         }
     }
+
+    pub async fn upsert_nft_price_history(&self) -> Result<()> {
+        let collection = actions::get_collection_by_nft(&self.auction_subject, &self.pool).await;
+
+        let price_history = NftPriceHistory {
+            source: self.address.clone(),
+            source_type: NftPriceSource::AuctionBid,
+            created_at: NaiveDateTime::from_timestamp(self.created_at, 0),
+            price: self._price.clone(),
+            price_token: Some(self.payment_token_root.clone()),
+            nft: Some(self.auction_subject.clone()),
+            collection,
+        };
+
+        actions::upsert_nft_price_history(&price_history, &self.pool).await
+    }
 }
 
 impl ContractEvent for BidPlaced {
@@ -959,6 +975,20 @@ impl BidPlaced {
         } else {
             Ok(())
         }
+    }
+
+    pub async fn upsert_nft_price_history(&self) -> Result<()> {
+        let price_history = NftPriceHistory {
+            source: self.address.clone(),
+            source_type: NftPriceSource::AuctionBid,
+            created_at: NaiveDateTime::from_timestamp(self.created_at, 0),
+            price: self.value.clone(),
+            price_token: None,
+            nft: None,
+            collection: None,
+        };
+
+        actions::upsert_nft_price_history(&price_history, &self.pool).await
     }
 }
 
@@ -1841,6 +1871,22 @@ impl DirectBuyStateChanged {
 
         actions::upsert_direct_buy(&direct_buy, &self.pool).await
     }
+
+    pub async fn upsert_nft_price_history(&self) -> Result<()> {
+        let collection = actions::get_collection_by_nft(&self.nft, &self.pool).await;
+
+        let price_history = NftPriceHistory {
+            source: self.address.clone(),
+            source_type: NftPriceSource::DirectBuy,
+            created_at: NaiveDateTime::from_timestamp(self.created_at, 0),
+            price: self._price.clone(),
+            price_token: Some(self.spent_token.clone()),
+            nft: Some(self.nft.clone()),
+            collection,
+        };
+
+        actions::upsert_nft_price_history(&price_history, &self.pool).await
+    }
 }
 
 impl ContractEvent for DirectSellStateChanged {
@@ -1972,6 +2018,22 @@ impl DirectSellStateChanged {
         } else {
             Ok(())
         }
+    }
+
+    pub async fn upsert_nft_price_history(&self) -> Result<()> {
+        let collection = actions::get_collection_by_nft(&self.nft, &self.pool).await;
+
+        let price_history = NftPriceHistory {
+            source: self.address.clone(),
+            source_type: NftPriceSource::DirectSell,
+            created_at: NaiveDateTime::from_timestamp(self.created_at, 0),
+            price: self._price.clone(),
+            price_token: Some(self.token.clone()),
+            nft: Some(self.nft.clone()),
+            collection,
+        };
+
+        actions::upsert_nft_price_history(&price_history, &self.pool).await
     }
 }
 
@@ -2593,6 +2655,10 @@ async fn fetch_metadata(
         .attempts(3)
         .backoff(10)
         .factor(2)
+        .trace_id(format!(
+            "fetch metadata {}",
+            address.address().as_hex_string()
+        ))
         .run()
         .await
     {
@@ -2613,6 +2679,10 @@ async fn get_collection_owner(
         .attempts(3)
         .backoff(10)
         .factor(2)
+        .trace_id(format!(
+            "collection owner {}",
+            collection.address().as_hex_string()
+        ))
         .run()
         .await
     {

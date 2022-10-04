@@ -9,6 +9,7 @@ where
     attempts: u64,
     backoff: u64,
     factor: u64,
+    trace_id: String,
 }
 
 impl<F, T> Retrier<F, T>
@@ -21,6 +22,7 @@ where
             attempts: 3,
             backoff: 1,
             factor: 2,
+            trace_id: String::new(),
         }
     }
 
@@ -39,14 +41,18 @@ where
         self
     }
 
-    // TODO: trace id
+    pub fn trace_id(mut self, trace: String) -> Self {
+        self.trace_id = trace;
+        self
+    }
 
     pub async fn run(mut self) -> Result<T> {
         for attempt in 1..=self.attempts {
             match (self.routine)().await {
                 Err(e) => {
                     log::error!(
-                        "Error occured: {:#?}, attempts left: {}",
+                        "[{}] Error occured: {:#?}, attempts left: {}",
+                        self.trace_id.as_str(),
                         e,
                         self.attempts - attempt
                     );

@@ -418,6 +418,63 @@
     },
     "query": "\n        select price as \"price!: BigDecimal\", price_token as \"price_token!: String\" from nft\n        inner join nft_direct_sell as direct_sell\n        on nft.address = direct_sell.nft\n        where nft.collection = $1 and direct_sell.state = 'active'\n        union\n        select price as \"price!: BigDecimal\", price_token as \"price_token!: String\" from nft\n        inner join nft_auction as auction\n        on nft.address = auction.nft\n        inner join nft_auction_bid as bid\n        on auction.address = bid.auction\n        where nft.collection = $1 and auction.status = 'active' and bid.declined = false\n        "
   },
+  "74cde259acad5d78d6ec5e83afcabc1080bc7e418cfe47f92f4ec4402857ce66": {
+    "describe": {
+      "columns": [],
+      "nullable": [],
+      "parameters": {
+        "Left": [
+          {
+            "Custom": {
+              "kind": {
+                "Domain": "Varchar"
+              },
+              "name": "t_address"
+            }
+          },
+          {
+            "Custom": {
+              "kind": {
+                "Enum": [
+                  "auctionBid",
+                  "directBuy",
+                  "directSell"
+                ]
+              },
+              "name": "nft_price_source"
+            }
+          },
+          "Timestamp",
+          "Numeric",
+          {
+            "Custom": {
+              "kind": {
+                "Domain": "Varchar"
+              },
+              "name": "t_address"
+            }
+          },
+          {
+            "Custom": {
+              "kind": {
+                "Domain": "Varchar"
+              },
+              "name": "t_address"
+            }
+          },
+          {
+            "Custom": {
+              "kind": {
+                "Domain": "Varchar"
+              },
+              "name": "t_address"
+            }
+          }
+        ]
+      }
+    },
+    "query": "\n        insert into nft_price_history (source, source_type, ts, price, price_token, nft, collection)\n        values ($1, $2, $3, $4, $5, $6, $7)\n        "
+  },
   "af570fc549eabc04332364885166e4b07ed6541bd02d029d1f0fa1d3aa63aca2": {
     "describe": {
       "columns": [
@@ -498,26 +555,6 @@
     },
     "query": "\n        insert into nft_auction (address, nft, wallet_for_bids, price_token, start_price, max_bid, status,\n            created_at, finished_at, tx_lt)\n        values ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10)\n        on conflict (address) where tx_lt < $10 do update\n        set nft = $2, wallet_for_bids = $3, price_token = $4, start_price = $5, max_bid = $6, status = $7,\n            created_at = $8, finished_at = $9, tx_lt = $10\n        "
   },
-  "c42bf74f0fa671b316da25f0a2e8156591b8115ef48011e499d107c6f1e33a0e": {
-    "describe": {
-      "columns": [],
-      "nullable": [],
-      "parameters": {
-        "Left": [
-          "Text",
-          {
-            "Custom": {
-              "kind": {
-                "Domain": "Varchar"
-              },
-              "name": "t_address"
-            }
-          }
-        ]
-      }
-    },
-    "query": "\n        update nft_direct_buy set collection = $2 where nft = $1\n        "
-  },
   "c8bba5a364f10135dc2782e9a64db2a268bea28d81d56d0f2013b5e17c5d74cb": {
     "describe": {
       "columns": [],
@@ -590,6 +627,21 @@
     },
     "query": "\n        insert into nft_direct_buy (address, nft, collection, price_token, price, buyer, finished_at, expired_at,\n            state, created, updated, tx_lt)    \n        values ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12)\n        on conflict (address) where tx_lt < $12 do update\n        set collection = $3, finished_at = $7, state = $9, updated = $11, tx_lt = $12\n        "
   },
+  "dd3744fad49c559fff0d921b279127301f6a71b4c332bdd51a148e6b000e8727": {
+    "describe": {
+      "columns": [],
+      "nullable": [],
+      "parameters": {
+        "Left": [
+          "Text",
+          "Varchar",
+          "Varchar",
+          "Varchar"
+        ]
+      }
+    },
+    "query": "\n        update nft_price_history as nph\n        set price_token = coalesce(nph.price_token, $2), nft = coalesce(nph.nft, $3), \n            collection = coalesce(nph.collection, $4)\n        where source = $1\n        "
+  },
   "ed5271faa0edea5031ec0f7204eabc4cad00034df488e6fec8fbc04a5d94081e": {
     "describe": {
       "columns": [],
@@ -608,26 +660,6 @@
       }
     },
     "query": "\n        insert into events_whitelist (address)\n        values ($1)\n        "
-  },
-  "fc0996d2206c83d18399741e5fb32c6f5bd10ae36c930468cda99a43a3e6b027": {
-    "describe": {
-      "columns": [],
-      "nullable": [],
-      "parameters": {
-        "Left": [
-          "Text",
-          {
-            "Custom": {
-              "kind": {
-                "Domain": "Varchar"
-              },
-              "name": "t_address"
-            }
-          }
-        ]
-      }
-    },
-    "query": "\n        update nft_direct_sell set collection = $2 where nft = $1\n        "
   },
   "fdf3b1e4235886fe1fd288cd7c99b427a3714245d8a877d0d87663935d72f05d": {
     "describe": {

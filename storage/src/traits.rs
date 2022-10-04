@@ -1,5 +1,6 @@
 use crate::types::*;
 
+// TODO: make derive macro
 pub trait EventRecord {
     fn get_address(&self) -> Address;
     fn get_created_at(&self) -> i64;

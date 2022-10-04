@@ -178,46 +178,29 @@ pub async fn upsert_nft_meta(nft_meta: &NftMeta, pool: &PgPool) -> Result<()> {
     Ok(tx.commit().await?)
 }
 
-async fn update_direct_sell_collection(
+async fn update_table_collection(
+    table_name: &str,
     nft: &Address,
     collection: &Address,
     tx: &mut Transaction<'_, Postgres>,
 ) -> Result<()> {
-    Ok(sqlx::query!(
+    let query = format!(
         r#"
-        update nft_direct_sell set collection = $2 where nft = $1
+        update {table_name} set collection = {} where nft = {} 
         "#,
-        nft as &Address,
-        collection as &Address,
-    )
-    .execute(tx)
-    .await
-    .map(|_| {})?)
-}
+        collection.0, nft.0,
+    );
 
-async fn update_direct_buy_collection(
-    nft: &Address,
-    collection: &Address,
-    tx: &mut Transaction<'_, Postgres>,
-) -> Result<()> {
-    Ok(sqlx::query!(
-        r#"
-        update nft_direct_buy set collection = $2 where nft = $1
-        "#,
-        nft as &Address,
-        collection as &Address,
-    )
-    .execute(tx)
-    .await
-    .map(|_| {})?)
+    Ok(sqlx::query(&query).execute(tx).await.map(|_| {})?)
 }
 
 pub async fn upsert_nft(nft: &Nft, pool: &PgPool) -> Result<()> {
     let mut tx = pool.begin().await?;
 
     if let Some(collection) = nft.collection.as_ref() {
-        update_direct_sell_collection(&nft.address, collection, &mut tx).await?;
-        update_direct_buy_collection(&nft.address, collection, &mut tx).await?;
+        update_table_collection("nft_direct_sell", &nft.address, collection, &mut tx).await?;
+        update_table_collection("nft_direct_buy", &nft.address, collection, &mut tx).await?;
+        update_table_collection("nft_price_hisory", &nft.address, collection, &mut tx).await?;
     }
 
     let nft = if let Some(mut saved_nft) = sqlx::query_as!(
@@ -477,6 +460,46 @@ pub async fn upsert_direct_buy(direct_buy: &NftDirectBuy, pool: &PgPool) -> Resu
         direct_buy.created,
         direct_buy.updated,
         direct_buy.tx_lt,
+    )
+    .execute(&mut tx)
+    .await?;
+
+    Ok(tx.commit().await?)
+}
+
+pub async fn upsert_nft_price_history(
+    price_history: &NftPriceHistory,
+    pool: &PgPool,
+) -> Result<()> {
+    let mut tx = pool.begin().await?;
+
+    sqlx::query!(
+        r#"
+        insert into nft_price_history (source, source_type, ts, price, price_token, nft, collection)
+        values ($1, $2, $3, $4, $5, $6, $7)
+        "#,
+        &price_history.source as &Address,
+        &price_history.source_type as &NftPriceSource,
+        price_history.created_at,
+        price_history.price,
+        &price_history.price_token as &Option<Address>,
+        &price_history.nft as &Option<Address>,
+        &price_history.collection as &Option<Address>,
+    )
+    .execute(&mut tx)
+    .await?;
+
+    sqlx::query!(
+        r#"
+        update nft_price_history as nph
+        set price_token = coalesce(nph.price_token, $2), nft = coalesce(nph.nft, $3), 
+            collection = coalesce(nph.collection, $4)
+        where source = $1
+        "#,
+        &price_history.source as &Address,
+        &price_history.price_token as &Option<Address>,
+        &price_history.nft as &Option<Address>,
+        &price_history.collection as &Option<Address>,
     )
     .execute(&mut tx)
     .await?;
