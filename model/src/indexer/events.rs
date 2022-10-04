@@ -98,6 +98,7 @@ pub struct AuctionCreated {
     pub finish_time: i64,
     pub _price: BigDecimal,
     pub _nonce: BigDecimal,
+    pub status: i16,
 }
 
 #[derive(Clone, Serialize)]
@@ -123,6 +124,7 @@ pub struct AuctionActive {
     pub finish_time: i64,
     pub _price: BigDecimal,
     pub _nonce: BigDecimal,
+    pub status: i16,
 }
 
 #[derive(Clone, Serialize)]
@@ -704,6 +706,7 @@ impl ContractEvent for AuctionCreated {
 
         let to_address = get_token_processor(tokens, token_to_addr);
         let to_i64 = get_token_processor(tokens, token_to_i64);
+        let to_i16 = get_token_processor(tokens, token_to_i16);
         let to_bigdecimal = get_token_processor(tokens, token_to_big_decimal);
 
         Ok(AuctionCreated {
@@ -723,6 +726,7 @@ impl ContractEvent for AuctionCreated {
             finish_time: to_i64("finishTime")?,
             _price: to_bigdecimal("_price")?,
             _nonce: to_bigdecimal("_nonce")?,
+            status: to_i16("status")?,
         })
     }
 }
@@ -771,6 +775,7 @@ impl ContractEvent for AuctionActive {
 
         let to_address = get_token_processor(tokens, token_to_addr);
         let to_i64 = get_token_processor(tokens, token_to_i64);
+        let to_i16 = get_token_processor(tokens, token_to_i16);
         let to_bigdecimal = get_token_processor(tokens, token_to_big_decimal);
 
         Ok(AuctionActive {
@@ -790,6 +795,7 @@ impl ContractEvent for AuctionActive {
             finish_time: to_i64("finishTime")?,
             _price: to_bigdecimal("_price")?,
             _nonce: to_bigdecimal("_nonce")?,
+            status: to_i16("status")?,
         })
     }
 }

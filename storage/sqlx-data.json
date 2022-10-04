@@ -267,6 +267,7 @@
             "Custom": {
               "kind": {
                 "Enum": [
+                  "created",
                   "active",
                   "cancelled",
                   "completed"
@@ -539,6 +540,7 @@
             "Custom": {
               "kind": {
                 "Enum": [
+                  "created",
                   "active",
                   "cancelled",
                   "completed"

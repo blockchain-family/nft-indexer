@@ -56,9 +56,10 @@ pub enum EventCategory {
 #[derive(Clone, Debug, Serialize, sqlx::Type)]
 #[sqlx(type_name = "auction_status", rename_all = "snake_case")]
 pub enum AuctionStatus {
+    Created = 0,
     Active,
-    Cancelled,
     Completed,
+    Cancelled,
 }
 
 #[derive(Clone, Debug, Serialize, PartialEq, Eq, sqlx::Type)]
@@ -153,6 +154,18 @@ impl From<i16> for DirectBuyState {
             4 => Self::Cancelled,
             5 => Self::Expired,
             _ => panic!("Unknown state of DirectBuy"),
+        }
+    }
+}
+
+impl From<i16> for AuctionStatus {
+    fn from(state: i16) -> Self {
+        match state {
+            0 => Self::Created,
+            1 => Self::Active,
+            2 => Self::Completed,
+            3 => Self::Cancelled,
+            _ => panic!("Unknown state of Auction"),
         }
     }
 }

@@ -107,6 +107,7 @@ create view nft_details as
     LEFT JOIN nft_metadata m ON m.nft = n.address;
 
 create type auction_status as enum (
+    'created',
     'active',
     'cancelled',
     'completed'
