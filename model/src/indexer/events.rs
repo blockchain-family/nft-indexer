@@ -91,7 +91,7 @@ pub struct AuctionCreated {
 
     pub auction_subject: Address,
     pub subject_owner: Address,
-    pub payment_token_root: Address,
+    pub _payment_token: Address,
     pub wallet_for_bids: Address,
     pub start_time: i64,
     pub duration: i64,
@@ -116,7 +116,7 @@ pub struct AuctionActive {
 
     pub auction_subject: Address,
     pub subject_owner: Address,
-    pub payment_token_root: Address,
+    pub _payment_token: Address,
     pub wallet_for_bids: Address,
     pub start_time: i64,
     pub duration: i64,
@@ -213,7 +213,7 @@ pub struct DirectBuyDeployed {
 
     pub direct_buy_address: Address,
     pub sender: Address,
-    pub token_root: Address,
+    pub token: Address,
     pub nft: Address,
     pub nonce: BigDecimal,
     pub amount: BigDecimal,
@@ -234,7 +234,7 @@ pub struct DirectBuyDeclined {
     pub created_at: i64,
 
     pub sender: Address,
-    pub token_root: Address,
+    pub token: Address,
     pub amount: BigDecimal,
 }
 
@@ -700,7 +700,7 @@ impl ContractEvent for AuctionCreated {
             Tuple(v) => Some(v),
             _ => None,
         }
-        .ok_or_else(|| anyhow!("value2 token value is not tuple"))?;
+        .ok_or_else(|| anyhow!("value0 token value is not tuple"))?;
 
         let to_address = get_token_processor(tokens, token_to_addr);
         let to_i64 = get_token_processor(tokens, token_to_i64);
@@ -716,7 +716,7 @@ impl ContractEvent for AuctionCreated {
 
             auction_subject: to_address("auctionSubject")?,
             subject_owner: to_address("subjectOwner")?,
-            payment_token_root: to_address("paymentTokenRoot")?,
+            _payment_token: to_address("_paymentToken")?,
             wallet_for_bids: to_address("walletForBids")?,
             start_time: to_i64("startTime")?,
             duration: to_i64("duration")?,
@@ -767,7 +767,7 @@ impl ContractEvent for AuctionActive {
             Tuple(v) => Some(v),
             _ => None,
         }
-        .ok_or_else(|| anyhow!("value2 token value is not tuple"))?;
+        .ok_or_else(|| anyhow!("value0 token value is not tuple"))?;
 
         let to_address = get_token_processor(tokens, token_to_addr);
         let to_i64 = get_token_processor(tokens, token_to_i64);
@@ -783,7 +783,7 @@ impl ContractEvent for AuctionActive {
 
             auction_subject: to_address("auctionSubject")?,
             subject_owner: to_address("subjectOwner")?,
-            payment_token_root: to_address("paymentTokenRoot")?,
+            _payment_token: to_address("_paymentToken")?,
             wallet_for_bids: to_address("walletForBids")?,
             start_time: to_i64("startTime")?,
             duration: to_i64("duration")?,
@@ -822,7 +822,7 @@ impl AuctionActive {
             address: self.address.clone(),
             nft: Some(self.auction_subject.clone()),
             wallet_for_bids: Some(self.wallet_for_bids.clone()),
-            price_token: Some(self.payment_token_root.clone()),
+            price_token: Some(self._payment_token.clone()),
             start_price: Some(self._price.clone()),
             max_bid: Some(self._price.clone()),
             status: Some(AuctionStatus::Active),
@@ -858,7 +858,7 @@ impl AuctionActive {
             source_type: NftPriceSource::AuctionBid,
             created_at: NaiveDateTime::from_timestamp(self.created_at, 0),
             price: self._price.clone(),
-            price_token: Some(self.payment_token_root.clone()),
+            price_token: Some(self._payment_token.clone()),
             nft: Some(self.auction_subject.clone()),
             collection,
         };
@@ -1310,11 +1310,11 @@ impl ContractEvent for DirectBuyDeployed {
             .ok_or_else(|| anyhow!("Couldn't find sender token"))?
             .clone();
 
-        let token_root_token = event
+        let token_token = event
             .tokens
             .iter()
-            .find(|t| t.name == "tokenRoot")
-            .ok_or_else(|| anyhow!("Couldn't find tokenRoot token"))?
+            .find(|t| t.name == "token")
+            .ok_or_else(|| anyhow!("Couldn't find token token"))?
             .clone();
 
         let nft_token = event
@@ -1341,7 +1341,7 @@ impl ContractEvent for DirectBuyDeployed {
         let tokens = vec![
             direct_buy_address_token,
             sender_token,
-            token_root_token,
+            token_token,
             nft_token,
             nonce_token,
             amount_token,
@@ -1360,7 +1360,7 @@ impl ContractEvent for DirectBuyDeployed {
 
             direct_buy_address: to_address("directBuyAddress")?,
             sender: to_address("sender")?,
-            token_root: to_address("tokenRoot")?,
+            token: to_address("token")?,
             nft: to_address("nft")?,
             nonce: to_bigdecimal("nonce")?,
             amount: to_bigdecimal("amount")?,
@@ -1406,11 +1406,11 @@ impl ContractEvent for DirectBuyDeclined {
             .ok_or_else(|| anyhow!("Couldn't find sender token"))?
             .clone();
 
-        let token_root_token = event
+        let token_token = event
             .tokens
             .iter()
-            .find(|t| t.name == "tokenRoot")
-            .ok_or_else(|| anyhow!("Couldn't find tokenRoot token"))?
+            .find(|t| t.name == "token")
+            .ok_or_else(|| anyhow!("Couldn't find token token"))?
             .clone();
 
         let amount_token = event
@@ -1420,7 +1420,7 @@ impl ContractEvent for DirectBuyDeclined {
             .ok_or_else(|| anyhow!("Couldn't find amount token"))?
             .clone();
 
-        let tokens = vec![sender_token, token_root_token, amount_token];
+        let tokens = vec![sender_token, token_token, amount_token];
 
         let to_address = get_token_processor(&tokens, token_to_addr);
         let to_bigdecimal = get_token_processor(&tokens, token_to_big_decimal);
@@ -1434,7 +1434,7 @@ impl ContractEvent for DirectBuyDeclined {
             created_at: get_created_at(event)?,
 
             sender: to_address("sender")?,
-            token_root: to_address("tokenRoot")?,
+            token: to_address("token")?,
             amount: to_bigdecimal("amount")?,
         })
     }

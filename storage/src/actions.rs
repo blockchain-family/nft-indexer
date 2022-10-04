@@ -186,7 +186,7 @@ async fn update_table_collection(
 ) -> Result<()> {
     let query = format!(
         r#"
-        update {table_name} set collection = {} where nft = {} 
+        update {table_name} set collection = '{}' where nft = '{}' 
         "#,
         collection.0, nft.0,
     );
