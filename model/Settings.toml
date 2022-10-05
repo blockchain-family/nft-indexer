@@ -1,8 +1,0 @@
-database_url = "postgresql://indexator:{M_+*SyJ>[6{<UaY@35.205.27.61:5432?dbname=indexator"
-# database_url = "postgresql://postgres:postgres@localhost:5432?dbname=nft"
-database_max_connections = 5
-kafka_consumer_group = "nft"
-kafka_topic = "everscale-transactions"
-states_rpc_endpoints = ["http://34.78.208.233:8081/"]
-
-kafka_settings = { "bootstrap.servers" = "kafka-1.bf.rocks:9092,kafka-2.bf.rocks:9092,kafka-3.bf.rocks:9092", "sasl.username" = "bfadmin", "sasl.password" = "yHSUq865zfZBEkf1nSFe5zKXsqV86oyMbgOiHtwMORyiSq7fLeOC04", "sasl.mechanism" = "SCRAM-SHA-512", "security.protocol" = "SASL_SSL", "ssl.key.password" = "confluentkeystorestorepass", "ssl.keystore.location" = "/home/nft-indexer/indexer/kafka-creds/kafka_broker.keystore.jks", "ssl.keystore.password" = "confluentkeystorestorepass", "ssl.ca.location" = "/home/nft-indexer/indexer/kafka-creds/ca.pem"}

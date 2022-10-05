@@ -2433,7 +2433,7 @@ impl NftCreated {
         .await;
 
         let nft_meta = NftMeta {
-            nft: self.address.clone(),
+            nft: self.nft.clone(),
             meta,
             updated: chrono::Utc::now().naive_utc(),
         };
@@ -2566,7 +2566,7 @@ impl NftBurned {
         .await;
 
         let nft_meta = NftMeta {
-            nft: self.address.clone(),
+            nft: self.nft.clone(),
             meta,
             updated: chrono::Utc::now().naive_utc(),
         };
