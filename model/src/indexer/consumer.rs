@@ -26,15 +26,14 @@ pub async fn serve(pool: PgPool, consumer: Arc<TransactionConsumer>) -> Result<(
     while let Some(tx) = fs.next().await {
         for (parser, handler) in parsers_and_handlers.iter() {
             if let Ok(extracted) = parser.parse(&tx.transaction) {
-                // TODO: async processing
                 let extracted = extracted.into_iter().map(|ex| ex.into_owned()).collect();
-                handler(extracted, pool.clone(), consumer.clone()).await;
+                let f = handler(extracted, pool.clone(), consumer.clone());
+                tokio::spawn(async move { f.await });
             }
         }
 
         if let Err(e) = tx.commit() {
-            // TODO: just skip?
-            return Err(e.context("Failed committing transacton"));
+            log::error!("Failed committing transacton: {:#?}", e);
         }
     }
 

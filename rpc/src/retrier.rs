@@ -1,9 +1,10 @@
 use anyhow::{anyhow, Result};
 use std::{future::Future, pin::Pin};
 
-pub struct Retrier<F, T>
+pub struct Retrier<F, T, E>
 where
-    F: Fn() -> Pin<Box<dyn Future<Output = Result<T>> + Send>>,
+    F: Fn() -> Pin<Box<dyn Future<Output = Result<T, E>> + Send>>,
+    E: std::fmt::Debug,
 {
     routine: F,
     attempts: u64,
@@ -12,9 +13,10 @@ where
     trace_id: String,
 }
 
-impl<F, T> Retrier<F, T>
+impl<F, T, E> Retrier<F, T, E>
 where
-    F: Fn() -> Pin<Box<dyn Future<Output = Result<T>> + Send>>,
+    F: Fn() -> Pin<Box<dyn Future<Output = Result<T, E>> + Send>>,
+    E: std::fmt::Debug,
 {
     pub fn new(routine: F) -> Self {
         Self {

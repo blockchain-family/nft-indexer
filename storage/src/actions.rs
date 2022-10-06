@@ -44,7 +44,6 @@ pub async fn get_owners_count(
     .await?)
 }
 
-// TODO: Retry on error?
 pub async fn token_to_usdt(token: &str) -> Result<BigDecimal> {
     let request_body = format!(
         r#"
@@ -56,11 +55,18 @@ pub async fn token_to_usdt(token: &str) -> Result<BigDecimal> {
     );
 
     let client = reqwest::Client::new();
-    let response = client
-        .post("https://api.flatqube.io/v1/pairs/cross_pairs")
-        .body(request_body)
-        .send()
-        .await?;
+    let response = rpc::retrier::Retrier::new(move || {
+        let request = client
+            .post("https://api.flatqube.io/v1/pairs/cross_pairs")
+            .body(request_body.clone());
+        Box::pin(request.send())
+    })
+    .attempts(5)
+    .backoff(50)
+    .factor(2)
+    .trace_id(format!("usdt price for {}", token))
+    .run()
+    .await?;
 
     let object: serde_json::Value = serde_json::from_slice(&response.bytes().await?)?;
     let usdt = object
