@@ -1,92 +1,5 @@
 {
   "db": "PostgreSQL",
-  "0cfa7e673db8d9c8862936bddd835a00673af9bd4ddbbcb45403500541467456": {
-    "describe": {
-      "columns": [
-        {
-          "name": "collection",
-          "ordinal": 0,
-          "type_info": "Varchar"
-        }
-      ],
-      "nullable": [
-        true
-      ],
-      "parameters": {
-        "Left": [
-          "Text"
-        ]
-      }
-    },
-    "query": "\n        select collection from nft\n        inner join nft_auction\n        on nft_auction.nft = nft.address\n        where nft_auction.address = $1\n        "
-  },
-  "241ad692992de1fe48130a39b656d25144284f0d07ef29e3478584b411cb268b": {
-    "describe": {
-      "columns": [],
-      "nullable": [],
-      "parameters": {
-        "Left": [
-          {
-            "Custom": {
-              "kind": {
-                "Enum": [
-                  "auction",
-                  "direct_buy",
-                  "direct_sell",
-                  "nft",
-                  "collection"
-                ]
-              },
-              "name": "event_category"
-            }
-          },
-          {
-            "Custom": {
-              "kind": {
-                "Enum": [
-                  "auction_deployed",
-                  "auction_created",
-                  "auction_ownership_transferred",
-                  "auction_active",
-                  "auction_declined",
-                  "auction_bid_placed",
-                  "auction_bid_declined",
-                  "auction_cancelled",
-                  "auction_complete",
-                  "direct_buy_deployed",
-                  "direct_buy_declined",
-                  "direct_buy_ownership_transferred",
-                  "direct_buy_state_changed",
-                  "direct_sell_deployed",
-                  "direct_sell_declined",
-                  "direct_sell_ownership_transferred",
-                  "direct_sell_state_changed",
-                  "nft_owner_changed",
-                  "nft_manager_changed",
-                  "collection_ownership_transferred",
-                  "nft_created",
-                  "nft_burned"
-                ]
-              },
-              "name": "event_type"
-            }
-          },
-          {
-            "Custom": {
-              "kind": {
-                "Domain": "Varchar"
-              },
-              "name": "t_address"
-            }
-          },
-          "Int8",
-          "Int8",
-          "Jsonb"
-        ]
-      }
-    },
-    "query": "\n        insert into nft_events (event_cat, event_type, address, created_lt, created_at, args)\n        values ($1, $2, $3, $4, $5, $6)\n        "
-  },
   "24807faa229f14f4a4f8b5a096223d3f8c58171d7abc05eb3f0fc209fe0571f0": {
     "describe": {
       "columns": [],
@@ -411,6 +324,89 @@
     },
     "query": "\n        insert into nft_auction_bid (auction, buyer, price, declined, created_at)\n        values ($1, $2, $3, $4, $5)\n        on conflict (auction, buyer, price) where declined = false do update\n        set declined = $4\n        "
   },
+  "58dad5adfd8bd05588eb0da4667fda1a158f8c0ba252c7f0bf4d23b22ff29b5b": {
+    "describe": {
+      "columns": [],
+      "nullable": [],
+      "parameters": {
+        "Left": [
+          {
+            "Custom": {
+              "kind": {
+                "Enum": [
+                  "auction",
+                  "direct_buy",
+                  "direct_sell",
+                  "nft",
+                  "collection"
+                ]
+              },
+              "name": "event_category"
+            }
+          },
+          {
+            "Custom": {
+              "kind": {
+                "Enum": [
+                  "auction_deployed",
+                  "auction_created",
+                  "auction_ownership_transferred",
+                  "auction_active",
+                  "auction_declined",
+                  "auction_bid_placed",
+                  "auction_bid_declined",
+                  "auction_cancelled",
+                  "auction_complete",
+                  "direct_buy_deployed",
+                  "direct_buy_declined",
+                  "direct_buy_ownership_transferred",
+                  "direct_buy_state_changed",
+                  "direct_sell_deployed",
+                  "direct_sell_declined",
+                  "direct_sell_ownership_transferred",
+                  "direct_sell_state_changed",
+                  "nft_owner_changed",
+                  "nft_manager_changed",
+                  "collection_ownership_transferred",
+                  "nft_created",
+                  "nft_burned"
+                ]
+              },
+              "name": "event_type"
+            }
+          },
+          {
+            "Custom": {
+              "kind": {
+                "Domain": "Varchar"
+              },
+              "name": "t_address"
+            }
+          },
+          {
+            "Custom": {
+              "kind": {
+                "Domain": "Varchar"
+              },
+              "name": "t_address"
+            }
+          },
+          {
+            "Custom": {
+              "kind": {
+                "Domain": "Varchar"
+              },
+              "name": "t_address"
+            }
+          },
+          "Int8",
+          "Int8",
+          "Jsonb"
+        ]
+      }
+    },
+    "query": "\n        insert into nft_events (event_cat, event_type, address, nft, collection, created_lt, created_at, args)\n        values ($1, $2, $3, $4, $5, $6, $7, $8)\n        "
+  },
   "62008fe40397338856242ab47abfad895a20b660971c98e5ecd02c57c809288c": {
     "describe": {
       "columns": [],
@@ -543,6 +539,32 @@
       }
     },
     "query": "\n        insert into nft_price_history (source, source_type, ts, price, price_token, nft, collection)\n        values ($1, $2, $3, $4, $5, $6, $7)\n        "
+  },
+  "8ecdb525bc647d2cee353ceae65cc873c93b531296da06233d2f779d9b3c091c": {
+    "describe": {
+      "columns": [
+        {
+          "name": "nft?: Address",
+          "ordinal": 0,
+          "type_info": "Varchar"
+        },
+        {
+          "name": "collection?: Address",
+          "ordinal": 1,
+          "type_info": "Varchar"
+        }
+      ],
+      "nullable": [
+        false,
+        true
+      ],
+      "parameters": {
+        "Left": [
+          "Text"
+        ]
+      }
+    },
+    "query": "\n        select nft.address as \"nft?: Address\", collection as \"collection?: Address\" from nft\n        inner join nft_auction\n        on nft_auction.nft = nft.address\n        where nft_auction.address = $1\n        "
   },
   "af570fc549eabc04332364885166e4b07ed6541bd02d029d1f0fa1d3aa63aca2": {
     "describe": {

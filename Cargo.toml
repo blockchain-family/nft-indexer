@@ -1,8 +1,8 @@
 [workspace]
 
 members = [
-    #"api",
-    "storage",
     "model",
     "rpc",
+    "storage",
+    "traits_derive"
 ]

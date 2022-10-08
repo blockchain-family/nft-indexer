@@ -1,6 +1,8 @@
 use crate::indexer::{record_build_utils::*, traits::ContractEvent};
 use anyhow::{anyhow, Result};
+use async_trait::async_trait;
 use chrono::NaiveDateTime;
+use futures::Future;
 use nekoton_abi::transaction_parser::ExtractedOwned;
 use serde::Serialize;
 use sqlx::{types::BigDecimal, PgPool};
@@ -8,11 +10,12 @@ use std::{str::FromStr, sync::Arc};
 use storage::{actions, traits::EventRecord, types::*};
 use ton_abi::TokenValue::Tuple;
 use ton_block::MsgAddressInt;
+use traits_derive::EventRecord;
 use transaction_consumer::TransactionConsumer;
 
 /// AuctionRootTip3 events
 
-#[derive(Clone, Serialize)]
+#[derive(Clone, Serialize, EventRecord)]
 pub struct AuctionDeployed {
     #[serde(skip_serializing)]
     pub pool: PgPool,
@@ -26,6 +29,11 @@ pub struct AuctionDeployed {
     #[serde(skip_serializing)]
     pub created_at: i64,
 
+    #[serde(skip_serializing)]
+    pub event_nft: Option<Address>,
+    #[serde(skip_serializing)]
+    pub event_collection: Option<Address>,
+
     pub offer_address: Address,
 
     pub collection: Address,
@@ -37,7 +45,7 @@ pub struct AuctionDeployed {
     pub deploy_nonce: BigDecimal,
 }
 
-#[derive(Clone, Serialize)]
+#[derive(Clone, Serialize, EventRecord)]
 pub struct AuctionDeclined {
     #[serde(skip_serializing)]
     pub pool: PgPool,
@@ -51,11 +59,16 @@ pub struct AuctionDeclined {
     #[serde(skip_serializing)]
     pub created_at: i64,
 
+    #[serde(skip_serializing)]
+    pub event_nft: Option<Address>,
+    #[serde(skip_serializing)]
+    pub event_collection: Option<Address>,
+
     pub nft_owner: Address,
     pub data_address: Address,
 }
 
-#[derive(Clone, Serialize)]
+#[derive(Clone, Serialize, EventRecord)]
 pub struct AuctionRootOwnershipTransferred {
     #[serde(skip_serializing)]
     pub pool: PgPool,
@@ -69,13 +82,18 @@ pub struct AuctionRootOwnershipTransferred {
     #[serde(skip_serializing)]
     pub created_at: i64,
 
+    #[serde(skip_serializing)]
+    pub event_nft: Option<Address>,
+    #[serde(skip_serializing)]
+    pub event_collection: Option<Address>,
+
     pub old_owner: Address,
     pub new_owner: Address,
 }
 
 /// AuctionTip3 events
 
-#[derive(Clone, Serialize)]
+#[derive(Clone, Serialize, EventRecord)]
 pub struct AuctionCreated {
     #[serde(skip_serializing)]
     pub pool: PgPool,
@@ -89,6 +107,11 @@ pub struct AuctionCreated {
     #[serde(skip_serializing)]
     pub created_at: i64,
 
+    #[serde(skip_serializing)]
+    pub event_nft: Option<Address>,
+    #[serde(skip_serializing)]
+    pub event_collection: Option<Address>,
+
     pub auction_subject: Address,
     pub subject_owner: Address,
     pub _payment_token: Address,
@@ -101,7 +124,7 @@ pub struct AuctionCreated {
     pub status: i16,
 }
 
-#[derive(Clone, Serialize)]
+#[derive(Clone, Serialize, EventRecord)]
 pub struct AuctionActive {
     #[serde(skip_serializing)]
     pub pool: PgPool,
@@ -115,6 +138,11 @@ pub struct AuctionActive {
     #[serde(skip_serializing)]
     pub created_at: i64,
 
+    #[serde(skip_serializing)]
+    pub event_nft: Option<Address>,
+    #[serde(skip_serializing)]
+    pub event_collection: Option<Address>,
+
     pub auction_subject: Address,
     pub subject_owner: Address,
     pub _payment_token: Address,
@@ -127,8 +155,8 @@ pub struct AuctionActive {
     pub status: i16,
 }
 
-#[derive(Clone, Serialize)]
-pub struct BidPlaced {
+#[derive(Clone, Serialize, EventRecord)]
+pub struct AuctionBidPlaced {
     #[serde(skip_serializing)]
     pub pool: PgPool,
     #[serde(skip_serializing)]
@@ -141,12 +169,17 @@ pub struct BidPlaced {
     #[serde(skip_serializing)]
     pub created_at: i64,
 
+    #[serde(skip_serializing)]
+    pub event_nft: Option<Address>,
+    #[serde(skip_serializing)]
+    pub event_collection: Option<Address>,
+
     pub buyer: Address,
     pub value: BigDecimal,
 }
 
-#[derive(Clone, Serialize)]
-pub struct BidDeclined {
+#[derive(Clone, Serialize, EventRecord)]
+pub struct AuctionBidDeclined {
     #[serde(skip_serializing)]
     pub pool: PgPool,
     #[serde(skip_serializing)]
@@ -159,11 +192,16 @@ pub struct BidDeclined {
     #[serde(skip_serializing)]
     pub created_at: i64,
 
+    #[serde(skip_serializing)]
+    pub event_nft: Option<Address>,
+    #[serde(skip_serializing)]
+    pub event_collection: Option<Address>,
+
     pub buyer: Address,
     pub value: BigDecimal,
 }
 
-#[derive(Clone, Serialize)]
+#[derive(Clone, Serialize, EventRecord)]
 pub struct AuctionComplete {
     #[serde(skip_serializing)]
     pub pool: PgPool,
@@ -177,12 +215,17 @@ pub struct AuctionComplete {
     #[serde(skip_serializing)]
     pub created_at: i64,
 
+    #[serde(skip_serializing)]
+    pub event_nft: Option<Address>,
+    #[serde(skip_serializing)]
+    pub event_collection: Option<Address>,
+
     pub seller: Address,
     pub buyer: Address,
     pub value: BigDecimal,
 }
 
-#[derive(Clone, Serialize)]
+#[derive(Clone, Serialize, EventRecord)]
 pub struct AuctionCancelled {
     #[serde(skip_serializing)]
     pub pool: PgPool,
@@ -195,11 +238,16 @@ pub struct AuctionCancelled {
     pub created_lt: i64,
     #[serde(skip_serializing)]
     pub created_at: i64,
+
+    #[serde(skip_serializing)]
+    pub event_nft: Option<Address>,
+    #[serde(skip_serializing)]
+    pub event_collection: Option<Address>,
 }
 
 /// FactoryDirectBuy events
 
-#[derive(Clone, Serialize)]
+#[derive(Clone, Serialize, EventRecord)]
 pub struct DirectBuyDeployed {
     #[serde(skip_serializing)]
     pub pool: PgPool,
@@ -213,6 +261,11 @@ pub struct DirectBuyDeployed {
     #[serde(skip_serializing)]
     pub created_at: i64,
 
+    #[serde(skip_serializing)]
+    pub event_nft: Option<Address>,
+    #[serde(skip_serializing)]
+    pub event_collection: Option<Address>,
+
     pub direct_buy_address: Address,
     pub sender: Address,
     pub token: Address,
@@ -221,7 +274,7 @@ pub struct DirectBuyDeployed {
     pub amount: BigDecimal,
 }
 
-#[derive(Clone, Serialize)]
+#[derive(Clone, Serialize, EventRecord)]
 pub struct DirectBuyDeclined {
     #[serde(skip_serializing)]
     pub pool: PgPool,
@@ -235,13 +288,18 @@ pub struct DirectBuyDeclined {
     #[serde(skip_serializing)]
     pub created_at: i64,
 
+    #[serde(skip_serializing)]
+    pub event_nft: Option<Address>,
+    #[serde(skip_serializing)]
+    pub event_collection: Option<Address>,
+
     pub sender: Address,
     pub token: Address,
     pub amount: BigDecimal,
 }
 
-#[derive(Clone, Serialize)]
-pub struct DirectBuyOwnershipTransferred {
+#[derive(Clone, Serialize, EventRecord)]
+pub struct FactoryDirectBuyOwnershipTransferred {
     #[serde(skip_serializing)]
     pub pool: PgPool,
     #[serde(skip_serializing)]
@@ -254,13 +312,18 @@ pub struct DirectBuyOwnershipTransferred {
     #[serde(skip_serializing)]
     pub created_at: i64,
 
+    #[serde(skip_serializing)]
+    pub event_nft: Option<Address>,
+    #[serde(skip_serializing)]
+    pub event_collection: Option<Address>,
+
     pub old_owner: Address,
     pub new_owner: Address,
 }
 
 /// FactoryDirectSell events
 
-#[derive(Clone, Serialize)]
+#[derive(Clone, Serialize, EventRecord)]
 pub struct DirectSellDeployed {
     #[serde(skip_serializing)]
     pub pool: PgPool,
@@ -274,6 +337,11 @@ pub struct DirectSellDeployed {
     #[serde(skip_serializing)]
     pub created_at: i64,
 
+    #[serde(skip_serializing)]
+    pub event_nft: Option<Address>,
+    #[serde(skip_serializing)]
+    pub event_collection: Option<Address>,
+
     pub direct_sell_address: Address,
     pub sender: Address,
     pub payment_token: Address,
@@ -282,7 +350,7 @@ pub struct DirectSellDeployed {
     pub price: BigDecimal,
 }
 
-#[derive(Clone, Serialize)]
+#[derive(Clone, Serialize, EventRecord)]
 pub struct DirectSellDeclined {
     #[serde(skip_serializing)]
     pub pool: PgPool,
@@ -296,12 +364,17 @@ pub struct DirectSellDeclined {
     #[serde(skip_serializing)]
     pub created_at: i64,
 
+    #[serde(skip_serializing)]
+    pub event_nft: Option<Address>,
+    #[serde(skip_serializing)]
+    pub event_collection: Option<Address>,
+
     pub sender: Address,
     pub _nft_address: Address,
 }
 
-#[derive(Clone, Serialize)]
-pub struct DirectSellOwnershipTransferred {
+#[derive(Clone, Serialize, EventRecord)]
+pub struct FactoryDirectSellOwnershipTransferred {
     #[serde(skip_serializing)]
     pub pool: PgPool,
     #[serde(skip_serializing)]
@@ -314,13 +387,18 @@ pub struct DirectSellOwnershipTransferred {
     #[serde(skip_serializing)]
     pub created_at: i64,
 
+    #[serde(skip_serializing)]
+    pub event_nft: Option<Address>,
+    #[serde(skip_serializing)]
+    pub event_collection: Option<Address>,
+
     pub old_owner: Address,
     pub new_owner: Address,
 }
 
 /// DirectBuy events
 
-#[derive(Clone, Serialize)]
+#[derive(Clone, Serialize, EventRecord)]
 pub struct DirectBuyStateChanged {
     #[serde(skip_serializing)]
     pub pool: PgPool,
@@ -333,6 +411,11 @@ pub struct DirectBuyStateChanged {
     pub created_lt: i64,
     #[serde(skip_serializing)]
     pub created_at: i64,
+
+    #[serde(skip_serializing)]
+    pub event_nft: Option<Address>,
+    #[serde(skip_serializing)]
+    pub event_collection: Option<Address>,
 
     pub from: i16,
     pub to: i16,
@@ -353,7 +436,7 @@ pub struct DirectBuyStateChanged {
 
 /// DirectSell events
 
-#[derive(Clone, Serialize)]
+#[derive(Clone, Serialize, EventRecord)]
 pub struct DirectSellStateChanged {
     #[serde(skip_serializing)]
     pub pool: PgPool,
@@ -366,6 +449,11 @@ pub struct DirectSellStateChanged {
     pub created_lt: i64,
     #[serde(skip_serializing)]
     pub created_at: i64,
+
+    #[serde(skip_serializing)]
+    pub event_nft: Option<Address>,
+    #[serde(skip_serializing)]
+    pub event_collection: Option<Address>,
 
     pub from: i16,
     pub to: i16,
@@ -385,7 +473,7 @@ pub struct DirectSellStateChanged {
 
 // Nft events
 
-#[derive(Clone, Serialize)]
+#[derive(Clone, Serialize, EventRecord)]
 pub struct NftOwnerChanged {
     #[serde(skip_serializing)]
     pub pool: PgPool,
@@ -399,11 +487,16 @@ pub struct NftOwnerChanged {
     #[serde(skip_serializing)]
     pub created_at: i64,
 
+    #[serde(skip_serializing)]
+    pub event_nft: Option<Address>,
+    #[serde(skip_serializing)]
+    pub event_collection: Option<Address>,
+
     pub old_owner: Address,
     pub new_owner: Address,
 }
 
-#[derive(Clone, Serialize)]
+#[derive(Clone, Serialize, EventRecord)]
 pub struct NftManagerChanged {
     #[serde(skip_serializing)]
     pub pool: PgPool,
@@ -417,13 +510,18 @@ pub struct NftManagerChanged {
     #[serde(skip_serializing)]
     pub created_at: i64,
 
+    #[serde(skip_serializing)]
+    pub event_nft: Option<Address>,
+    #[serde(skip_serializing)]
+    pub event_collection: Option<Address>,
+
     pub old_manager: Address,
     pub new_manager: Address,
 }
 
 // Collection events
 
-#[derive(Clone, Serialize)]
+#[derive(Clone, Serialize, EventRecord)]
 pub struct CollectionOwnershipTransferred {
     #[serde(skip_serializing)]
     pub pool: PgPool,
@@ -437,11 +535,16 @@ pub struct CollectionOwnershipTransferred {
     #[serde(skip_serializing)]
     pub created_at: i64,
 
+    #[serde(skip_serializing)]
+    pub event_nft: Option<Address>,
+    #[serde(skip_serializing)]
+    pub event_collection: Option<Address>,
+
     pub old_owner: Address,
     pub new_owner: Address,
 }
 
-#[derive(Clone, Serialize)]
+#[derive(Clone, Serialize, EventRecord)]
 pub struct NftCreated {
     #[serde(skip_serializing)]
     pub pool: PgPool,
@@ -455,6 +558,11 @@ pub struct NftCreated {
     #[serde(skip_serializing)]
     pub created_at: i64,
 
+    #[serde(skip_serializing)]
+    pub event_nft: Option<Address>,
+    #[serde(skip_serializing)]
+    pub event_collection: Option<Address>,
+
     pub id: BigDecimal,
     pub nft: Address,
     pub owner: Address,
@@ -462,7 +570,7 @@ pub struct NftCreated {
     pub creator: Address,
 }
 
-#[derive(Clone, Serialize)]
+#[derive(Clone, Serialize, EventRecord)]
 pub struct NftBurned {
     #[serde(skip_serializing)]
     pub pool: PgPool,
@@ -476,12 +584,27 @@ pub struct NftBurned {
     #[serde(skip_serializing)]
     pub created_at: i64,
 
+    #[serde(skip_serializing)]
+    pub event_nft: Option<Address>,
+    #[serde(skip_serializing)]
+    pub event_collection: Option<Address>,
+
     pub id: BigDecimal,
     pub nft: Address,
     pub owner: Address,
     pub manager: Address,
 }
 
+async fn await_logging_error<F, T>(f: F, trace_id: &str)
+where
+    F: Future<Output = Result<T>> + Send,
+{
+    if let Err(e) = f.await {
+        log::error!("[{}] Error: {:#?}", trace_id, e);
+    }
+}
+
+#[async_trait]
 impl ContractEvent for AuctionDeployed {
     fn build_from(
         event: &ExtractedOwned,
@@ -523,6 +646,9 @@ impl ContractEvent for AuctionDeployed {
             created_lt: get_created_lt(event)?,
             created_at: get_created_at(event)?,
 
+            event_collection: Some(to_address("collection")?),
+            event_nft: Some(to_address("nft")?),
+
             offer_address: to_address("offerAddress")?,
 
             collection: to_address("collection")?,
@@ -534,30 +660,15 @@ impl ContractEvent for AuctionDeployed {
             deploy_nonce: to_big_decimal("deployNonce")?,
         })
     }
-}
 
-impl EventRecord for AuctionDeployed {
-    fn get_address(&self) -> Address {
-        self.address.clone()
-    }
-
-    fn get_created_at(&self) -> i64 {
-        self.created_at
-    }
-
-    fn get_created_lt(&self) -> i64 {
-        self.created_lt
-    }
-
-    fn get_event_category(&self) -> EventCategory {
-        EventCategory::Auction
-    }
-
-    fn get_event_type(&self) -> EventType {
-        EventType::AuctionDeployed
+    async fn update_dependent_tables(&mut self) -> Result<()> {
+        let mut tx = self.pool.begin().await?;
+        await_logging_error(actions::save_event(self, &mut tx), "Saving AuctionDeployed").await;
+        Ok(tx.commit().await?)
     }
 }
 
+#[async_trait]
 impl ContractEvent for AuctionDeclined {
     fn build_from(
         event: &ExtractedOwned,
@@ -593,34 +704,22 @@ impl ContractEvent for AuctionDeclined {
             created_lt: get_created_lt(event)?,
             created_at: get_created_at(event)?,
 
+            event_collection: None,
+            event_nft: None,
+
             nft_owner: to_address("nftOwner")?,
             data_address: to_address("dataAddress")?,
         })
     }
-}
 
-impl EventRecord for AuctionDeclined {
-    fn get_address(&self) -> Address {
-        self.address.clone()
-    }
-
-    fn get_created_at(&self) -> i64 {
-        self.created_at
-    }
-
-    fn get_created_lt(&self) -> i64 {
-        self.created_lt
-    }
-
-    fn get_event_category(&self) -> EventCategory {
-        EventCategory::Auction
-    }
-
-    fn get_event_type(&self) -> EventType {
-        EventType::AuctionDeclined
+    async fn update_dependent_tables(&mut self) -> Result<()> {
+        let mut tx = self.pool.begin().await?;
+        await_logging_error(actions::save_event(self, &mut tx), "Saving AuctionDeclined").await;
+        Ok(tx.commit().await?)
     }
 }
 
+#[async_trait]
 impl ContractEvent for AuctionRootOwnershipTransferred {
     fn build_from(
         event: &ExtractedOwned,
@@ -656,34 +755,26 @@ impl ContractEvent for AuctionRootOwnershipTransferred {
             created_lt: get_created_lt(event)?,
             created_at: get_created_at(event)?,
 
+            event_collection: None,
+            event_nft: None,
+
             old_owner: to_address("oldOwner")?,
             new_owner: to_address("newOwner")?,
         })
     }
-}
 
-impl EventRecord for AuctionRootOwnershipTransferred {
-    fn get_address(&self) -> Address {
-        self.address.clone()
-    }
-
-    fn get_created_at(&self) -> i64 {
-        self.created_at
-    }
-
-    fn get_created_lt(&self) -> i64 {
-        self.created_lt
-    }
-
-    fn get_event_category(&self) -> EventCategory {
-        EventCategory::Auction
-    }
-
-    fn get_event_type(&self) -> EventType {
-        EventType::AuctionOwnershipTransferred
+    async fn update_dependent_tables(&mut self) -> Result<()> {
+        let mut tx = self.pool.begin().await?;
+        await_logging_error(
+            actions::save_event(self, &mut tx),
+            "Saving AuctionRootOwnershipTransferred",
+        )
+        .await;
+        Ok(tx.commit().await?)
     }
 }
 
+#[async_trait]
 impl ContractEvent for AuctionCreated {
     fn build_from(
         event: &ExtractedOwned,
@@ -717,6 +808,9 @@ impl ContractEvent for AuctionCreated {
             created_lt: get_created_lt(event)?,
             created_at: get_created_at(event)?,
 
+            event_collection: None,
+            event_nft: Some(to_address("auctionSubject")?),
+
             auction_subject: to_address("auctionSubject")?,
             subject_owner: to_address("subjectOwner")?,
             _payment_token: to_address("_paymentToken")?,
@@ -729,30 +823,30 @@ impl ContractEvent for AuctionCreated {
             status: to_i16("status")?,
         })
     }
+
+    async fn update_dependent_tables(&mut self) -> Result<()> {
+        let mut tx = self.pool.begin().await?;
+
+        self.event_collection =
+            actions::get_collection_by_nft(&self.auction_subject, &mut tx).await;
+        await_logging_error(
+            actions::update_nft_by_auction(
+                "nft_events",
+                &self.address,
+                &self.auction_subject,
+                &mut tx,
+            ),
+            "Updating nft of auctions",
+        )
+        .await;
+
+        await_logging_error(actions::save_event(self, &mut tx), "Saving AuctionCreated").await;
+
+        Ok(tx.commit().await?)
+    }
 }
 
-impl EventRecord for AuctionCreated {
-    fn get_address(&self) -> Address {
-        self.address.clone()
-    }
-
-    fn get_created_at(&self) -> i64 {
-        self.created_at
-    }
-
-    fn get_created_lt(&self) -> i64 {
-        self.created_lt
-    }
-
-    fn get_event_category(&self) -> EventCategory {
-        EventCategory::Auction
-    }
-
-    fn get_event_type(&self) -> EventType {
-        EventType::AuctionCreated
-    }
-}
-
+#[async_trait]
 impl ContractEvent for AuctionActive {
     fn build_from(
         event: &ExtractedOwned,
@@ -786,6 +880,9 @@ impl ContractEvent for AuctionActive {
             created_lt: get_created_lt(event)?,
             created_at: get_created_at(event)?,
 
+            event_collection: None,
+            event_nft: Some(to_address("auctionSubject")?),
+
             auction_subject: to_address("auctionSubject")?,
             subject_owner: to_address("subjectOwner")?,
             _payment_token: to_address("_paymentToken")?,
@@ -798,35 +895,13 @@ impl ContractEvent for AuctionActive {
             status: to_i16("status")?,
         })
     }
-}
 
-impl EventRecord for AuctionActive {
-    fn get_address(&self) -> Address {
-        self.address.clone()
-    }
+    async fn update_dependent_tables(&mut self) -> Result<()> {
+        let mut tx = self.pool.begin().await?;
 
-    fn get_created_at(&self) -> i64 {
-        self.created_at
-    }
-
-    fn get_created_lt(&self) -> i64 {
-        self.created_lt
-    }
-
-    fn get_event_category(&self) -> EventCategory {
-        EventCategory::Auction
-    }
-
-    fn get_event_type(&self) -> EventType {
-        EventType::AuctionActive
-    }
-}
-
-impl AuctionActive {
-    pub async fn upsert_auction(&self) -> Result<()> {
         let auction = NftAuction {
             address: self.address.clone(),
-            nft: Some(self.auction_subject.clone()),
+            nft: self.event_nft.clone(),
             wallet_for_bids: Some(self.wallet_for_bids.clone()),
             price_token: Some(self._payment_token.clone()),
             start_price: Some(self._price.clone()),
@@ -836,28 +911,37 @@ impl AuctionActive {
             finished_at: Some(NaiveDateTime::from_timestamp(self.finish_time, 0)),
             tx_lt: self.created_lt,
         };
+        await_logging_error(
+            actions::upsert_auction(&auction, &mut tx),
+            "Inserting Auction",
+        )
+        .await;
 
-        actions::upsert_auction(&auction, &self.pool).await
-    }
+        await_logging_error(
+            actions::update_nft_by_auction(
+                "nft_events",
+                &self.address,
+                &self.auction_subject,
+                &mut tx,
+            ),
+            "Updating nft of auctions",
+        )
+        .await;
 
-    pub async fn upsert_collection(&self) -> Result<()> {
-        if let Some(collection) =
-            actions::get_collection_by_nft(&self.auction_subject, &self.pool).await
-        {
+        self.event_collection =
+            actions::get_collection_by_nft(&self.auction_subject, &mut tx).await;
+        if let Some(collection) = self.event_collection.as_ref() {
             let collection = get_collection_data(
                 MsgAddressInt::from_str(collection.0.as_str())?,
                 &self.consumer,
             )
             .await;
-
-            actions::upsert_collection(&collection, &self.pool).await
-        } else {
-            Ok(())
+            await_logging_error(
+                actions::upsert_collection(&collection, &mut tx),
+                "Inserting collection",
+            )
+            .await;
         }
-    }
-
-    pub async fn upsert_nft_price_history(&self) -> Result<()> {
-        let collection = actions::get_collection_by_nft(&self.auction_subject, &self.pool).await;
 
         let price_history = NftPriceHistory {
             source: self.address.clone(),
@@ -865,15 +949,23 @@ impl AuctionActive {
             created_at: NaiveDateTime::from_timestamp(self.created_at, 0),
             price: self._price.clone(),
             price_token: Some(self._payment_token.clone()),
-            nft: Some(self.auction_subject.clone()),
-            collection,
+            nft: self.event_nft.clone(),
+            collection: self.event_collection.clone(),
         };
+        await_logging_error(
+            actions::upsert_nft_price_history(&price_history, &mut tx),
+            "Updating NftPriceHistory",
+        )
+        .await;
 
-        actions::upsert_nft_price_history(&price_history, &self.pool).await
+        await_logging_error(actions::save_event(self, &mut tx), "Saving AuctionActive").await;
+
+        Ok(tx.commit().await?)
     }
 }
 
-impl ContractEvent for BidPlaced {
+#[async_trait]
+impl ContractEvent for AuctionBidPlaced {
     fn build_from(
         event: &ExtractedOwned,
         pool: &PgPool,
@@ -901,7 +993,7 @@ impl ContractEvent for BidPlaced {
         let to_address = get_token_processor(&tokens, token_to_addr);
         let to_bigdecimal = get_token_processor(&tokens, token_to_big_decimal);
 
-        Ok(BidPlaced {
+        Ok(AuctionBidPlaced {
             pool: pool.clone(),
             consumer: consumer.clone(),
 
@@ -909,36 +1001,20 @@ impl ContractEvent for BidPlaced {
             created_lt: get_created_lt(event)?,
             created_at: get_created_at(event)?,
 
+            event_collection: None,
+            event_nft: None,
+
             buyer: to_address("buyer")?,
             value: to_bigdecimal("value")?,
         })
     }
-}
 
-impl EventRecord for BidPlaced {
-    fn get_address(&self) -> Address {
-        self.address.clone()
-    }
+    async fn update_dependent_tables(&mut self) -> Result<()> {
+        let mut tx = self.pool.begin().await?;
 
-    fn get_created_at(&self) -> i64 {
-        self.created_at
-    }
+        (self.event_nft, self.event_collection) =
+            actions::get_nft_and_collection_by_auction(&self.address, &mut tx).await;
 
-    fn get_created_lt(&self) -> i64 {
-        self.created_lt
-    }
-
-    fn get_event_category(&self) -> EventCategory {
-        EventCategory::Auction
-    }
-
-    fn get_event_type(&self) -> EventType {
-        EventType::AuctionBidPlaced
-    }
-}
-
-impl BidPlaced {
-    pub async fn upsert_bid(&self) -> Result<()> {
         let bid = NftAuctionBid {
             auction: self.address.clone(),
             buyer: self.buyer.clone(),
@@ -946,14 +1022,11 @@ impl BidPlaced {
             declined: false,
             created_at: NaiveDateTime::from_timestamp(self.created_at, 0),
         };
+        await_logging_error(actions::upsert_bid(&bid, &mut tx), "Updating AuctionBid").await;
 
-        actions::upsert_bid(&bid, &self.pool).await
-    }
-
-    pub async fn upsert_auction(&self) -> Result<()> {
         let auction = NftAuction {
             address: self.address.clone(),
-            nft: None,
+            nft: self.event_nft.clone(),
             wallet_for_bids: None,
             price_token: None,
             start_price: None,
@@ -963,42 +1036,48 @@ impl BidPlaced {
             finished_at: None,
             tx_lt: self.created_lt,
         };
+        await_logging_error(
+            actions::upsert_auction(&auction, &mut tx),
+            "Updating Auction",
+        )
+        .await;
 
-        actions::upsert_auction(&auction, &self.pool).await
-    }
-
-    pub async fn upsert_collection(&self) -> Result<()> {
-        if let Some(collection) =
-            actions::get_collection_by_auction(&self.address, &self.pool).await
-        {
-            let collection = get_collection_data(
-                MsgAddressInt::from_str(collection.0.as_str())?,
-                &self.consumer,
-            )
-            .await;
-
-            actions::upsert_collection(&collection, &self.pool).await
-        } else {
-            Ok(())
-        }
-    }
-
-    pub async fn upsert_nft_price_history(&self) -> Result<()> {
         let price_history = NftPriceHistory {
             source: self.address.clone(),
             source_type: NftPriceSource::AuctionBid,
             created_at: NaiveDateTime::from_timestamp(self.created_at, 0),
             price: self.value.clone(),
             price_token: None,
-            nft: None,
-            collection: None,
+            nft: self.event_nft.clone(),
+            collection: self.event_collection.clone(),
         };
+        await_logging_error(
+            actions::upsert_nft_price_history(&price_history, &mut tx),
+            "Updating NftPriceHistory",
+        )
+        .await;
 
-        actions::upsert_nft_price_history(&price_history, &self.pool).await
+        if let Some(collection) = self.event_collection.as_ref() {
+            let collection = get_collection_data(
+                MsgAddressInt::from_str(collection.0.as_str())?,
+                &self.consumer,
+            )
+            .await;
+            await_logging_error(
+                actions::upsert_collection(&collection, &mut tx),
+                "Inserting collection",
+            )
+            .await;
+        }
+
+        await_logging_error(actions::save_event(self, &mut tx), "Saving AuctionBid").await;
+
+        Ok(tx.commit().await?)
     }
 }
 
-impl ContractEvent for BidDeclined {
+#[async_trait]
+impl ContractEvent for AuctionBidDeclined {
     fn build_from(
         event: &ExtractedOwned,
         pool: &PgPool,
@@ -1026,7 +1105,7 @@ impl ContractEvent for BidDeclined {
         let to_address = get_token_processor(&tokens, token_to_addr);
         let to_bigdecimal = get_token_processor(&tokens, token_to_big_decimal);
 
-        Ok(BidDeclined {
+        Ok(AuctionBidDeclined {
             pool: pool.clone(),
             consumer: consumer.clone(),
 
@@ -1034,36 +1113,20 @@ impl ContractEvent for BidDeclined {
             created_lt: get_created_lt(event)?,
             created_at: get_created_at(event)?,
 
+            event_collection: None,
+            event_nft: None,
+
             buyer: to_address("buyer")?,
             value: to_bigdecimal("value")?,
         })
     }
-}
 
-impl EventRecord for BidDeclined {
-    fn get_address(&self) -> Address {
-        self.address.clone()
-    }
+    async fn update_dependent_tables(&mut self) -> Result<()> {
+        let mut tx = self.pool.begin().await?;
 
-    fn get_created_at(&self) -> i64 {
-        self.created_at
-    }
+        (self.event_nft, self.event_collection) =
+            actions::get_nft_and_collection_by_auction(&self.address, &mut tx).await;
 
-    fn get_created_lt(&self) -> i64 {
-        self.created_lt
-    }
-
-    fn get_event_category(&self) -> EventCategory {
-        EventCategory::Auction
-    }
-
-    fn get_event_type(&self) -> EventType {
-        EventType::AuctionBidDeclined
-    }
-}
-
-impl BidDeclined {
-    pub async fn upsert_bid(&self) -> Result<()> {
         let bid = NftAuctionBid {
             auction: self.address.clone(),
             buyer: self.buyer.clone(),
@@ -1071,14 +1134,11 @@ impl BidDeclined {
             declined: true,
             created_at: NaiveDateTime::from_timestamp(self.created_at, 0),
         };
+        await_logging_error(actions::upsert_bid(&bid, &mut tx), "Updating AuctionBid").await;
 
-        actions::upsert_bid(&bid, &self.pool).await
-    }
-
-    pub async fn upsert_auction(&self) -> Result<()> {
         let auction = NftAuction {
             address: self.address.clone(),
-            nft: None,
+            nft: self.event_nft.clone(),
             wallet_for_bids: None,
             price_token: None,
             start_price: None,
@@ -1088,27 +1148,32 @@ impl BidDeclined {
             finished_at: None,
             tx_lt: self.created_lt,
         };
+        await_logging_error(
+            actions::upsert_auction(&auction, &mut tx),
+            "Updating Auction",
+        )
+        .await;
 
-        actions::upsert_auction(&auction, &self.pool).await
-    }
-
-    pub async fn upsert_collection(&self) -> Result<()> {
-        if let Some(collection) =
-            actions::get_collection_by_auction(&self.address, &self.pool).await
-        {
+        if let Some(collection) = self.event_collection.as_ref() {
             let collection = get_collection_data(
                 MsgAddressInt::from_str(collection.0.as_str())?,
                 &self.consumer,
             )
             .await;
-
-            actions::upsert_collection(&collection, &self.pool).await
-        } else {
-            Ok(())
+            await_logging_error(
+                actions::upsert_collection(&collection, &mut tx),
+                "Inserting collection",
+            )
+            .await;
         }
+
+        await_logging_error(actions::save_event(self, &mut tx), "Saving AuctionBid").await;
+
+        Ok(tx.commit().await?)
     }
 }
 
+#[async_trait]
 impl ContractEvent for AuctionComplete {
     fn build_from(
         event: &ExtractedOwned,
@@ -1152,40 +1217,24 @@ impl ContractEvent for AuctionComplete {
             created_lt: get_created_lt(event)?,
             created_at: get_created_at(event)?,
 
+            event_collection: None,
+            event_nft: None,
+
             seller: to_address("seller")?,
             buyer: to_address("buyer")?,
             value: to_bigdecimal("value")?,
         })
     }
-}
 
-impl EventRecord for AuctionComplete {
-    fn get_address(&self) -> Address {
-        self.address.clone()
-    }
+    async fn update_dependent_tables(&mut self) -> Result<()> {
+        let mut tx = self.pool.begin().await?;
 
-    fn get_created_at(&self) -> i64 {
-        self.created_at
-    }
+        (self.event_nft, self.event_collection) =
+            actions::get_nft_and_collection_by_auction(&self.address, &mut tx).await;
 
-    fn get_created_lt(&self) -> i64 {
-        self.created_lt
-    }
-
-    fn get_event_category(&self) -> EventCategory {
-        EventCategory::Auction
-    }
-
-    fn get_event_type(&self) -> EventType {
-        EventType::AuctionComplete
-    }
-}
-
-impl AuctionComplete {
-    pub async fn upsert_auction(&self) -> Result<()> {
         let auction = NftAuction {
             address: self.address.clone(),
-            nft: None,
+            nft: self.event_nft.clone(),
             wallet_for_bids: None,
             price_token: None,
             start_price: None,
@@ -1195,27 +1244,32 @@ impl AuctionComplete {
             finished_at: None,
             tx_lt: self.created_lt,
         };
+        await_logging_error(
+            actions::upsert_auction(&auction, &mut tx),
+            "Updating Auction",
+        )
+        .await;
 
-        actions::upsert_auction(&auction, &self.pool).await
-    }
-
-    pub async fn upsert_collection(&self) -> Result<()> {
-        if let Some(collection) =
-            actions::get_collection_by_auction(&self.address, &self.pool).await
-        {
+        if let Some(collection) = self.event_collection.as_ref() {
             let collection = get_collection_data(
                 MsgAddressInt::from_str(collection.0.as_str())?,
                 &self.consumer,
             )
             .await;
-
-            actions::upsert_collection(&collection, &self.pool).await
-        } else {
-            Ok(())
+            await_logging_error(
+                actions::upsert_collection(&collection, &mut tx),
+                "Inserting collection",
+            )
+            .await;
         }
+
+        await_logging_error(actions::save_event(self, &mut tx), "Saving AuctionComplete").await;
+
+        Ok(tx.commit().await?)
     }
 }
 
+#[async_trait]
 impl ContractEvent for AuctionCancelled {
     fn build_from(
         event: &ExtractedOwned,
@@ -1232,37 +1286,21 @@ impl ContractEvent for AuctionCancelled {
             address: get_address(event),
             created_lt: get_created_lt(event)?,
             created_at: get_created_at(event)?,
+
+            event_collection: None,
+            event_nft: None,
         })
     }
-}
 
-impl EventRecord for AuctionCancelled {
-    fn get_address(&self) -> Address {
-        self.address.clone()
-    }
+    async fn update_dependent_tables(&mut self) -> Result<()> {
+        let mut tx = self.pool.begin().await?;
 
-    fn get_created_at(&self) -> i64 {
-        self.created_at
-    }
+        (self.event_nft, self.event_collection) =
+            actions::get_nft_and_collection_by_auction(&self.address, &mut tx).await;
 
-    fn get_created_lt(&self) -> i64 {
-        self.created_lt
-    }
-
-    fn get_event_category(&self) -> EventCategory {
-        EventCategory::Auction
-    }
-
-    fn get_event_type(&self) -> EventType {
-        EventType::AuctionCancelled
-    }
-}
-
-impl AuctionCancelled {
-    pub async fn upsert_auction(&self) -> Result<()> {
         let auction = NftAuction {
             address: self.address.clone(),
-            nft: None,
+            nft: self.event_nft.clone(),
             wallet_for_bids: None,
             price_token: None,
             start_price: None,
@@ -1272,27 +1310,36 @@ impl AuctionCancelled {
             finished_at: None,
             tx_lt: self.created_lt,
         };
+        await_logging_error(
+            actions::upsert_auction(&auction, &mut tx),
+            "Updating Auction",
+        )
+        .await;
 
-        actions::upsert_auction(&auction, &self.pool).await
-    }
-
-    pub async fn upsert_collection(&self) -> Result<()> {
-        if let Some(collection) =
-            actions::get_collection_by_auction(&self.address, &self.pool).await
-        {
+        if let Some(collection) = self.event_collection.as_ref() {
             let collection = get_collection_data(
                 MsgAddressInt::from_str(collection.0.as_str())?,
                 &self.consumer,
             )
             .await;
-
-            actions::upsert_collection(&collection, &self.pool).await
-        } else {
-            Ok(())
+            await_logging_error(
+                actions::upsert_collection(&collection, &mut tx),
+                "Inserting collection",
+            )
+            .await;
         }
+
+        await_logging_error(
+            actions::save_event(self, &mut tx),
+            "Saving AuctionCancelled",
+        )
+        .await;
+
+        Ok(tx.commit().await?)
     }
 }
 
+#[async_trait]
 impl ContractEvent for DirectBuyDeployed {
     fn build_from(
         event: &ExtractedOwned,
@@ -1364,6 +1411,9 @@ impl ContractEvent for DirectBuyDeployed {
             created_lt: get_created_lt(event)?,
             created_at: get_created_at(event)?,
 
+            event_collection: None,
+            event_nft: Some(to_address("nft")?),
+
             direct_buy_address: to_address("directBuyAddress")?,
             sender: to_address("sender")?,
             token: to_address("token")?,
@@ -1372,30 +1422,23 @@ impl ContractEvent for DirectBuyDeployed {
             amount: to_bigdecimal("amount")?,
         })
     }
-}
 
-impl EventRecord for DirectBuyDeployed {
-    fn get_address(&self) -> Address {
-        self.address.clone()
-    }
+    async fn update_dependent_tables(&mut self) -> Result<()> {
+        let mut tx = self.pool.begin().await?;
 
-    fn get_created_at(&self) -> i64 {
-        self.created_at
-    }
+        self.event_collection = actions::get_collection_by_nft(&self.nft, &mut tx).await;
 
-    fn get_created_lt(&self) -> i64 {
-        self.created_lt
-    }
+        await_logging_error(
+            actions::save_event(self, &mut tx),
+            "Saving DirectBuyDeployed",
+        )
+        .await;
 
-    fn get_event_category(&self) -> EventCategory {
-        EventCategory::DirectBuy
-    }
-
-    fn get_event_type(&self) -> EventType {
-        EventType::DirectBuyDeployed
+        Ok(tx.commit().await?)
     }
 }
 
+#[async_trait]
 impl ContractEvent for DirectBuyDeclined {
     fn build_from(
         event: &ExtractedOwned,
@@ -1439,36 +1482,28 @@ impl ContractEvent for DirectBuyDeclined {
             created_lt: get_created_lt(event)?,
             created_at: get_created_at(event)?,
 
+            event_collection: None,
+            event_nft: None,
+
             sender: to_address("sender")?,
             token: to_address("token")?,
             amount: to_bigdecimal("amount")?,
         })
     }
-}
 
-impl EventRecord for DirectBuyDeclined {
-    fn get_address(&self) -> Address {
-        self.address.clone()
-    }
-
-    fn get_created_at(&self) -> i64 {
-        self.created_at
-    }
-
-    fn get_created_lt(&self) -> i64 {
-        self.created_lt
-    }
-
-    fn get_event_category(&self) -> EventCategory {
-        EventCategory::DirectBuy
-    }
-
-    fn get_event_type(&self) -> EventType {
-        EventType::DirectBuyDeclined
+    async fn update_dependent_tables(&mut self) -> Result<()> {
+        let mut tx = self.pool.begin().await?;
+        await_logging_error(
+            actions::save_event(self, &mut tx),
+            "Saving DirectBuyDeclined",
+        )
+        .await;
+        Ok(tx.commit().await?)
     }
 }
 
-impl ContractEvent for DirectBuyOwnershipTransferred {
+#[async_trait]
+impl ContractEvent for FactoryDirectBuyOwnershipTransferred {
     fn build_from(
         event: &ExtractedOwned,
         pool: &PgPool,
@@ -1495,7 +1530,7 @@ impl ContractEvent for DirectBuyOwnershipTransferred {
 
         let to_address = get_token_processor(&tokens, token_to_addr);
 
-        Ok(DirectBuyOwnershipTransferred {
+        Ok(FactoryDirectBuyOwnershipTransferred {
             pool: pool.clone(),
             consumer: consumer.clone(),
 
@@ -1503,34 +1538,26 @@ impl ContractEvent for DirectBuyOwnershipTransferred {
             created_lt: get_created_lt(event)?,
             created_at: get_created_at(event)?,
 
+            event_collection: None,
+            event_nft: None,
+
             old_owner: to_address("oldOwner")?,
             new_owner: to_address("newOwner")?,
         })
     }
-}
 
-impl EventRecord for DirectBuyOwnershipTransferred {
-    fn get_address(&self) -> Address {
-        self.address.clone()
-    }
-
-    fn get_created_at(&self) -> i64 {
-        self.created_at
-    }
-
-    fn get_created_lt(&self) -> i64 {
-        self.created_lt
-    }
-
-    fn get_event_category(&self) -> EventCategory {
-        EventCategory::DirectBuy
-    }
-
-    fn get_event_type(&self) -> EventType {
-        EventType::DirectBuyOwnershipTransferred
+    async fn update_dependent_tables(&mut self) -> Result<()> {
+        let mut tx = self.pool.begin().await?;
+        await_logging_error(
+            actions::save_event(self, &mut tx),
+            "Saving FactoryDirectBuyOwnershipTransferred",
+        )
+        .await;
+        Ok(tx.commit().await?)
     }
 }
 
+#[async_trait]
 impl ContractEvent for DirectSellDeployed {
     fn build_from(
         event: &ExtractedOwned,
@@ -1602,6 +1629,9 @@ impl ContractEvent for DirectSellDeployed {
             created_lt: get_created_lt(event)?,
             created_at: get_created_at(event)?,
 
+            event_collection: None,
+            event_nft: Some(to_address("nft")?),
+
             direct_sell_address: to_address("_directSellAddress")?,
             sender: to_address("sender")?,
             payment_token: to_address("paymentToken")?,
@@ -1610,30 +1640,23 @@ impl ContractEvent for DirectSellDeployed {
             price: to_bigdecimal("price")?,
         })
     }
-}
 
-impl EventRecord for DirectSellDeployed {
-    fn get_address(&self) -> Address {
-        self.address.clone()
-    }
+    async fn update_dependent_tables(&mut self) -> Result<()> {
+        let mut tx = self.pool.begin().await?;
 
-    fn get_created_at(&self) -> i64 {
-        self.created_at
-    }
+        self.event_collection = actions::get_collection_by_nft(&self.nft, &mut tx).await;
 
-    fn get_created_lt(&self) -> i64 {
-        self.created_lt
-    }
+        await_logging_error(
+            actions::save_event(self, &mut tx),
+            "Saving DirectSellDeployed",
+        )
+        .await;
 
-    fn get_event_category(&self) -> EventCategory {
-        EventCategory::DirectSell
-    }
-
-    fn get_event_type(&self) -> EventType {
-        EventType::DirectSellDeployed
+        Ok(tx.commit().await?)
     }
 }
 
+#[async_trait]
 impl ContractEvent for DirectSellDeclined {
     fn build_from(
         event: &ExtractedOwned,
@@ -1669,35 +1692,27 @@ impl ContractEvent for DirectSellDeclined {
             created_lt: get_created_lt(event)?,
             created_at: get_created_at(event)?,
 
+            event_collection: None,
+            event_nft: None,
+
             sender: to_address("sender")?,
             _nft_address: to_address("_nftAddress")?,
         })
     }
-}
 
-impl EventRecord for DirectSellDeclined {
-    fn get_address(&self) -> Address {
-        self.address.clone()
-    }
-
-    fn get_created_at(&self) -> i64 {
-        self.created_at
-    }
-
-    fn get_created_lt(&self) -> i64 {
-        self.created_lt
-    }
-
-    fn get_event_category(&self) -> EventCategory {
-        EventCategory::DirectSell
-    }
-
-    fn get_event_type(&self) -> EventType {
-        EventType::DirectSellDeclined
+    async fn update_dependent_tables(&mut self) -> Result<()> {
+        let mut tx = self.pool.begin().await?;
+        await_logging_error(
+            actions::save_event(self, &mut tx),
+            "Saving DirectSellDeclined",
+        )
+        .await;
+        Ok(tx.commit().await?)
     }
 }
 
-impl ContractEvent for DirectSellOwnershipTransferred {
+#[async_trait]
+impl ContractEvent for FactoryDirectSellOwnershipTransferred {
     fn build_from(
         event: &ExtractedOwned,
         pool: &PgPool,
@@ -1724,7 +1739,7 @@ impl ContractEvent for DirectSellOwnershipTransferred {
 
         let to_address = get_token_processor(&tokens, token_to_addr);
 
-        Ok(DirectSellOwnershipTransferred {
+        Ok(FactoryDirectSellOwnershipTransferred {
             pool: pool.clone(),
             consumer: consumer.clone(),
 
@@ -1732,34 +1747,26 @@ impl ContractEvent for DirectSellOwnershipTransferred {
             created_lt: get_created_lt(event)?,
             created_at: get_created_at(event)?,
 
+            event_collection: None,
+            event_nft: None,
+
             old_owner: to_address("oldOwner")?,
             new_owner: to_address("newOwner")?,
         })
     }
-}
 
-impl EventRecord for DirectSellOwnershipTransferred {
-    fn get_address(&self) -> Address {
-        self.address.clone()
-    }
-
-    fn get_created_at(&self) -> i64 {
-        self.created_at
-    }
-
-    fn get_created_lt(&self) -> i64 {
-        self.created_lt
-    }
-
-    fn get_event_category(&self) -> EventCategory {
-        EventCategory::DirectSell
-    }
-
-    fn get_event_type(&self) -> EventType {
-        EventType::DirectSellOwnershipTransferred
+    async fn update_dependent_tables(&mut self) -> Result<()> {
+        let mut tx = self.pool.begin().await?;
+        await_logging_error(
+            actions::save_event(self, &mut tx),
+            "Saving FactoryDirectSellOwnershipTransferred",
+        )
+        .await;
+        Ok(tx.commit().await?)
     }
 }
 
+#[async_trait]
 impl ContractEvent for DirectBuyStateChanged {
     fn build_from(
         event: &ExtractedOwned,
@@ -1809,6 +1816,9 @@ impl ContractEvent for DirectBuyStateChanged {
             created_lt: get_created_lt(event)?,
             created_at: get_created_at(event)?,
 
+            event_collection: None,
+            event_nft: Some(to_address("nft")?),
+
             from: to_i16("from")?,
             to: to_i16("to")?,
 
@@ -1826,40 +1836,36 @@ impl ContractEvent for DirectBuyStateChanged {
             end_time_buy: to_i64("endTimeBuy")?,
         })
     }
-}
 
-impl EventRecord for DirectBuyStateChanged {
-    fn get_address(&self) -> Address {
-        self.address.clone()
-    }
+    async fn update_dependent_tables(&mut self) -> Result<()> {
+        let mut tx = self.pool.begin().await?;
 
-    fn get_created_at(&self) -> i64 {
-        self.created_at
-    }
+        self.event_collection = actions::get_collection_by_nft(&self.nft, &mut tx).await;
 
-    fn get_created_lt(&self) -> i64 {
-        self.created_lt
-    }
-
-    fn get_event_category(&self) -> EventCategory {
-        EventCategory::DirectBuy
-    }
-
-    fn get_event_type(&self) -> EventType {
-        EventType::DirectBuyStateChanged
-    }
-}
-
-impl DirectBuyStateChanged {
-    pub async fn upsert_direct_buy(&self) -> Result<()> {
-        let collection = actions::get_collection_by_nft(&self.nft, &self.pool).await;
         let state = self.to.into();
         let created_ts = NaiveDateTime::from_timestamp(self.created_at, 0);
+
+        if state != DirectBuyState::Create {
+            let price_history = NftPriceHistory {
+                source: self.address.clone(),
+                source_type: NftPriceSource::DirectBuy,
+                created_at: NaiveDateTime::from_timestamp(self.created_at, 0),
+                price: self._price.clone(),
+                price_token: Some(self.spent_token.clone()),
+                nft: self.event_nft.clone(),
+                collection: self.event_collection.clone(),
+            };
+            await_logging_error(
+                actions::upsert_nft_price_history(&price_history, &mut tx),
+                "Updating NftPriceHistory",
+            )
+            .await;
+        }
 
         let direct_buy = NftDirectBuy {
             address: self.address.clone(),
             nft: self.nft.clone(),
-            collection,
+            collection: self.event_collection.clone(),
             price_token: self.spent_token.clone(),
             price: self._price.clone(),
             buyer: self.creator.clone(),
@@ -1874,27 +1880,23 @@ impl DirectBuyStateChanged {
             updated: created_ts,
             tx_lt: self.created_lt,
         };
+        await_logging_error(
+            actions::upsert_direct_buy(&direct_buy, &mut tx),
+            "Updating DirectBuy",
+        )
+        .await;
 
-        actions::upsert_direct_buy(&direct_buy, &self.pool).await
-    }
+        await_logging_error(
+            actions::save_event(self, &mut tx),
+            "Saving DirectBuyStateChanged",
+        )
+        .await;
 
-    pub async fn upsert_nft_price_history(&self) -> Result<()> {
-        let collection = actions::get_collection_by_nft(&self.nft, &self.pool).await;
-
-        let price_history = NftPriceHistory {
-            source: self.address.clone(),
-            source_type: NftPriceSource::DirectBuy,
-            created_at: NaiveDateTime::from_timestamp(self.created_at, 0),
-            price: self._price.clone(),
-            price_token: Some(self.spent_token.clone()),
-            nft: Some(self.nft.clone()),
-            collection,
-        };
-
-        actions::upsert_nft_price_history(&price_history, &self.pool).await
+        Ok(tx.commit().await?)
     }
 }
 
+#[async_trait]
 impl ContractEvent for DirectSellStateChanged {
     fn build_from(
         event: &ExtractedOwned,
@@ -1944,6 +1946,9 @@ impl ContractEvent for DirectSellStateChanged {
             created_lt: get_created_lt(event)?,
             created_at: get_created_at(event)?,
 
+            event_collection: None,
+            event_nft: Some(to_address("nft")?),
+
             from: to_i16("from")?,
             to: to_i16("to")?,
 
@@ -1960,40 +1965,36 @@ impl ContractEvent for DirectSellStateChanged {
             sender: to_address("sender")?,
         })
     }
-}
 
-impl EventRecord for DirectSellStateChanged {
-    fn get_address(&self) -> Address {
-        self.address.clone()
-    }
+    async fn update_dependent_tables(&mut self) -> Result<()> {
+        let mut tx = self.pool.begin().await?;
 
-    fn get_created_at(&self) -> i64 {
-        self.created_at
-    }
+        self.event_collection = actions::get_collection_by_nft(&self.nft, &mut tx).await;
 
-    fn get_created_lt(&self) -> i64 {
-        self.created_lt
-    }
-
-    fn get_event_category(&self) -> EventCategory {
-        EventCategory::DirectSell
-    }
-
-    fn get_event_type(&self) -> EventType {
-        EventType::DirectSellStateChanged
-    }
-}
-
-impl DirectSellStateChanged {
-    pub async fn upsert_direct_sell(&self) -> Result<()> {
-        let collection = actions::get_collection_by_nft(&self.nft, &self.pool).await;
         let state = self.to.into();
         let created_ts = NaiveDateTime::from_timestamp(self.created_at, 0);
+
+        if state != DirectSellState::Create {
+            let price_history = NftPriceHistory {
+                source: self.address.clone(),
+                source_type: NftPriceSource::DirectSell,
+                created_at: NaiveDateTime::from_timestamp(self.created_at, 0),
+                price: self._price.clone(),
+                price_token: Some(self.token.clone()),
+                nft: self.event_nft.clone(),
+                collection: self.event_collection.clone(),
+            };
+            await_logging_error(
+                actions::upsert_nft_price_history(&price_history, &mut tx),
+                "Updating NftPriceHistory",
+            )
+            .await;
+        }
 
         let direct_sell = NftDirectSell {
             address: self.address.clone(),
             nft: self.nft.clone(),
-            collection,
+            collection: self.event_collection.clone(),
             price_token: self.token.clone(),
             price: self._price.clone(),
             seller: self.creator.clone(),
@@ -2008,41 +2009,36 @@ impl DirectSellStateChanged {
             updated: created_ts,
             tx_lt: self.created_lt,
         };
+        await_logging_error(
+            actions::upsert_direct_sell(&direct_sell, &mut tx),
+            "Updating DirectSell",
+        )
+        .await;
 
-        actions::upsert_direct_sell(&direct_sell, &self.pool).await
-    }
-
-    pub async fn upsert_collection(&self) -> Result<()> {
-        if let Some(collection) = actions::get_collection_by_nft(&self.nft, &self.pool).await {
+        if let Some(collection) = self.event_collection.as_ref() {
             let collection = get_collection_data(
                 MsgAddressInt::from_str(collection.0.as_str())?,
                 &self.consumer,
             )
             .await;
-
-            actions::upsert_collection(&collection, &self.pool).await
-        } else {
-            Ok(())
+            await_logging_error(
+                actions::upsert_collection(&collection, &mut tx),
+                "Inserting collection",
+            )
+            .await;
         }
-    }
 
-    pub async fn upsert_nft_price_history(&self) -> Result<()> {
-        let collection = actions::get_collection_by_nft(&self.nft, &self.pool).await;
+        await_logging_error(
+            actions::save_event(self, &mut tx),
+            "Saving DirectSellStateChanged",
+        )
+        .await;
 
-        let price_history = NftPriceHistory {
-            source: self.address.clone(),
-            source_type: NftPriceSource::DirectSell,
-            created_at: NaiveDateTime::from_timestamp(self.created_at, 0),
-            price: self._price.clone(),
-            price_token: Some(self.token.clone()),
-            nft: Some(self.nft.clone()),
-            collection,
-        };
-
-        actions::upsert_nft_price_history(&price_history, &self.pool).await
+        Ok(tx.commit().await?)
     }
 }
 
+#[async_trait]
 impl ContractEvent for NftOwnerChanged {
     fn build_from(
         event: &ExtractedOwned,
@@ -2078,36 +2074,19 @@ impl ContractEvent for NftOwnerChanged {
             created_lt: get_created_lt(event)?,
             created_at: get_created_at(event)?,
 
+            event_collection: None,
+            event_nft: Some(get_address(event)),
+
             old_owner: to_address("oldOwner")?,
             new_owner: to_address("newOwner")?,
         })
     }
-}
 
-impl EventRecord for NftOwnerChanged {
-    fn get_address(&self) -> Address {
-        self.address.clone()
-    }
+    async fn update_dependent_tables(&mut self) -> Result<()> {
+        let mut tx = self.pool.begin().await?;
 
-    fn get_created_at(&self) -> i64 {
-        self.created_at
-    }
+        self.event_collection = actions::get_collection_by_nft(&self.address, &mut tx).await;
 
-    fn get_created_lt(&self) -> i64 {
-        self.created_lt
-    }
-
-    fn get_event_category(&self) -> EventCategory {
-        EventCategory::Nft
-    }
-
-    fn get_event_type(&self) -> EventType {
-        EventType::NftOwnerChanged
-    }
-}
-
-impl NftOwnerChanged {
-    pub async fn upsert_nft(&self) -> Result<()> {
         let meta = fetch_metadata(
             MsgAddressInt::from_str(self.address.0.as_str())?,
             &self.consumer,
@@ -2122,7 +2101,7 @@ impl NftOwnerChanged {
 
         let nft = Nft {
             address: self.address.clone(),
-            collection: None,
+            collection: self.event_collection.clone(),
             owner: Some(self.new_owner.clone()),
             manager: None,
             name: nft_meta
@@ -2144,11 +2123,20 @@ impl NftOwnerChanged {
             tx_lt: self.created_lt,
         };
 
-        actions::upsert_nft(&nft, &self.pool).await?;
-        actions::upsert_nft_meta(&nft_meta, &self.pool).await
+        await_logging_error(actions::upsert_nft(&nft, &mut tx), "Updating nft").await;
+        await_logging_error(
+            actions::upsert_nft_meta(&nft_meta, &mut tx),
+            "Updating nft meta",
+        )
+        .await;
+
+        await_logging_error(actions::save_event(self, &mut tx), "Saving NftOwnerChanged").await;
+
+        Ok(tx.commit().await?)
     }
 }
 
+#[async_trait]
 impl ContractEvent for NftManagerChanged {
     fn build_from(
         event: &ExtractedOwned,
@@ -2184,36 +2172,19 @@ impl ContractEvent for NftManagerChanged {
             created_lt: get_created_lt(event)?,
             created_at: get_created_at(event)?,
 
+            event_collection: None,
+            event_nft: Some(get_address(event)),
+
             old_manager: to_address("oldManager")?,
             new_manager: to_address("newManager")?,
         })
     }
-}
 
-impl EventRecord for NftManagerChanged {
-    fn get_address(&self) -> Address {
-        self.address.clone()
-    }
+    async fn update_dependent_tables(&mut self) -> Result<()> {
+        let mut tx = self.pool.begin().await?;
 
-    fn get_created_at(&self) -> i64 {
-        self.created_at
-    }
+        self.event_collection = actions::get_collection_by_nft(&self.address, &mut tx).await;
 
-    fn get_created_lt(&self) -> i64 {
-        self.created_lt
-    }
-
-    fn get_event_category(&self) -> EventCategory {
-        EventCategory::Nft
-    }
-
-    fn get_event_type(&self) -> EventType {
-        EventType::NftManagerChanged
-    }
-}
-
-impl NftManagerChanged {
-    pub async fn upsert_nft(&self) -> Result<()> {
         let meta = fetch_metadata(
             MsgAddressInt::from_str(self.address.0.as_str())?,
             &self.consumer,
@@ -2228,7 +2199,7 @@ impl NftManagerChanged {
 
         let nft = Nft {
             address: self.address.clone(),
-            collection: None,
+            collection: self.event_collection.clone(),
             owner: None,
             manager: Some(self.new_manager.clone()),
             name: nft_meta
@@ -2250,11 +2221,24 @@ impl NftManagerChanged {
             tx_lt: self.created_lt,
         };
 
-        actions::upsert_nft(&nft, &self.pool).await?;
-        actions::upsert_nft_meta(&nft_meta, &self.pool).await
+        await_logging_error(actions::upsert_nft(&nft, &mut tx), "Updating nft").await;
+        await_logging_error(
+            actions::upsert_nft_meta(&nft_meta, &mut tx),
+            "Updating nft meta",
+        )
+        .await;
+
+        await_logging_error(
+            actions::save_event(self, &mut tx),
+            "Saving NftManagerChanged",
+        )
+        .await;
+
+        Ok(tx.commit().await?)
     }
 }
 
+#[async_trait]
 impl ContractEvent for CollectionOwnershipTransferred {
     fn build_from(
         event: &ExtractedOwned,
@@ -2290,46 +2274,42 @@ impl ContractEvent for CollectionOwnershipTransferred {
             created_lt: get_created_lt(event)?,
             created_at: get_created_at(event)?,
 
+            event_collection: Some(get_address(event)),
+            event_nft: None,
+
             old_owner: to_address("oldOwner")?,
             new_owner: to_address("newOwner")?,
         })
     }
-}
 
-impl EventRecord for CollectionOwnershipTransferred {
-    fn get_address(&self) -> Address {
-        self.address.clone()
-    }
+    async fn update_dependent_tables(&mut self) -> Result<()> {
+        let mut tx = self.pool.begin().await?;
 
-    fn get_created_at(&self) -> i64 {
-        self.created_at
-    }
-
-    fn get_created_lt(&self) -> i64 {
-        self.created_lt
-    }
-
-    fn get_event_category(&self) -> EventCategory {
-        EventCategory::Collection
-    }
-
-    fn get_event_type(&self) -> EventType {
-        EventType::CollectionOwnershipTransferred
-    }
-}
-
-impl CollectionOwnershipTransferred {
-    pub async fn upsert_collection(&self) -> Result<()> {
         let collection = get_collection_data(
             MsgAddressInt::from_str(self.address.0.as_str())?,
             &self.consumer,
         )
         .await;
 
-        actions::upsert_collection(&collection, &self.pool).await
+        await_logging_error(
+            actions::upsert_collection(&collection, &mut tx),
+            "Updating collection",
+        )
+        .await;
+
+        await_logging_error(
+            actions::save_event(self, &mut tx),
+            "Saving CollectionOwnershipTransferred",
+        )
+        .await;
+
+        Ok(tx.commit().await?)
     }
 }
 
+// TODO: update tables collection
+
+#[async_trait]
 impl ContractEvent for NftCreated {
     fn build_from(
         event: &ExtractedOwned,
@@ -2393,6 +2373,9 @@ impl ContractEvent for NftCreated {
             created_lt: get_created_lt(event)?,
             created_at: get_created_at(event)?,
 
+            event_collection: Some(get_address(event)),
+            event_nft: Some(to_address("nft")?),
+
             id: to_bigdecimal("id")?,
             nft: to_address("nft")?,
             owner: to_address("owner")?,
@@ -2400,38 +2383,15 @@ impl ContractEvent for NftCreated {
             creator: to_address("creator")?,
         })
     }
-}
 
-impl EventRecord for NftCreated {
-    fn get_address(&self) -> Address {
-        self.address.clone()
-    }
+    async fn update_dependent_tables(&mut self) -> Result<()> {
+        let mut tx = self.pool.begin().await?;
 
-    fn get_created_at(&self) -> i64 {
-        self.created_at
-    }
-
-    fn get_created_lt(&self) -> i64 {
-        self.created_lt
-    }
-
-    fn get_event_category(&self) -> EventCategory {
-        EventCategory::Collection
-    }
-
-    fn get_event_type(&self) -> EventType {
-        EventType::NftCreated
-    }
-}
-
-impl NftCreated {
-    pub async fn upsert_nft(&self) -> Result<()> {
         let meta = fetch_metadata(
             MsgAddressInt::from_str(self.nft.0.as_str())?,
             &self.consumer,
         )
         .await;
-
         let nft_meta = NftMeta {
             nft: self.nft.clone(),
             meta,
@@ -2440,7 +2400,7 @@ impl NftCreated {
 
         let nft = Nft {
             address: self.nft.clone(),
-            collection: Some(self.address.clone()),
+            collection: self.event_collection.clone(),
             owner: Some(self.owner.clone()),
             manager: Some(self.manager.clone()),
             name: nft_meta
@@ -2462,21 +2422,58 @@ impl NftCreated {
             tx_lt: self.created_lt,
         };
 
-        actions::upsert_nft(&nft, &self.pool).await?;
-        actions::upsert_nft_meta(&nft_meta, &self.pool).await
-    }
+        await_logging_error(actions::upsert_nft(&nft, &mut tx), "Updating nft").await;
+        await_logging_error(
+            actions::upsert_nft_meta(&nft_meta, &mut tx),
+            "Updating nft meta",
+        )
+        .await;
 
-    pub async fn upsert_collection(&self) -> Result<()> {
         let collection = get_collection_data(
             MsgAddressInt::from_str(self.address.0.as_str())?,
             &self.consumer,
         )
         .await;
 
-        actions::upsert_collection(&collection, &self.pool).await
+        await_logging_error(
+            actions::upsert_collection(&collection, &mut tx),
+            "Updating collection",
+        )
+        .await;
+
+        await_logging_error(actions::save_event(self, &mut tx), "Saving NftCreated").await;
+
+        await_logging_error(
+            actions::update_collection_by_nft("nft_events", &self.nft, &self.address, &mut tx),
+            "Updating collection by nft",
+        )
+        .await;
+        await_logging_error(
+            actions::update_collection_by_nft("nft_direct_sell", &self.nft, &self.address, &mut tx),
+            "Updating collection by nft",
+        )
+        .await;
+        await_logging_error(
+            actions::update_collection_by_nft("nft_direct_buy", &self.nft, &self.address, &mut tx),
+            "Updating collection by nft",
+        )
+        .await;
+        await_logging_error(
+            actions::update_collection_by_nft(
+                "nft_price_history",
+                &self.nft,
+                &self.address,
+                &mut tx,
+            ),
+            "Updating collection by nft",
+        )
+        .await;
+
+        Ok(tx.commit().await?)
     }
 }
 
+#[async_trait]
 impl ContractEvent for NftBurned {
     fn build_from(
         event: &ExtractedOwned,
@@ -2527,38 +2524,19 @@ impl ContractEvent for NftBurned {
             created_lt: get_created_lt(event)?,
             created_at: get_created_at(event)?,
 
+            event_collection: Some(get_address(event)),
+            event_nft: Some(to_address("nft")?),
+
             id: to_bigdecimal("id")?,
             nft: to_address("nft")?,
             owner: to_address("owner")?,
             manager: to_address("manager")?,
         })
     }
-}
 
-impl EventRecord for NftBurned {
-    fn get_address(&self) -> Address {
-        self.address.clone()
-    }
+    async fn update_dependent_tables(&mut self) -> Result<()> {
+        let mut tx = self.pool.begin().await?;
 
-    fn get_created_at(&self) -> i64 {
-        self.created_at
-    }
-
-    fn get_created_lt(&self) -> i64 {
-        self.created_lt
-    }
-
-    fn get_event_category(&self) -> EventCategory {
-        EventCategory::Collection
-    }
-
-    fn get_event_type(&self) -> EventType {
-        EventType::NftBurned
-    }
-}
-
-impl NftBurned {
-    pub async fn upsert_nft(&self) -> Result<()> {
         let meta = fetch_metadata(
             MsgAddressInt::from_str(self.nft.0.as_str())?,
             &self.consumer,
@@ -2573,7 +2551,7 @@ impl NftBurned {
 
         let nft = Nft {
             address: self.nft.clone(),
-            collection: Some(self.address.clone()),
+            collection: self.event_collection.clone(),
             owner: Some(self.owner.clone()),
             manager: Some(self.manager.clone()),
             name: nft_meta
@@ -2595,18 +2573,54 @@ impl NftBurned {
             tx_lt: self.created_lt,
         };
 
-        actions::upsert_nft(&nft, &self.pool).await?;
-        actions::upsert_nft_meta(&nft_meta, &self.pool).await
-    }
+        await_logging_error(actions::upsert_nft(&nft, &mut tx), "Updating nft").await;
+        await_logging_error(
+            actions::upsert_nft_meta(&nft_meta, &mut tx),
+            "Updating nft meta",
+        )
+        .await;
 
-    pub async fn upsert_collection(&self) -> Result<()> {
         let collection = get_collection_data(
             MsgAddressInt::from_str(self.address.0.as_str())?,
             &self.consumer,
         )
         .await;
 
-        actions::upsert_collection(&collection, &self.pool).await
+        await_logging_error(
+            actions::upsert_collection(&collection, &mut tx),
+            "Updating collection",
+        )
+        .await;
+
+        await_logging_error(actions::save_event(self, &mut tx), "Saving NftBurned").await;
+
+        await_logging_error(
+            actions::update_collection_by_nft("nft_events", &self.nft, &self.address, &mut tx),
+            "Updating collection by nft",
+        )
+        .await;
+        await_logging_error(
+            actions::update_collection_by_nft("nft_direct_sell", &self.nft, &self.address, &mut tx),
+            "Updating collection by nft",
+        )
+        .await;
+        await_logging_error(
+            actions::update_collection_by_nft("nft_direct_buy", &self.nft, &self.address, &mut tx),
+            "Updating collection by nft",
+        )
+        .await;
+        await_logging_error(
+            actions::update_collection_by_nft(
+                "nft_price_history",
+                &self.nft,
+                &self.address,
+                &mut tx,
+            ),
+            "Updating collection by nft",
+        )
+        .await;
+
+        Ok(tx.commit().await?)
     }
 }
 

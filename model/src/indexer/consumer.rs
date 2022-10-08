@@ -1,6 +1,6 @@
 use crate::indexer::{events::*, traits::ContractEvent};
 use anyhow::Result;
-use futures::{future::BoxFuture, Future, StreamExt};
+use futures::{future::BoxFuture, StreamExt};
 use nekoton_abi::{transaction_parser::ExtractedOwned, TransactionParser};
 use serde::Serialize;
 use sqlx::PgPool;
@@ -27,13 +27,12 @@ pub async fn serve(pool: PgPool, consumer: Arc<TransactionConsumer>) -> Result<(
         for (parser, handler) in parsers_and_handlers.iter() {
             if let Ok(extracted) = parser.parse(&tx.transaction) {
                 let extracted = extracted.into_iter().map(|ex| ex.into_owned()).collect();
-                let f = handler(extracted, pool.clone(), consumer.clone());
-                tokio::spawn(async move { f.await });
+                handler(extracted, pool.clone(), consumer.clone()).await;
             }
         }
 
         if let Err(e) = tx.commit() {
-            log::error!("Failed committing transacton: {:#?}", e);
+            return Err(e.context("Failed committing transacton"));
         }
     }
 
@@ -123,7 +122,7 @@ where
     EventType: ContractEvent + EventRecord + Serialize + Sync,
 {
     if let Some(event) = extracted.iter().find(|e| e.name == event_name) {
-        let record = match EventType::build_from(event, pool, consumer) {
+        let mut record = match EventType::build_from(event, pool, consumer) {
             Ok(record) => record,
             Err(e) => {
                 log::error!("Error creating record {}: {:#?}", event_name, e);
@@ -131,23 +130,20 @@ where
             }
         };
 
-        if let Err(e) = actions::save_event(&record, pool).await {
-            log::error!("Error saving event {}: {:#?}", event_name, e);
+        // TODO: adding to whitelist here?
+
+        if let Err(e) = record.update_dependent_tables().await {
+            log::error!(
+                "Error updating dependent tables of {}: {:#?}",
+                event_name,
+                e
+            );
             return None;
         }
 
         Some(record)
     } else {
         None
-    }
-}
-
-async fn await_logging_error<F, T>(f: F, trace_id: &str)
-where
-    F: Future<Output = Result<T>> + Send,
-{
-    if let Err(e) = f.await {
-        log::error!("[{}] Error: {:#?}", trace_id, e);
     }
 }
 
@@ -187,44 +183,11 @@ async fn handle_auction_tip3(
     consumer: Arc<TransactionConsumer>,
 ) {
     handle_event::<AuctionCreated>("AuctionCreated", &extracted, &pool, &consumer).await;
-
-    if let Some(record) =
-        handle_event::<AuctionActive>("AuctionActive", &extracted, &pool, &consumer).await
-    {
-        await_logging_error(record.upsert_auction(), &record.address.0).await;
-        await_logging_error(record.upsert_collection(), &record.address.0).await;
-        await_logging_error(record.upsert_nft_price_history(), &record.address.0).await;
-    }
-
-    if let Some(record) = handle_event::<BidPlaced>("BidPlaced", &extracted, &pool, &consumer).await
-    {
-        await_logging_error(record.upsert_bid(), &record.address.0).await;
-        await_logging_error(record.upsert_auction(), &record.address.0).await;
-        await_logging_error(record.upsert_collection(), &record.address.0).await;
-        await_logging_error(record.upsert_nft_price_history(), &record.address.0).await;
-    }
-
-    if let Some(record) =
-        handle_event::<BidDeclined>("BidDeclined", &extracted, &pool, &consumer).await
-    {
-        await_logging_error(record.upsert_bid(), &record.address.0).await;
-        await_logging_error(record.upsert_auction(), &record.address.0).await;
-        await_logging_error(record.upsert_collection(), &record.address.0).await;
-    }
-
-    if let Some(record) =
-        handle_event::<AuctionComplete>("AuctionComplete", &extracted, &pool, &consumer).await
-    {
-        await_logging_error(record.upsert_auction(), &record.address.0).await;
-        await_logging_error(record.upsert_collection(), &record.address.0).await;
-    }
-
-    if let Some(record) =
-        handle_event::<AuctionCancelled>("AuctionCancelled", &extracted, &pool, &consumer).await
-    {
-        await_logging_error(record.upsert_auction(), &record.address.0).await;
-        await_logging_error(record.upsert_collection(), &record.address.0).await;
-    }
+    handle_event::<AuctionActive>("AuctionActive", &extracted, &pool, &consumer).await;
+    handle_event::<AuctionBidPlaced>("BidPlaced", &extracted, &pool, &consumer).await;
+    handle_event::<AuctionBidDeclined>("BidDeclined", &extracted, &pool, &consumer).await;
+    handle_event::<AuctionComplete>("AuctionComplete", &extracted, &pool, &consumer).await;
+    handle_event::<AuctionCancelled>("AuctionCancelled", &extracted, &pool, &consumer).await;
 }
 
 async fn handle_direct_buy(
@@ -232,13 +195,8 @@ async fn handle_direct_buy(
     pool: PgPool,
     consumer: Arc<TransactionConsumer>,
 ) {
-    if let Some(record) =
-        handle_event::<DirectBuyStateChanged>("DirectBuyStateChanged", &extracted, &pool, &consumer)
-            .await
-    {
-        await_logging_error(record.upsert_direct_buy(), &record.address.0).await;
-        await_logging_error(record.upsert_nft_price_history(), &record.address.0).await;
-    }
+    handle_event::<DirectBuyStateChanged>("DirectBuyStateChanged", &extracted, &pool, &consumer)
+        .await;
 }
 
 async fn handle_direct_sell(
@@ -246,18 +204,8 @@ async fn handle_direct_sell(
     pool: PgPool,
     consumer: Arc<TransactionConsumer>,
 ) {
-    if let Some(record) = handle_event::<DirectSellStateChanged>(
-        "DirectSellStateChanged",
-        &extracted,
-        &pool,
-        &consumer,
-    )
-    .await
-    {
-        await_logging_error(record.upsert_direct_sell(), &record.address.0).await;
-        await_logging_error(record.upsert_collection(), &record.address.0).await;
-        await_logging_error(record.upsert_nft_price_history(), &record.address.0).await;
-    }
+    handle_event::<DirectSellStateChanged>("DirectSellStateChanged", &extracted, &pool, &consumer)
+        .await;
 }
 
 async fn handle_factory_direct_buy(
@@ -280,7 +228,7 @@ async fn handle_factory_direct_buy(
         }
     }
     handle_event::<DirectBuyDeclined>("DirectBuyDeclined", &extracted, &pool, &consumer).await;
-    handle_event::<DirectBuyOwnershipTransferred>(
+    handle_event::<FactoryDirectBuyOwnershipTransferred>(
         "OwnershipTransferred",
         &extracted,
         &pool,
@@ -309,7 +257,7 @@ async fn handle_factory_direct_sell(
         }
     }
     handle_event::<DirectSellDeclined>("DirectSellDeclined", &extracted, &pool, &consumer).await;
-    handle_event::<DirectSellOwnershipTransferred>(
+    handle_event::<FactoryDirectSellOwnershipTransferred>(
         "OwnershipTransferred",
         &extracted,
         &pool,
@@ -323,17 +271,8 @@ async fn handle_nft(
     pool: PgPool,
     consumer: Arc<TransactionConsumer>,
 ) {
-    if let Some(record) =
-        handle_event::<NftOwnerChanged>("OwnerChanged", &extracted, &pool, &consumer).await
-    {
-        await_logging_error(record.upsert_nft(), &record.address.0).await;
-    }
-
-    if let Some(record) =
-        handle_event::<NftManagerChanged>("ManagerChanged", &extracted, &pool, &consumer).await
-    {
-        await_logging_error(record.upsert_nft(), &record.address.0).await;
-    }
+    handle_event::<NftOwnerChanged>("OwnerChanged", &extracted, &pool, &consumer).await;
+    handle_event::<NftManagerChanged>("ManagerChanged", &extracted, &pool, &consumer).await;
 }
 
 async fn handle_collection(
@@ -341,29 +280,15 @@ async fn handle_collection(
     pool: PgPool,
     consumer: Arc<TransactionConsumer>,
 ) {
-    if let Some(record) = handle_event::<CollectionOwnershipTransferred>(
+    handle_event::<CollectionOwnershipTransferred>(
         "OwnershipTransferred",
         &extracted,
         &pool,
         &consumer,
     )
-    .await
-    {
-        await_logging_error(record.upsert_collection(), &record.address.0).await;
-    }
-
-    if let Some(record) =
-        handle_event::<NftCreated>("NftCreated", &extracted, &pool, &consumer).await
-    {
-        await_logging_error(record.upsert_collection(), &record.address.0).await;
-        await_logging_error(record.upsert_nft(), &record.address.0).await;
-    }
-
-    if let Some(record) = handle_event::<NftBurned>("NftBurned", &extracted, &pool, &consumer).await
-    {
-        await_logging_error(record.upsert_collection(), &record.address.0).await;
-        await_logging_error(record.upsert_nft(), &record.address.0).await;
-    }
+    .await;
+    handle_event::<NftCreated>("NftCreated", &extracted, &pool, &consumer).await;
+    handle_event::<NftBurned>("NftBurned", &extracted, &pool, &consumer).await;
 }
 
 async fn initialize_whitelist_addresses(pool: &PgPool) {

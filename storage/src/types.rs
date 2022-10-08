@@ -16,7 +16,7 @@ pub struct Uri(pub String);
 pub enum EventType {
     AuctionDeployed,
     AuctionCreated,
-    AuctionOwnershipTransferred,
+    AuctionRootOwnershipTransferred,
     AuctionActive,
     AuctionDeclined,
     AuctionBidPlaced,
@@ -26,12 +26,12 @@ pub enum EventType {
 
     DirectBuyDeployed,
     DirectBuyDeclined,
-    DirectBuyOwnershipTransferred,
+    FactoryDirectBuyOwnershipTransferred,
     DirectBuyStateChanged,
 
     DirectSellDeployed,
     DirectSellDeclined,
-    DirectSellOwnershipTransferred,
+    FactoryDirectSellOwnershipTransferred,
     DirectSellStateChanged,
 
     NftOwnerChanged,
