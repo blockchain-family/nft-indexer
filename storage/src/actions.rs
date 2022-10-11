@@ -270,7 +270,7 @@ pub async fn upsert_nft(nft: &Nft, tx: &mut Transaction<'_, Postgres>) -> Result
         r#"
         insert into nft (address, collection, owner, manager, name, description, burned, updated, tx_lt)
         values ($1, $2, $3, $4, $5, $6, $7, $8, $9)
-        on conflict (address) where tx_lt < $9 do update
+        on conflict (address) where tx_lt <= $9 do update
         set collection = $2, owner = $3, manager = $4, name = $5, description = $6, burned = $7, updated = $8, 
             tx_lt = $9
         "#,
@@ -374,7 +374,7 @@ pub async fn upsert_auction(
         insert into nft_auction (address, nft, wallet_for_bids, price_token, start_price, max_bid, status,
             created_at, finished_at, tx_lt)
         values ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10)
-        on conflict (address) where tx_lt < $10 do update
+        on conflict (address) where tx_lt <= $10 do update
         set nft = $2, wallet_for_bids = $3, price_token = $4, start_price = $5, max_bid = $6, status = $7,
             created_at = $8, finished_at = $9, tx_lt = $10
         "#,
@@ -421,8 +421,9 @@ pub async fn upsert_direct_sell(
         insert into nft_direct_sell (address, nft, collection, price_token, price, seller, finished_at, expired_at,
             state, created, updated, tx_lt)
         values ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12)
-        on conflict (address) where tx_lt < $12 do update
-        set collection = $3, finished_at = $7, state = $9, updated = $11, tx_lt = $12
+        on conflict (address) where tx_lt <= $12 do update
+        set collection = $3, price = $5, finished_at = $7, expired_at = $8, state = $9, created = $10, updated = $11,
+            tx_lt = $12
         "#,
         &direct_sell.address as &Address,
         &direct_sell.nft as &Address,
@@ -450,8 +451,9 @@ pub async fn upsert_direct_buy(
         insert into nft_direct_buy (address, nft, collection, price_token, price, buyer, finished_at, expired_at,
             state, created, updated, tx_lt)    
         values ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12)
-        on conflict (address) where tx_lt < $12 do update
-        set collection = $3, finished_at = $7, state = $9, updated = $11, tx_lt = $12
+        on conflict (address) where tx_lt <= $12 do update
+        set collection = $3, price = $5, finished_at = $7, expired_at = $8, state = $9, created = $10, updated = $11,
+            tx_lt = $12
         "#,
         &direct_buy.address as &Address,
         &direct_buy.nft as &Address,
