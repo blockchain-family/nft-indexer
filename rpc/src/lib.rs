@@ -1,8 +1,9 @@
 use anyhow::{anyhow, Result};
-use nekoton_abi::{FunctionBuilder, FunctionExt, UnpackFirst};
+use nekoton_abi::{num_bigint::BigUint, FunctionBuilder, FunctionExt, UnpackFirst};
 use nekoton_contracts::tip4_1::nft_contract::GetInfoOutputs;
 use nekoton_utils::SimpleClock;
-use std::sync::Arc;
+use sqlx::types::BigDecimal;
+use std::{str::FromStr, sync::Arc};
 use ton_block::{MsgAddrStd, MsgAddressInt};
 use transaction_consumer::TransactionConsumer;
 
@@ -49,6 +50,14 @@ fn get_owner_function() -> ton_abi::Function {
         .build()
 }
 
+fn get_next_bid_value_function() -> ton_abi::Function {
+    FunctionBuilder::new("nextBidValue")
+        .abi_version(ton_abi::contract::ABI_VERSION_2_2)
+        .default_headers()
+        .output("nextBidValue", ton_abi::ParamType::Uint(128))
+        .build()
+}
+
 pub async fn owner(
     collection: MsgAddressInt,
     consumer: Arc<TransactionConsumer>,
@@ -67,4 +76,24 @@ pub async fn owner(
             .unpack_first::<MsgAddrStd>()?
             .address
             .as_hex_string())
+}
+
+pub async fn next_bid_value(
+    auction: MsgAddressInt,
+    consumer: Arc<TransactionConsumer>,
+) -> Result<BigDecimal> {
+    let contract = consumer
+        .get_contract_state(&auction)
+        .await?
+        .ok_or_else(|| anyhow!("Contract state is none!"))?;
+
+    let output = get_next_bid_value_function().run_local(&SimpleClock, contract.account, &[])?;
+
+    Ok(BigDecimal::from_str(
+        &output
+            .tokens
+            .ok_or_else(|| anyhow!("No tokens in output"))?
+            .unpack_first::<BigUint>()?
+            .to_string(),
+    )?)
 }

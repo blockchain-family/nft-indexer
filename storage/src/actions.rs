@@ -296,9 +296,9 @@ pub async fn upsert_auction(
         NftAuction,
         r#"
         select address as "address!: Address", nft as "nft?: Address", wallet_for_bids as "wallet_for_bids?: Address",
-            price_token as "price_token?: Address", start_price as "start_price?", max_bid as "max_bid?", 
-            status as "status?: AuctionStatus", created_at as "created_at?", finished_at as "finished_at?", 
-            tx_lt as "tx_lt!"
+            price_token as "price_token?: Address", start_price as "start_price?", min_bid as "min_bid?", 
+            max_bid as "max_bid?", status as "status?: AuctionStatus", created_at as "created_at?", 
+            finished_at as "finished_at?", tx_lt as "tx_lt!"
         from nft_auction where address = $1
         "#,
         &auction.address as &Address
@@ -339,6 +339,10 @@ pub async fn upsert_auction(
             saved_auction.start_price = auction.start_price.clone();
         }
 
+        if saved_auction.min_bid.is_none() {
+            saved_auction.min_bid = auction.min_bid.clone();
+        }
+
         if saved_auction.max_bid.is_none() {
             saved_auction.max_bid = sqlx::query_scalar!(
                 r#"
@@ -371,18 +375,19 @@ pub async fn upsert_auction(
 
     Ok(sqlx::query!(
         r#"
-        insert into nft_auction (address, nft, wallet_for_bids, price_token, start_price, max_bid, status,
+        insert into nft_auction (address, nft, wallet_for_bids, price_token, start_price, min_bid, max_bid, status,
             created_at, finished_at, tx_lt)
-        values ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10)
-        on conflict (address) where tx_lt <= $10 do update
-        set nft = $2, wallet_for_bids = $3, price_token = $4, start_price = $5, max_bid = $6, status = $7,
-            created_at = $8, finished_at = $9, tx_lt = $10
+        values ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11)
+        on conflict (address) where tx_lt <= $11 do update
+        set nft = $2, wallet_for_bids = $3, price_token = $4, start_price = $5, min_bid = $6, max_bid = $7,
+            status = $8, created_at = $9, finished_at = $10, tx_lt = $11
         "#,
         &auction.address as &Address,
         &auction.nft as &Option<Address>,
         &auction.wallet_for_bids as &Option<Address>,
         &auction.price_token as &Option<Address>,
         auction.start_price,
+        auction.min_bid,
         auction.max_bid,
         &auction.status as &Option<AuctionStatus>,
         auction.created_at,

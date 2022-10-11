@@ -209,6 +209,7 @@ pub struct NftAuction {
     pub wallet_for_bids: Option<Address>,
     pub price_token: Option<Address>,
     pub start_price: Option<BigDecimal>,
+    pub min_bid: Option<BigDecimal>,
     pub max_bid: Option<BigDecimal>,
     pub status: Option<AuctionStatus>,
     pub created_at: Option<NaiveDateTime>,

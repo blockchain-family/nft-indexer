@@ -1959,6 +1959,7 @@ dependencies = [
  "nekoton-contracts",
  "nekoton-utils",
  "serde_json",
+ "sqlx",
  "ton_abi",
  "ton_block",
  "transaction-consumer",

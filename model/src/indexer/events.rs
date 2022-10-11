@@ -899,12 +899,19 @@ impl ContractEvent for AuctionActive {
     async fn update_dependent_tables(&mut self) -> Result<()> {
         let mut tx = self.pool.begin().await?;
 
+        let min_bid = get_next_bid_value(
+            MsgAddressInt::from_str(self.address.0.as_str())?,
+            &self.consumer,
+        )
+        .await;
+
         let auction = NftAuction {
             address: self.address.clone(),
             nft: self.event_nft.clone(),
             wallet_for_bids: Some(self.wallet_for_bids.clone()),
             price_token: Some(self._payment_token.clone()),
             start_price: Some(self._price.clone()),
+            min_bid,
             max_bid: Some(self._price.clone()),
             status: Some(AuctionStatus::Active),
             created_at: Some(NaiveDateTime::from_timestamp(self.start_time, 0)),
@@ -1024,12 +1031,19 @@ impl ContractEvent for AuctionBidPlaced {
         };
         await_logging_error(actions::upsert_bid(&bid, &mut tx), "Updating AuctionBid").await;
 
+        let min_bid = get_next_bid_value(
+            MsgAddressInt::from_str(self.address.0.as_str())?,
+            &self.consumer,
+        )
+        .await;
+
         let auction = NftAuction {
             address: self.address.clone(),
             nft: self.event_nft.clone(),
             wallet_for_bids: None,
             price_token: None,
             start_price: None,
+            min_bid,
             max_bid: Some(self.value.clone()),
             status: None,
             created_at: None,
@@ -1136,12 +1150,19 @@ impl ContractEvent for AuctionBidDeclined {
         };
         await_logging_error(actions::upsert_bid(&bid, &mut tx), "Updating AuctionBid").await;
 
+        let min_bid = get_next_bid_value(
+            MsgAddressInt::from_str(self.address.0.as_str())?,
+            &self.consumer,
+        )
+        .await;
+
         let auction = NftAuction {
             address: self.address.clone(),
             nft: self.event_nft.clone(),
             wallet_for_bids: None,
             price_token: None,
             start_price: None,
+            min_bid,
             max_bid: None,
             status: None,
             created_at: None,
@@ -1232,12 +1253,19 @@ impl ContractEvent for AuctionComplete {
         (self.event_nft, self.event_collection) =
             actions::get_nft_and_collection_by_auction(&self.address, &mut tx).await;
 
+        let min_bid = get_next_bid_value(
+            MsgAddressInt::from_str(self.address.0.as_str())?,
+            &self.consumer,
+        )
+        .await;
+
         let auction = NftAuction {
             address: self.address.clone(),
             nft: self.event_nft.clone(),
             wallet_for_bids: None,
             price_token: None,
             start_price: None,
+            min_bid,
             max_bid: Some(self.value.clone()),
             status: Some(AuctionStatus::Completed),
             created_at: None,
@@ -1298,12 +1326,19 @@ impl ContractEvent for AuctionCancelled {
         (self.event_nft, self.event_collection) =
             actions::get_nft_and_collection_by_auction(&self.address, &mut tx).await;
 
+        let min_bid = get_next_bid_value(
+            MsgAddressInt::from_str(self.address.0.as_str())?,
+            &self.consumer,
+        )
+        .await;
+
         let auction = NftAuction {
             address: self.address.clone(),
             nft: self.event_nft.clone(),
             wallet_for_bids: None,
             price_token: None,
             start_price: None,
+            min_bid,
             max_bid: None,
             status: Some(AuctionStatus::Cancelled),
             created_at: None,
@@ -2307,8 +2342,6 @@ impl ContractEvent for CollectionOwnershipTransferred {
     }
 }
 
-// TODO: update tables collection
-
 #[async_trait]
 impl ContractEvent for NftCreated {
     fn build_from(
@@ -2706,8 +2739,8 @@ async fn get_collection_owner(
     consumer: &Arc<TransactionConsumer>,
 ) -> storage::types::Address {
     match rpc::retrier::Retrier::new(|| Box::pin(rpc::owner(collection.clone(), consumer.clone())))
-        .attempts(5)
-        .backoff(50)
+        .attempts(3)
+        .backoff(10)
         .factor(2)
         .trace_id(format!(
             "collection owner {}",
@@ -2720,6 +2753,31 @@ async fn get_collection_owner(
         Err(e) => {
             log::error!("Can't get {} collection owner: {:#?}", collection, e);
             String::default().into()
+        }
+    }
+}
+
+async fn get_next_bid_value(
+    auction: MsgAddressInt,
+    consumer: &Arc<TransactionConsumer>,
+) -> Option<BigDecimal> {
+    match rpc::retrier::Retrier::new(|| {
+        Box::pin(rpc::next_bid_value(auction.clone(), consumer.clone()))
+    })
+    .attempts(3)
+    .backoff(10)
+    .factor(2)
+    .trace_id(format!(
+        "next bid value {}",
+        auction.address().as_hex_string()
+    ))
+    .run()
+    .await
+    {
+        Ok(next_bid) => Some(next_bid),
+        Err(e) => {
+            log::error!("Can't get {} next bid value: {:#?}", auction, e);
+            None
         }
     }
 }

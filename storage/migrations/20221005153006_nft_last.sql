@@ -124,6 +124,7 @@ create table nft_auction(
     wallet_for_bids t_address,
     price_token t_address,
     start_price numeric(40),
+    min_bid numeric(40),
     max_bid numeric(40),
     status auction_status,
     created_at timestamp,

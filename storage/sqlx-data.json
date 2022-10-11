@@ -20,92 +20,6 @@
     },
     "query": "\n                select max(price) from nft_auction_bid\n                where auction = $1 and declined = false\n                "
   },
-  "3f1ccd23745399c151a6dcb1aaf6d4006936aca18cbf6e4870c733d5a62556ae": {
-    "describe": {
-      "columns": [
-        {
-          "name": "address!: Address",
-          "ordinal": 0,
-          "type_info": "Varchar"
-        },
-        {
-          "name": "nft?: Address",
-          "ordinal": 1,
-          "type_info": "Varchar"
-        },
-        {
-          "name": "wallet_for_bids?: Address",
-          "ordinal": 2,
-          "type_info": "Varchar"
-        },
-        {
-          "name": "price_token?: Address",
-          "ordinal": 3,
-          "type_info": "Varchar"
-        },
-        {
-          "name": "start_price?",
-          "ordinal": 4,
-          "type_info": "Numeric"
-        },
-        {
-          "name": "max_bid?",
-          "ordinal": 5,
-          "type_info": "Numeric"
-        },
-        {
-          "name": "status?: AuctionStatus",
-          "ordinal": 6,
-          "type_info": {
-            "Custom": {
-              "kind": {
-                "Enum": [
-                  "created",
-                  "active",
-                  "cancelled",
-                  "completed"
-                ]
-              },
-              "name": "auction_status"
-            }
-          }
-        },
-        {
-          "name": "created_at?",
-          "ordinal": 7,
-          "type_info": "Timestamp"
-        },
-        {
-          "name": "finished_at?",
-          "ordinal": 8,
-          "type_info": "Timestamp"
-        },
-        {
-          "name": "tx_lt!",
-          "ordinal": 9,
-          "type_info": "Int8"
-        }
-      ],
-      "nullable": [
-        false,
-        true,
-        true,
-        true,
-        true,
-        true,
-        true,
-        true,
-        true,
-        false
-      ],
-      "parameters": {
-        "Left": [
-          "Text"
-        ]
-      }
-    },
-    "query": "\n        select address as \"address!: Address\", nft as \"nft?: Address\", wallet_for_bids as \"wallet_for_bids?: Address\",\n            price_token as \"price_token?: Address\", start_price as \"start_price?\", max_bid as \"max_bid?\", \n            status as \"status?: AuctionStatus\", created_at as \"created_at?\", finished_at as \"finished_at?\", \n            tx_lt as \"tx_lt!\"\n        from nft_auction where address = $1\n        "
-  },
   "4382a5bdf9ecad4fc8b4d10a65986abd950e925726c297745dbd5619e0ef7461": {
     "describe": {
       "columns": [
@@ -543,7 +457,33 @@
     },
     "query": "\n        insert into nft_price_history (source, source_type, ts, price, price_token, nft, collection)\n        values ($1, $2, $3, $4, $5, $6, $7)\n        "
   },
-  "8b576a3a8328f3361ff55b98368a81fade9db428cfefa468a82efacf1fc1c11a": {
+  "8ecdb525bc647d2cee353ceae65cc873c93b531296da06233d2f779d9b3c091c": {
+    "describe": {
+      "columns": [
+        {
+          "name": "nft?: Address",
+          "ordinal": 0,
+          "type_info": "Varchar"
+        },
+        {
+          "name": "collection?: Address",
+          "ordinal": 1,
+          "type_info": "Varchar"
+        }
+      ],
+      "nullable": [
+        false,
+        true
+      ],
+      "parameters": {
+        "Left": [
+          "Text"
+        ]
+      }
+    },
+    "query": "\n        select nft.address as \"nft?: Address\", collection as \"collection?: Address\" from nft\n        inner join nft_auction\n        on nft_auction.nft = nft.address\n        where nft_auction.address = $1\n        "
+  },
+  "989e2cdf3f9c6c2a48e5db1425a8c5c556724b0ef0db188ae27d0ad5828854a2": {
     "describe": {
       "columns": [],
       "nullable": [],
@@ -583,6 +523,7 @@
           },
           "Numeric",
           "Numeric",
+          "Numeric",
           {
             "Custom": {
               "kind": {
@@ -602,33 +543,7 @@
         ]
       }
     },
-    "query": "\n        insert into nft_auction (address, nft, wallet_for_bids, price_token, start_price, max_bid, status,\n            created_at, finished_at, tx_lt)\n        values ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10)\n        on conflict (address) where tx_lt <= $10 do update\n        set nft = $2, wallet_for_bids = $3, price_token = $4, start_price = $5, max_bid = $6, status = $7,\n            created_at = $8, finished_at = $9, tx_lt = $10\n        "
-  },
-  "8ecdb525bc647d2cee353ceae65cc873c93b531296da06233d2f779d9b3c091c": {
-    "describe": {
-      "columns": [
-        {
-          "name": "nft?: Address",
-          "ordinal": 0,
-          "type_info": "Varchar"
-        },
-        {
-          "name": "collection?: Address",
-          "ordinal": 1,
-          "type_info": "Varchar"
-        }
-      ],
-      "nullable": [
-        false,
-        true
-      ],
-      "parameters": {
-        "Left": [
-          "Text"
-        ]
-      }
-    },
-    "query": "\n        select nft.address as \"nft?: Address\", collection as \"collection?: Address\" from nft\n        inner join nft_auction\n        on nft_auction.nft = nft.address\n        where nft_auction.address = $1\n        "
+    "query": "\n        insert into nft_auction (address, nft, wallet_for_bids, price_token, start_price, min_bid, max_bid, status,\n            created_at, finished_at, tx_lt)\n        values ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11)\n        on conflict (address) where tx_lt <= $11 do update\n        set nft = $2, wallet_for_bids = $3, price_token = $4, start_price = $5, min_bid = $6, max_bid = $7,\n            status = $8, created_at = $9, finished_at = $10, tx_lt = $11\n        "
   },
   "af570fc549eabc04332364885166e4b07ed6541bd02d029d1f0fa1d3aa63aca2": {
     "describe": {
@@ -755,6 +670,98 @@
       }
     },
     "query": "\n        insert into events_whitelist (address)\n        values ($1)\n        "
+  },
+  "f9ccc5ee112f62ca82b8523423dffea30e35105a7219c401028fd407037f9a2e": {
+    "describe": {
+      "columns": [
+        {
+          "name": "address!: Address",
+          "ordinal": 0,
+          "type_info": "Varchar"
+        },
+        {
+          "name": "nft?: Address",
+          "ordinal": 1,
+          "type_info": "Varchar"
+        },
+        {
+          "name": "wallet_for_bids?: Address",
+          "ordinal": 2,
+          "type_info": "Varchar"
+        },
+        {
+          "name": "price_token?: Address",
+          "ordinal": 3,
+          "type_info": "Varchar"
+        },
+        {
+          "name": "start_price?",
+          "ordinal": 4,
+          "type_info": "Numeric"
+        },
+        {
+          "name": "min_bid?",
+          "ordinal": 5,
+          "type_info": "Numeric"
+        },
+        {
+          "name": "max_bid?",
+          "ordinal": 6,
+          "type_info": "Numeric"
+        },
+        {
+          "name": "status?: AuctionStatus",
+          "ordinal": 7,
+          "type_info": {
+            "Custom": {
+              "kind": {
+                "Enum": [
+                  "created",
+                  "active",
+                  "cancelled",
+                  "completed"
+                ]
+              },
+              "name": "auction_status"
+            }
+          }
+        },
+        {
+          "name": "created_at?",
+          "ordinal": 8,
+          "type_info": "Timestamp"
+        },
+        {
+          "name": "finished_at?",
+          "ordinal": 9,
+          "type_info": "Timestamp"
+        },
+        {
+          "name": "tx_lt!",
+          "ordinal": 10,
+          "type_info": "Int8"
+        }
+      ],
+      "nullable": [
+        false,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        false
+      ],
+      "parameters": {
+        "Left": [
+          "Text"
+        ]
+      }
+    },
+    "query": "\n        select address as \"address!: Address\", nft as \"nft?: Address\", wallet_for_bids as \"wallet_for_bids?: Address\",\n            price_token as \"price_token?: Address\", start_price as \"start_price?\", min_bid as \"min_bid?\", \n            max_bid as \"max_bid?\", status as \"status?: AuctionStatus\", created_at as \"created_at?\", \n            finished_at as \"finished_at?\", tx_lt as \"tx_lt!\"\n        from nft_auction where address = $1\n        "
   },
   "fdf3b1e4235886fe1fd288cd7c99b427a3714245d8a877d0d87663935d72f05d": {
     "describe": {
