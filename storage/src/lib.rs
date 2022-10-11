@@ -36,12 +36,10 @@ mod tests {
         let nft = "0:b7c55b3f9f82a68e7f6121b49ee58709737f1e38e96288b2531e9a5dc61822e0";
         let collection = "0:2e486ea613d1e9a0ccda5f4ca3f47c8b46de6c70ab9ddb314a3298f5bc4c6b1d";
 
-        let mut tx = pool.begin().await.unwrap();
-        let stored_collection = crate::actions::get_collection_by_nft(&nft.into(), &mut tx)
+        let stored_collection = crate::actions::get_collection_by_nft(&nft.into(), &pool)
             .await
             .unwrap()
             .0;
-        tx.commit().await.unwrap();
         assert_eq!(stored_collection, collection);
     }
 
@@ -63,14 +61,12 @@ mod tests {
             .await
             .expect("Postgres connection failed");
 
-        let mut tx = pool.begin().await.unwrap();
         let nft = "0:b7c55b3f9f82a68e7f6121b49ee58709737f1e38e96288b2531e9a5dc61822e0";
-        let collection = crate::actions::get_collection_by_nft(&nft.into(), &mut tx)
+        let collection = crate::actions::get_collection_by_nft(&nft.into(), &pool)
             .await
             .unwrap();
-        let prices = crate::actions::get_prices(&collection.into(), &mut tx).await;
+        let prices = crate::actions::get_prices(&collection.into(), &pool).await;
 
-        tx.commit().await.unwrap();
         println!("prices: {:#?}", prices.expect("Can't get prices"));
     }
 }

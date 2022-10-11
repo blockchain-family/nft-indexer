@@ -662,9 +662,12 @@ impl ContractEvent for AuctionDeployed {
     }
 
     async fn update_dependent_tables(&mut self) -> Result<()> {
-        let mut tx = self.pool.begin().await?;
-        await_logging_error(actions::save_event(self, &mut tx), "Saving AuctionDeployed").await;
-        Ok(tx.commit().await?)
+        await_logging_error(
+            actions::save_event(self, &self.pool),
+            "Saving AuctionDeployed",
+        )
+        .await;
+        Ok(())
     }
 }
 
@@ -713,9 +716,12 @@ impl ContractEvent for AuctionDeclined {
     }
 
     async fn update_dependent_tables(&mut self) -> Result<()> {
-        let mut tx = self.pool.begin().await?;
-        await_logging_error(actions::save_event(self, &mut tx), "Saving AuctionDeclined").await;
-        Ok(tx.commit().await?)
+        await_logging_error(
+            actions::save_event(self, &self.pool),
+            "Saving AuctionDeclined",
+        )
+        .await;
+        Ok(())
     }
 }
 
@@ -764,13 +770,12 @@ impl ContractEvent for AuctionRootOwnershipTransferred {
     }
 
     async fn update_dependent_tables(&mut self) -> Result<()> {
-        let mut tx = self.pool.begin().await?;
         await_logging_error(
-            actions::save_event(self, &mut tx),
+            actions::save_event(self, &self.pool),
             "Saving AuctionRootOwnershipTransferred",
         )
         .await;
-        Ok(tx.commit().await?)
+        Ok(())
     }
 }
 
@@ -825,24 +830,26 @@ impl ContractEvent for AuctionCreated {
     }
 
     async fn update_dependent_tables(&mut self) -> Result<()> {
-        let mut tx = self.pool.begin().await?;
-
         self.event_collection =
-            actions::get_collection_by_nft(&self.auction_subject, &mut tx).await;
+            actions::get_collection_by_nft(&self.auction_subject, &self.pool).await;
         await_logging_error(
             actions::update_nft_by_auction(
                 "nft_events",
                 &self.address,
                 &self.auction_subject,
-                &mut tx,
+                &self.pool,
             ),
             "Updating nft of auctions",
         )
         .await;
 
-        await_logging_error(actions::save_event(self, &mut tx), "Saving AuctionCreated").await;
+        await_logging_error(
+            actions::save_event(self, &self.pool),
+            "Saving AuctionCreated",
+        )
+        .await;
 
-        Ok(tx.commit().await?)
+        Ok(())
     }
 }
 
@@ -897,8 +904,6 @@ impl ContractEvent for AuctionActive {
     }
 
     async fn update_dependent_tables(&mut self) -> Result<()> {
-        let mut tx = self.pool.begin().await?;
-
         let min_bid = get_next_bid_value(
             MsgAddressInt::from_str(self.address.0.as_str())?,
             &self.consumer,
@@ -919,7 +924,7 @@ impl ContractEvent for AuctionActive {
             tx_lt: self.created_lt,
         };
         await_logging_error(
-            actions::upsert_auction(&auction, &mut tx),
+            actions::upsert_auction(&auction, &self.pool),
             "Inserting Auction",
         )
         .await;
@@ -929,14 +934,14 @@ impl ContractEvent for AuctionActive {
                 "nft_events",
                 &self.address,
                 &self.auction_subject,
-                &mut tx,
+                &self.pool,
             ),
             "Updating nft of auctions",
         )
         .await;
 
         self.event_collection =
-            actions::get_collection_by_nft(&self.auction_subject, &mut tx).await;
+            actions::get_collection_by_nft(&self.auction_subject, &self.pool).await;
         if let Some(collection) = self.event_collection.as_ref() {
             let collection = get_collection_data(
                 MsgAddressInt::from_str(collection.0.as_str())?,
@@ -944,7 +949,7 @@ impl ContractEvent for AuctionActive {
             )
             .await;
             await_logging_error(
-                actions::upsert_collection(&collection, &mut tx),
+                actions::upsert_collection(&collection, &self.pool),
                 "Inserting collection",
             )
             .await;
@@ -960,14 +965,18 @@ impl ContractEvent for AuctionActive {
             collection: self.event_collection.clone(),
         };
         await_logging_error(
-            actions::upsert_nft_price_history(&price_history, &mut tx),
+            actions::upsert_nft_price_history(&price_history, &self.pool),
             "Updating NftPriceHistory",
         )
         .await;
 
-        await_logging_error(actions::save_event(self, &mut tx), "Saving AuctionActive").await;
+        await_logging_error(
+            actions::save_event(self, &self.pool),
+            "Saving AuctionActive",
+        )
+        .await;
 
-        Ok(tx.commit().await?)
+        Ok(())
     }
 }
 
@@ -1017,10 +1026,8 @@ impl ContractEvent for AuctionBidPlaced {
     }
 
     async fn update_dependent_tables(&mut self) -> Result<()> {
-        let mut tx = self.pool.begin().await?;
-
         (self.event_nft, self.event_collection) =
-            actions::get_nft_and_collection_by_auction(&self.address, &mut tx).await;
+            actions::get_nft_and_collection_by_auction(&self.address, &self.pool).await;
 
         let bid = NftAuctionBid {
             auction: self.address.clone(),
@@ -1029,7 +1036,7 @@ impl ContractEvent for AuctionBidPlaced {
             declined: false,
             created_at: NaiveDateTime::from_timestamp(self.created_at, 0),
         };
-        await_logging_error(actions::upsert_bid(&bid, &mut tx), "Updating AuctionBid").await;
+        await_logging_error(actions::upsert_bid(&bid, &self.pool), "Updating AuctionBid").await;
 
         let min_bid = get_next_bid_value(
             MsgAddressInt::from_str(self.address.0.as_str())?,
@@ -1051,7 +1058,7 @@ impl ContractEvent for AuctionBidPlaced {
             tx_lt: self.created_lt,
         };
         await_logging_error(
-            actions::upsert_auction(&auction, &mut tx),
+            actions::upsert_auction(&auction, &self.pool),
             "Updating Auction",
         )
         .await;
@@ -1066,7 +1073,7 @@ impl ContractEvent for AuctionBidPlaced {
             collection: self.event_collection.clone(),
         };
         await_logging_error(
-            actions::upsert_nft_price_history(&price_history, &mut tx),
+            actions::upsert_nft_price_history(&price_history, &self.pool),
             "Updating NftPriceHistory",
         )
         .await;
@@ -1078,15 +1085,15 @@ impl ContractEvent for AuctionBidPlaced {
             )
             .await;
             await_logging_error(
-                actions::upsert_collection(&collection, &mut tx),
+                actions::upsert_collection(&collection, &self.pool),
                 "Inserting collection",
             )
             .await;
         }
 
-        await_logging_error(actions::save_event(self, &mut tx), "Saving AuctionBid").await;
+        await_logging_error(actions::save_event(self, &self.pool), "Saving AuctionBid").await;
 
-        Ok(tx.commit().await?)
+        Ok(())
     }
 }
 
@@ -1136,10 +1143,8 @@ impl ContractEvent for AuctionBidDeclined {
     }
 
     async fn update_dependent_tables(&mut self) -> Result<()> {
-        let mut tx = self.pool.begin().await?;
-
         (self.event_nft, self.event_collection) =
-            actions::get_nft_and_collection_by_auction(&self.address, &mut tx).await;
+            actions::get_nft_and_collection_by_auction(&self.address, &self.pool).await;
 
         let bid = NftAuctionBid {
             auction: self.address.clone(),
@@ -1148,7 +1153,7 @@ impl ContractEvent for AuctionBidDeclined {
             declined: true,
             created_at: NaiveDateTime::from_timestamp(self.created_at, 0),
         };
-        await_logging_error(actions::upsert_bid(&bid, &mut tx), "Updating AuctionBid").await;
+        await_logging_error(actions::upsert_bid(&bid, &self.pool), "Updating AuctionBid").await;
 
         let min_bid = get_next_bid_value(
             MsgAddressInt::from_str(self.address.0.as_str())?,
@@ -1170,7 +1175,7 @@ impl ContractEvent for AuctionBidDeclined {
             tx_lt: self.created_lt,
         };
         await_logging_error(
-            actions::upsert_auction(&auction, &mut tx),
+            actions::upsert_auction(&auction, &self.pool),
             "Updating Auction",
         )
         .await;
@@ -1182,15 +1187,15 @@ impl ContractEvent for AuctionBidDeclined {
             )
             .await;
             await_logging_error(
-                actions::upsert_collection(&collection, &mut tx),
+                actions::upsert_collection(&collection, &self.pool),
                 "Inserting collection",
             )
             .await;
         }
 
-        await_logging_error(actions::save_event(self, &mut tx), "Saving AuctionBid").await;
+        await_logging_error(actions::save_event(self, &self.pool), "Saving AuctionBid").await;
 
-        Ok(tx.commit().await?)
+        Ok(())
     }
 }
 
@@ -1248,10 +1253,8 @@ impl ContractEvent for AuctionComplete {
     }
 
     async fn update_dependent_tables(&mut self) -> Result<()> {
-        let mut tx = self.pool.begin().await?;
-
         (self.event_nft, self.event_collection) =
-            actions::get_nft_and_collection_by_auction(&self.address, &mut tx).await;
+            actions::get_nft_and_collection_by_auction(&self.address, &self.pool).await;
 
         let min_bid = get_next_bid_value(
             MsgAddressInt::from_str(self.address.0.as_str())?,
@@ -1273,7 +1276,7 @@ impl ContractEvent for AuctionComplete {
             tx_lt: self.created_lt,
         };
         await_logging_error(
-            actions::upsert_auction(&auction, &mut tx),
+            actions::upsert_auction(&auction, &self.pool),
             "Updating Auction",
         )
         .await;
@@ -1285,15 +1288,19 @@ impl ContractEvent for AuctionComplete {
             )
             .await;
             await_logging_error(
-                actions::upsert_collection(&collection, &mut tx),
+                actions::upsert_collection(&collection, &self.pool),
                 "Inserting collection",
             )
             .await;
         }
 
-        await_logging_error(actions::save_event(self, &mut tx), "Saving AuctionComplete").await;
+        await_logging_error(
+            actions::save_event(self, &self.pool),
+            "Saving AuctionComplete",
+        )
+        .await;
 
-        Ok(tx.commit().await?)
+        Ok(())
     }
 }
 
@@ -1321,10 +1328,8 @@ impl ContractEvent for AuctionCancelled {
     }
 
     async fn update_dependent_tables(&mut self) -> Result<()> {
-        let mut tx = self.pool.begin().await?;
-
         (self.event_nft, self.event_collection) =
-            actions::get_nft_and_collection_by_auction(&self.address, &mut tx).await;
+            actions::get_nft_and_collection_by_auction(&self.address, &self.pool).await;
 
         let min_bid = get_next_bid_value(
             MsgAddressInt::from_str(self.address.0.as_str())?,
@@ -1346,7 +1351,7 @@ impl ContractEvent for AuctionCancelled {
             tx_lt: self.created_lt,
         };
         await_logging_error(
-            actions::upsert_auction(&auction, &mut tx),
+            actions::upsert_auction(&auction, &self.pool),
             "Updating Auction",
         )
         .await;
@@ -1358,19 +1363,19 @@ impl ContractEvent for AuctionCancelled {
             )
             .await;
             await_logging_error(
-                actions::upsert_collection(&collection, &mut tx),
+                actions::upsert_collection(&collection, &self.pool),
                 "Inserting collection",
             )
             .await;
         }
 
         await_logging_error(
-            actions::save_event(self, &mut tx),
+            actions::save_event(self, &self.pool),
             "Saving AuctionCancelled",
         )
         .await;
 
-        Ok(tx.commit().await?)
+        Ok(())
     }
 }
 
@@ -1459,17 +1464,15 @@ impl ContractEvent for DirectBuyDeployed {
     }
 
     async fn update_dependent_tables(&mut self) -> Result<()> {
-        let mut tx = self.pool.begin().await?;
-
-        self.event_collection = actions::get_collection_by_nft(&self.nft, &mut tx).await;
+        self.event_collection = actions::get_collection_by_nft(&self.nft, &self.pool).await;
 
         await_logging_error(
-            actions::save_event(self, &mut tx),
+            actions::save_event(self, &self.pool),
             "Saving DirectBuyDeployed",
         )
         .await;
 
-        Ok(tx.commit().await?)
+        Ok(())
     }
 }
 
@@ -1527,13 +1530,12 @@ impl ContractEvent for DirectBuyDeclined {
     }
 
     async fn update_dependent_tables(&mut self) -> Result<()> {
-        let mut tx = self.pool.begin().await?;
         await_logging_error(
-            actions::save_event(self, &mut tx),
+            actions::save_event(self, &self.pool),
             "Saving DirectBuyDeclined",
         )
         .await;
-        Ok(tx.commit().await?)
+        Ok(())
     }
 }
 
@@ -1582,13 +1584,12 @@ impl ContractEvent for FactoryDirectBuyOwnershipTransferred {
     }
 
     async fn update_dependent_tables(&mut self) -> Result<()> {
-        let mut tx = self.pool.begin().await?;
         await_logging_error(
-            actions::save_event(self, &mut tx),
+            actions::save_event(self, &self.pool),
             "Saving FactoryDirectBuyOwnershipTransferred",
         )
         .await;
-        Ok(tx.commit().await?)
+        Ok(())
     }
 }
 
@@ -1677,17 +1678,15 @@ impl ContractEvent for DirectSellDeployed {
     }
 
     async fn update_dependent_tables(&mut self) -> Result<()> {
-        let mut tx = self.pool.begin().await?;
-
-        self.event_collection = actions::get_collection_by_nft(&self.nft, &mut tx).await;
+        self.event_collection = actions::get_collection_by_nft(&self.nft, &self.pool).await;
 
         await_logging_error(
-            actions::save_event(self, &mut tx),
+            actions::save_event(self, &self.pool),
             "Saving DirectSellDeployed",
         )
         .await;
 
-        Ok(tx.commit().await?)
+        Ok(())
     }
 }
 
@@ -1736,13 +1735,12 @@ impl ContractEvent for DirectSellDeclined {
     }
 
     async fn update_dependent_tables(&mut self) -> Result<()> {
-        let mut tx = self.pool.begin().await?;
         await_logging_error(
-            actions::save_event(self, &mut tx),
+            actions::save_event(self, &self.pool),
             "Saving DirectSellDeclined",
         )
         .await;
-        Ok(tx.commit().await?)
+        Ok(())
     }
 }
 
@@ -1791,13 +1789,12 @@ impl ContractEvent for FactoryDirectSellOwnershipTransferred {
     }
 
     async fn update_dependent_tables(&mut self) -> Result<()> {
-        let mut tx = self.pool.begin().await?;
         await_logging_error(
-            actions::save_event(self, &mut tx),
+            actions::save_event(self, &self.pool),
             "Saving FactoryDirectSellOwnershipTransferred",
         )
         .await;
-        Ok(tx.commit().await?)
+        Ok(())
     }
 }
 
@@ -1873,9 +1870,7 @@ impl ContractEvent for DirectBuyStateChanged {
     }
 
     async fn update_dependent_tables(&mut self) -> Result<()> {
-        let mut tx = self.pool.begin().await?;
-
-        self.event_collection = actions::get_collection_by_nft(&self.nft, &mut tx).await;
+        self.event_collection = actions::get_collection_by_nft(&self.nft, &self.pool).await;
 
         let state = self.to.into();
         let created_ts = NaiveDateTime::from_timestamp(self.created_at, 0);
@@ -1891,7 +1886,7 @@ impl ContractEvent for DirectBuyStateChanged {
                 collection: self.event_collection.clone(),
             };
             await_logging_error(
-                actions::upsert_nft_price_history(&price_history, &mut tx),
+                actions::upsert_nft_price_history(&price_history, &self.pool),
                 "Updating NftPriceHistory",
             )
             .await;
@@ -1916,18 +1911,18 @@ impl ContractEvent for DirectBuyStateChanged {
             tx_lt: self.created_lt,
         };
         await_logging_error(
-            actions::upsert_direct_buy(&direct_buy, &mut tx),
+            actions::upsert_direct_buy(&direct_buy, &self.pool),
             "Updating DirectBuy",
         )
         .await;
 
         await_logging_error(
-            actions::save_event(self, &mut tx),
+            actions::save_event(self, &self.pool),
             "Saving DirectBuyStateChanged",
         )
         .await;
 
-        Ok(tx.commit().await?)
+        Ok(())
     }
 }
 
@@ -2002,9 +1997,7 @@ impl ContractEvent for DirectSellStateChanged {
     }
 
     async fn update_dependent_tables(&mut self) -> Result<()> {
-        let mut tx = self.pool.begin().await?;
-
-        self.event_collection = actions::get_collection_by_nft(&self.nft, &mut tx).await;
+        self.event_collection = actions::get_collection_by_nft(&self.nft, &self.pool).await;
 
         let state = self.to.into();
         let created_ts = NaiveDateTime::from_timestamp(self.created_at, 0);
@@ -2020,7 +2013,7 @@ impl ContractEvent for DirectSellStateChanged {
                 collection: self.event_collection.clone(),
             };
             await_logging_error(
-                actions::upsert_nft_price_history(&price_history, &mut tx),
+                actions::upsert_nft_price_history(&price_history, &self.pool),
                 "Updating NftPriceHistory",
             )
             .await;
@@ -2045,7 +2038,7 @@ impl ContractEvent for DirectSellStateChanged {
             tx_lt: self.created_lt,
         };
         await_logging_error(
-            actions::upsert_direct_sell(&direct_sell, &mut tx),
+            actions::upsert_direct_sell(&direct_sell, &self.pool),
             "Updating DirectSell",
         )
         .await;
@@ -2057,19 +2050,19 @@ impl ContractEvent for DirectSellStateChanged {
             )
             .await;
             await_logging_error(
-                actions::upsert_collection(&collection, &mut tx),
+                actions::upsert_collection(&collection, &self.pool),
                 "Inserting collection",
             )
             .await;
         }
 
         await_logging_error(
-            actions::save_event(self, &mut tx),
+            actions::save_event(self, &self.pool),
             "Saving DirectSellStateChanged",
         )
         .await;
 
-        Ok(tx.commit().await?)
+        Ok(())
     }
 }
 
@@ -2118,9 +2111,7 @@ impl ContractEvent for NftOwnerChanged {
     }
 
     async fn update_dependent_tables(&mut self) -> Result<()> {
-        let mut tx = self.pool.begin().await?;
-
-        self.event_collection = actions::get_collection_by_nft(&self.address, &mut tx).await;
+        self.event_collection = actions::get_collection_by_nft(&self.address, &self.pool).await;
 
         let meta = fetch_metadata(
             MsgAddressInt::from_str(self.address.0.as_str())?,
@@ -2158,16 +2149,20 @@ impl ContractEvent for NftOwnerChanged {
             tx_lt: self.created_lt,
         };
 
-        await_logging_error(actions::upsert_nft(&nft, &mut tx), "Updating nft").await;
+        await_logging_error(actions::upsert_nft(&nft, &self.pool), "Updating nft").await;
         await_logging_error(
-            actions::upsert_nft_meta(&nft_meta, &mut tx),
+            actions::upsert_nft_meta(&nft_meta, &self.pool),
             "Updating nft meta",
         )
         .await;
 
-        await_logging_error(actions::save_event(self, &mut tx), "Saving NftOwnerChanged").await;
+        await_logging_error(
+            actions::save_event(self, &self.pool),
+            "Saving NftOwnerChanged",
+        )
+        .await;
 
-        Ok(tx.commit().await?)
+        Ok(())
     }
 }
 
@@ -2216,9 +2211,7 @@ impl ContractEvent for NftManagerChanged {
     }
 
     async fn update_dependent_tables(&mut self) -> Result<()> {
-        let mut tx = self.pool.begin().await?;
-
-        self.event_collection = actions::get_collection_by_nft(&self.address, &mut tx).await;
+        self.event_collection = actions::get_collection_by_nft(&self.address, &self.pool).await;
 
         let meta = fetch_metadata(
             MsgAddressInt::from_str(self.address.0.as_str())?,
@@ -2256,20 +2249,20 @@ impl ContractEvent for NftManagerChanged {
             tx_lt: self.created_lt,
         };
 
-        await_logging_error(actions::upsert_nft(&nft, &mut tx), "Updating nft").await;
+        await_logging_error(actions::upsert_nft(&nft, &self.pool), "Updating nft").await;
         await_logging_error(
-            actions::upsert_nft_meta(&nft_meta, &mut tx),
+            actions::upsert_nft_meta(&nft_meta, &self.pool),
             "Updating nft meta",
         )
         .await;
 
         await_logging_error(
-            actions::save_event(self, &mut tx),
+            actions::save_event(self, &self.pool),
             "Saving NftManagerChanged",
         )
         .await;
 
-        Ok(tx.commit().await?)
+        Ok(())
     }
 }
 
@@ -2318,8 +2311,6 @@ impl ContractEvent for CollectionOwnershipTransferred {
     }
 
     async fn update_dependent_tables(&mut self) -> Result<()> {
-        let mut tx = self.pool.begin().await?;
-
         let collection = get_collection_data(
             MsgAddressInt::from_str(self.address.0.as_str())?,
             &self.consumer,
@@ -2327,18 +2318,18 @@ impl ContractEvent for CollectionOwnershipTransferred {
         .await;
 
         await_logging_error(
-            actions::upsert_collection(&collection, &mut tx),
+            actions::upsert_collection(&collection, &self.pool),
             "Updating collection",
         )
         .await;
 
         await_logging_error(
-            actions::save_event(self, &mut tx),
+            actions::save_event(self, &self.pool),
             "Saving CollectionOwnershipTransferred",
         )
         .await;
 
-        Ok(tx.commit().await?)
+        Ok(())
     }
 }
 
@@ -2418,8 +2409,6 @@ impl ContractEvent for NftCreated {
     }
 
     async fn update_dependent_tables(&mut self) -> Result<()> {
-        let mut tx = self.pool.begin().await?;
-
         let meta = fetch_metadata(
             MsgAddressInt::from_str(self.nft.0.as_str())?,
             &self.consumer,
@@ -2455,9 +2444,9 @@ impl ContractEvent for NftCreated {
             tx_lt: self.created_lt,
         };
 
-        await_logging_error(actions::upsert_nft(&nft, &mut tx), "Updating nft").await;
+        await_logging_error(actions::upsert_nft(&nft, &self.pool), "Updating nft").await;
         await_logging_error(
-            actions::upsert_nft_meta(&nft_meta, &mut tx),
+            actions::upsert_nft_meta(&nft_meta, &self.pool),
             "Updating nft meta",
         )
         .await;
@@ -2469,25 +2458,35 @@ impl ContractEvent for NftCreated {
         .await;
 
         await_logging_error(
-            actions::upsert_collection(&collection, &mut tx),
+            actions::upsert_collection(&collection, &self.pool),
             "Updating collection",
         )
         .await;
 
-        await_logging_error(actions::save_event(self, &mut tx), "Saving NftCreated").await;
+        await_logging_error(actions::save_event(self, &self.pool), "Saving NftCreated").await;
 
         await_logging_error(
-            actions::update_collection_by_nft("nft_events", &self.nft, &self.address, &mut tx),
+            actions::update_collection_by_nft("nft_events", &self.nft, &self.address, &self.pool),
             "Updating collection by nft",
         )
         .await;
         await_logging_error(
-            actions::update_collection_by_nft("nft_direct_sell", &self.nft, &self.address, &mut tx),
+            actions::update_collection_by_nft(
+                "nft_direct_sell",
+                &self.nft,
+                &self.address,
+                &self.pool,
+            ),
             "Updating collection by nft",
         )
         .await;
         await_logging_error(
-            actions::update_collection_by_nft("nft_direct_buy", &self.nft, &self.address, &mut tx),
+            actions::update_collection_by_nft(
+                "nft_direct_buy",
+                &self.nft,
+                &self.address,
+                &self.pool,
+            ),
             "Updating collection by nft",
         )
         .await;
@@ -2496,13 +2495,13 @@ impl ContractEvent for NftCreated {
                 "nft_price_history",
                 &self.nft,
                 &self.address,
-                &mut tx,
+                &self.pool,
             ),
             "Updating collection by nft",
         )
         .await;
 
-        Ok(tx.commit().await?)
+        Ok(())
     }
 }
 
@@ -2568,8 +2567,6 @@ impl ContractEvent for NftBurned {
     }
 
     async fn update_dependent_tables(&mut self) -> Result<()> {
-        let mut tx = self.pool.begin().await?;
-
         let meta = fetch_metadata(
             MsgAddressInt::from_str(self.nft.0.as_str())?,
             &self.consumer,
@@ -2606,9 +2603,9 @@ impl ContractEvent for NftBurned {
             tx_lt: self.created_lt,
         };
 
-        await_logging_error(actions::upsert_nft(&nft, &mut tx), "Updating nft").await;
+        await_logging_error(actions::upsert_nft(&nft, &self.pool), "Updating nft").await;
         await_logging_error(
-            actions::upsert_nft_meta(&nft_meta, &mut tx),
+            actions::upsert_nft_meta(&nft_meta, &self.pool),
             "Updating nft meta",
         )
         .await;
@@ -2620,25 +2617,35 @@ impl ContractEvent for NftBurned {
         .await;
 
         await_logging_error(
-            actions::upsert_collection(&collection, &mut tx),
+            actions::upsert_collection(&collection, &self.pool),
             "Updating collection",
         )
         .await;
 
-        await_logging_error(actions::save_event(self, &mut tx), "Saving NftBurned").await;
+        await_logging_error(actions::save_event(self, &self.pool), "Saving NftBurned").await;
 
         await_logging_error(
-            actions::update_collection_by_nft("nft_events", &self.nft, &self.address, &mut tx),
+            actions::update_collection_by_nft("nft_events", &self.nft, &self.address, &self.pool),
             "Updating collection by nft",
         )
         .await;
         await_logging_error(
-            actions::update_collection_by_nft("nft_direct_sell", &self.nft, &self.address, &mut tx),
+            actions::update_collection_by_nft(
+                "nft_direct_sell",
+                &self.nft,
+                &self.address,
+                &self.pool,
+            ),
             "Updating collection by nft",
         )
         .await;
         await_logging_error(
-            actions::update_collection_by_nft("nft_direct_buy", &self.nft, &self.address, &mut tx),
+            actions::update_collection_by_nft(
+                "nft_direct_buy",
+                &self.nft,
+                &self.address,
+                &self.pool,
+            ),
             "Updating collection by nft",
         )
         .await;
@@ -2647,13 +2654,13 @@ impl ContractEvent for NftBurned {
                 "nft_price_history",
                 &self.nft,
                 &self.address,
-                &mut tx,
+                &self.pool,
             ),
             "Updating collection by nft",
         )
         .await;
 
-        Ok(tx.commit().await?)
+        Ok(())
     }
 }
 
