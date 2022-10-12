@@ -364,8 +364,8 @@ pub async fn upsert_auction(auction: &NftAuction, pool: &PgPool) -> Result<()> {
             created_at, finished_at, tx_lt)
         values ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11)
         on conflict (address) where tx_lt <= $11 do update
-        set nft = $2, wallet_for_bids = $3, price_token = $4, start_price = $5, min_bid = $6, max_bid = $7,
-            status = $8, created_at = $9, finished_at = $10, tx_lt = $11
+        set nft = $2, wallet_for_bids = $3, price_token = $4, start_price = $5, min_bid = least(nft_auction.min_bid, $6),
+            max_bid = $7, status = $8, created_at = $9, finished_at = $10, tx_lt = $11
         "#,
         &auction.address as &Address,
         &auction.nft as &Option<Address>,

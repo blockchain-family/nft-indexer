@@ -483,7 +483,7 @@
     },
     "query": "\n        select nft.address as \"nft?: Address\", collection as \"collection?: Address\" from nft\n        inner join nft_auction\n        on nft_auction.nft = nft.address\n        where nft_auction.address = $1\n        "
   },
-  "989e2cdf3f9c6c2a48e5db1425a8c5c556724b0ef0db188ae27d0ad5828854a2": {
+  "9237eb8719822fb07d7b0a5ea71cd50bd007ce4eb26811fe4c26a8db1b6cca7a": {
     "describe": {
       "columns": [],
       "nullable": [],
@@ -543,7 +543,7 @@
         ]
       }
     },
-    "query": "\n        insert into nft_auction (address, nft, wallet_for_bids, price_token, start_price, min_bid, max_bid, status,\n            created_at, finished_at, tx_lt)\n        values ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11)\n        on conflict (address) where tx_lt <= $11 do update\n        set nft = $2, wallet_for_bids = $3, price_token = $4, start_price = $5, min_bid = $6, max_bid = $7,\n            status = $8, created_at = $9, finished_at = $10, tx_lt = $11\n        "
+    "query": "\n        insert into nft_auction (address, nft, wallet_for_bids, price_token, start_price, min_bid, max_bid, status,\n            created_at, finished_at, tx_lt)\n        values ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11)\n        on conflict (address) where tx_lt <= $11 do update\n        set nft = $2, wallet_for_bids = $3, price_token = $4, start_price = $5, min_bid = least(nft_auction.min_bid, $6),\n            max_bid = $7, status = $8, created_at = $9, finished_at = $10, tx_lt = $11\n        "
   },
   "af570fc549eabc04332364885166e4b07ed6541bd02d029d1f0fa1d3aa63aca2": {
     "describe": {

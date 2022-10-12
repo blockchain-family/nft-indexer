@@ -176,6 +176,7 @@ pub struct AuctionBidPlaced {
 
     pub buyer: Address,
     pub value: BigDecimal,
+    pub next_bid_value: BigDecimal,
 }
 
 #[derive(Clone, Serialize, EventRecord)]
@@ -1004,7 +1005,14 @@ impl ContractEvent for AuctionBidPlaced {
             .ok_or_else(|| anyhow!("Couldn't find value token"))?
             .clone();
 
-        let tokens = vec![buyer_token, value_token];
+        let next_bid_value_token = event
+            .tokens
+            .iter()
+            .find(|t| t.name == "nextBidValue")
+            .ok_or_else(|| anyhow!("Couldn't find nextBidValue token"))?
+            .clone();
+
+        let tokens = vec![buyer_token, value_token, next_bid_value_token];
 
         let to_address = get_token_processor(&tokens, token_to_addr);
         let to_bigdecimal = get_token_processor(&tokens, token_to_big_decimal);
@@ -1022,6 +1030,7 @@ impl ContractEvent for AuctionBidPlaced {
 
             buyer: to_address("buyer")?,
             value: to_bigdecimal("value")?,
+            next_bid_value: to_bigdecimal("nextBidValue")?,
         })
     }
 
