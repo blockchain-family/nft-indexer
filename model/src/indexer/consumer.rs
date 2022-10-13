@@ -9,11 +9,11 @@ use storage::{actions, traits::*};
 use transaction_consumer::{StreamFrom, TransactionConsumer};
 
 const AUCTION_ROOT_TIP3: &str =
-    "0:bd2b5314fa65d075fa60d95146bcb531597a9b0c1bf3f3a400120cd4333e2095";
+    "0:1844c7d00a52fb59c653215dc3073fabd7db28911d43d816e82022e4b1be3c15";
 const FACTORY_DIRECT_BUY: &str =
-    "0:4af229edbc1767d88370899a5fdba4dad0a7cfcec62f45f07366e4729ab2bc81";
+    "0:08aa42d2f563c56ccb07d0566fd57a0ee7faa836e513c1714a8495811fbc322e";
 const FACTORY_DIRECT_SELL: &str =
-    "0:18c6d4812cbc98837830bea92f5839e3bd3ed95a6de9f0361474b999c571c2b5";
+    "0:5fcd09defa5dd9cd73c576c36935e15a1ece31b44c743e4efc4eb9ff696085b7";
 
 pub async fn serve(pool: PgPool, consumer: Arc<TransactionConsumer>) -> Result<()> {
     let stream = consumer.stream_transactions(StreamFrom::Stored).await?;
