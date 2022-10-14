@@ -1,4 +1,4 @@
-use crate::settings::config::Config;
+use crate::{settings::config::Config, state_updater::run_updater};
 use anyhow::Result;
 use env_logger::Builder;
 use indexer::consumer;
@@ -8,6 +8,7 @@ use transaction_consumer::{ConsumerOptions, TransactionConsumer};
 
 mod indexer;
 mod settings;
+mod state_updater;
 
 #[tokio::main]
 async fn main() -> Result<()> {
@@ -23,6 +24,13 @@ async fn main() -> Result<()> {
     let consumer = init_transactions_consumer(config.clone())
         .await
         .expect("Kafka connection failed");
+
+    {
+        let pool = pg_pool.clone();
+        tokio::spawn(async move {
+            run_updater(pool).await;
+        });
+    }
 
     consumer::serve(pg_pool, consumer).await
 }

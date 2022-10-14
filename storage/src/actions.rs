@@ -409,7 +409,8 @@ pub async fn upsert_direct_sell(direct_sell: &NftDirectSell, pool: &PgPool) -> R
             state, created, updated, tx_lt)
         values ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12)
         on conflict (address) where tx_lt <= $12 do update
-        set collection = $3, price = $5, finished_at = $7, expired_at = $8, state = $9, created = $10, updated = $11,
+        set collection = $3, price = $5, finished_at = $7, expired_at = $8, 
+        state = case when nft_direct_sell.state = 'expired' then 'expired' else $9 end, created = $10, updated = $11,
             tx_lt = $12
         "#,
         &direct_sell.address as &Address,
@@ -436,7 +437,8 @@ pub async fn upsert_direct_buy(direct_buy: &NftDirectBuy, pool: &PgPool) -> Resu
             state, created, updated, tx_lt)    
         values ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12)
         on conflict (address) where tx_lt <= $12 do update
-        set collection = $3, price = $5, finished_at = $7, expired_at = $8, state = $9, created = $10, updated = $11,
+        set collection = $3, price = $5, finished_at = $7, expired_at = $8, 
+        state = case when nft_direct_buy.state = 'expired' then 'expired' else $9 end, created = $10, updated = $11,
             tx_lt = $12
         "#,
         &direct_buy.address as &Address,
@@ -545,4 +547,36 @@ pub async fn add_whitelist_address(address: &Address, pool: &PgPool) -> Result<(
     .execute(pool)
     .await
     .map(|_| {})?)
+}
+
+pub async fn update_offers_status(pool: &PgPool) -> Result<()> {
+    let mut tx = pool.begin().await?;
+
+    let now = chrono::Utc::now().naive_utc();
+
+    sqlx::query!(
+        r#"
+        update nft_direct_sell set state = $1
+        where expired_at < $2 and nft_direct_sell.state = $3
+        "#,
+        DirectSellState::Expired as DirectSellState,
+        now,
+        DirectSellState::Active as DirectSellState,
+    )
+    .execute(&mut tx)
+    .await?;
+
+    sqlx::query!(
+        r#"
+        update nft_direct_buy set state = $1
+        where expired_at < $2 and nft_direct_buy.state = $3
+        "#,
+        DirectBuyState::Expired as DirectBuyState,
+        now,
+        DirectBuyState::Active as DirectBuyState,
+    )
+    .execute(&mut tx)
+    .await?;
+
+    Ok(tx.commit().await?)
 }

@@ -118,7 +118,7 @@
     },
     "query": "\n        insert into nft_auction_bid (auction, buyer, price, declined, created_at)\n        values ($1, $2, $3, $4, $5)\n        on conflict (auction, buyer, price) where declined = false do update\n        set declined = $4\n        "
   },
-  "5893313eea1327d2a133872fbfff37d1ac8f7248c7272bc4b47b2882524ffbfe": {
+  "4f44fd345fc1377f77c6fea2f90b99192dd16d5cd5e2a78756a52dfeafe93d67": {
     "describe": {
       "columns": [],
       "nullable": [],
@@ -127,68 +127,38 @@
           {
             "Custom": {
               "kind": {
-                "Domain": "Varchar"
-              },
-              "name": "t_address"
-            }
-          },
-          {
-            "Custom": {
-              "kind": {
-                "Domain": "Varchar"
-              },
-              "name": "t_address"
-            }
-          },
-          {
-            "Custom": {
-              "kind": {
-                "Domain": "Varchar"
-              },
-              "name": "t_address"
-            }
-          },
-          {
-            "Custom": {
-              "kind": {
-                "Domain": "Varchar"
-              },
-              "name": "t_address"
-            }
-          },
-          "Numeric",
-          {
-            "Custom": {
-              "kind": {
-                "Domain": "Varchar"
-              },
-              "name": "t_address"
-            }
-          },
-          "Timestamp",
-          "Timestamp",
-          {
-            "Custom": {
-              "kind": {
                 "Enum": [
                   "create",
-                  "await_nft",
+                  "await_tokens",
                   "active",
                   "filled",
                   "cancelled",
                   "expired"
                 ]
               },
-              "name": "direct_sell_state"
+              "name": "direct_buy_state"
             }
           },
           "Timestamp",
-          "Timestamp",
-          "Int8"
+          {
+            "Custom": {
+              "kind": {
+                "Enum": [
+                  "create",
+                  "await_tokens",
+                  "active",
+                  "filled",
+                  "cancelled",
+                  "expired"
+                ]
+              },
+              "name": "direct_buy_state"
+            }
+          }
         ]
       }
     },
-    "query": "\n        insert into nft_direct_sell (address, nft, collection, price_token, price, seller, finished_at, expired_at,\n            state, created, updated, tx_lt)\n        values ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12)\n        on conflict (address) where tx_lt <= $12 do update\n        set collection = $3, price = $5, finished_at = $7, expired_at = $8, state = $9, created = $10, updated = $11,\n            tx_lt = $12\n        "
+    "query": "\n        update nft_direct_buy set state = $1\n        where expired_at < $2 and nft_direct_buy.state = $3\n        "
   },
   "58dad5adfd8bd05588eb0da4667fda1a158f8c0ba252c7f0bf4d23b22ff29b5b": {
     "describe": {
@@ -457,6 +427,48 @@
     },
     "query": "\n        insert into nft_price_history (source, source_type, ts, price, price_token, nft, collection)\n        values ($1, $2, $3, $4, $5, $6, $7)\n        "
   },
+  "8d8df01cd87376e748dfc23309963c0236373edc6ee16e69fc84e1854e0adcda": {
+    "describe": {
+      "columns": [],
+      "nullable": [],
+      "parameters": {
+        "Left": [
+          {
+            "Custom": {
+              "kind": {
+                "Enum": [
+                  "create",
+                  "await_nft",
+                  "active",
+                  "filled",
+                  "cancelled",
+                  "expired"
+                ]
+              },
+              "name": "direct_sell_state"
+            }
+          },
+          "Timestamp",
+          {
+            "Custom": {
+              "kind": {
+                "Enum": [
+                  "create",
+                  "await_nft",
+                  "active",
+                  "filled",
+                  "cancelled",
+                  "expired"
+                ]
+              },
+              "name": "direct_sell_state"
+            }
+          }
+        ]
+      }
+    },
+    "query": "\n        update nft_direct_sell set state = $1\n        where expired_at < $2 and nft_direct_sell.state = $3\n        "
+  },
   "8ecdb525bc647d2cee353ceae65cc873c93b531296da06233d2f779d9b3c091c": {
     "describe": {
       "columns": [
@@ -565,7 +577,7 @@
     },
     "query": "\n        select collection from nft\n        where nft.address = $1\n        "
   },
-  "d1fadb9ec1b00670074d5915fd31be591751dfa0ef09f553603170012a7ceb40": {
+  "b06c15822a6ed0309b289a59b7f0a2d23e731a4b2185865949a115b87c91c22a": {
     "describe": {
       "columns": [],
       "nullable": [],
@@ -635,7 +647,79 @@
         ]
       }
     },
-    "query": "\n        insert into nft_direct_buy (address, nft, collection, price_token, price, buyer, finished_at, expired_at,\n            state, created, updated, tx_lt)    \n        values ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12)\n        on conflict (address) where tx_lt <= $12 do update\n        set collection = $3, price = $5, finished_at = $7, expired_at = $8, state = $9, created = $10, updated = $11,\n            tx_lt = $12\n        "
+    "query": "\n        insert into nft_direct_buy (address, nft, collection, price_token, price, buyer, finished_at, expired_at,\n            state, created, updated, tx_lt)    \n        values ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12)\n        on conflict (address) where tx_lt <= $12 do update\n        set collection = $3, price = $5, finished_at = $7, expired_at = $8, \n        state = case when nft_direct_buy.state = 'expired' then 'expired' else $9 end, created = $10, updated = $11,\n            tx_lt = $12\n        "
+  },
+  "be9c96ef3e4de7abf5191d475263341720cdeb6661ad82957a0767cb1c2e76b0": {
+    "describe": {
+      "columns": [],
+      "nullable": [],
+      "parameters": {
+        "Left": [
+          {
+            "Custom": {
+              "kind": {
+                "Domain": "Varchar"
+              },
+              "name": "t_address"
+            }
+          },
+          {
+            "Custom": {
+              "kind": {
+                "Domain": "Varchar"
+              },
+              "name": "t_address"
+            }
+          },
+          {
+            "Custom": {
+              "kind": {
+                "Domain": "Varchar"
+              },
+              "name": "t_address"
+            }
+          },
+          {
+            "Custom": {
+              "kind": {
+                "Domain": "Varchar"
+              },
+              "name": "t_address"
+            }
+          },
+          "Numeric",
+          {
+            "Custom": {
+              "kind": {
+                "Domain": "Varchar"
+              },
+              "name": "t_address"
+            }
+          },
+          "Timestamp",
+          "Timestamp",
+          {
+            "Custom": {
+              "kind": {
+                "Enum": [
+                  "create",
+                  "await_nft",
+                  "active",
+                  "filled",
+                  "cancelled",
+                  "expired"
+                ]
+              },
+              "name": "direct_sell_state"
+            }
+          },
+          "Timestamp",
+          "Timestamp",
+          "Int8"
+        ]
+      }
+    },
+    "query": "\n        insert into nft_direct_sell (address, nft, collection, price_token, price, seller, finished_at, expired_at,\n            state, created, updated, tx_lt)\n        values ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12)\n        on conflict (address) where tx_lt <= $12 do update\n        set collection = $3, price = $5, finished_at = $7, expired_at = $8, \n        state = case when nft_direct_sell.state = 'expired' then 'expired' else $9 end, created = $10, updated = $11,\n            tx_lt = $12\n        "
   },
   "dd3744fad49c559fff0d921b279127301f6a71b4c332bdd51a148e6b000e8727": {
     "describe": {
