@@ -1,5 +1,91 @@
 {
   "db": "PostgreSQL",
+  "0c58155ac3deb1f1bae5ba7a4516d114f8c112d470094b74149fdb8c1c21f7e6": {
+    "describe": {
+      "columns": [],
+      "nullable": [],
+      "parameters": {
+        "Left": [
+          {
+            "Custom": {
+              "kind": {
+                "Enum": [
+                  "create",
+                  "await_nft",
+                  "active",
+                  "filled",
+                  "cancelled",
+                  "expired"
+                ]
+              },
+              "name": "direct_sell_state"
+            }
+          },
+          "Timestamp",
+          "Timestamp",
+          {
+            "Custom": {
+              "kind": {
+                "Enum": [
+                  "create",
+                  "await_nft",
+                  "active",
+                  "filled",
+                  "cancelled",
+                  "expired"
+                ]
+              },
+              "name": "direct_sell_state"
+            }
+          }
+        ]
+      }
+    },
+    "query": "\n        update nft_direct_sell set state = $1\n        where expired_at != $2 and expired_at < $3 and nft_direct_sell.state = $4\n        "
+  },
+  "3bb05dc18b8bfcdece5658a62266b0e951e647de7b8d5183c0cdaef2992f0881": {
+    "describe": {
+      "columns": [],
+      "nullable": [],
+      "parameters": {
+        "Left": [
+          {
+            "Custom": {
+              "kind": {
+                "Enum": [
+                  "create",
+                  "await_tokens",
+                  "active",
+                  "filled",
+                  "cancelled",
+                  "expired"
+                ]
+              },
+              "name": "direct_buy_state"
+            }
+          },
+          "Timestamp",
+          "Timestamp",
+          {
+            "Custom": {
+              "kind": {
+                "Enum": [
+                  "create",
+                  "await_tokens",
+                  "active",
+                  "filled",
+                  "cancelled",
+                  "expired"
+                ]
+              },
+              "name": "direct_buy_state"
+            }
+          }
+        ]
+      }
+    },
+    "query": "\n        update nft_direct_buy set state = $1\n        where expired_at != $2 and expired_at < $3 and nft_direct_buy.state = $4\n        "
+  },
   "3d8b9ae1de860bbcb9e6d0715596de2b18c1948ddbbdc590693e87f8008fb840": {
     "describe": {
       "columns": [
@@ -117,48 +203,6 @@
       }
     },
     "query": "\n        insert into nft_auction_bid (auction, buyer, price, declined, created_at)\n        values ($1, $2, $3, $4, $5)\n        on conflict (auction, buyer, price) where declined = false do update\n        set declined = $4\n        "
-  },
-  "4f44fd345fc1377f77c6fea2f90b99192dd16d5cd5e2a78756a52dfeafe93d67": {
-    "describe": {
-      "columns": [],
-      "nullable": [],
-      "parameters": {
-        "Left": [
-          {
-            "Custom": {
-              "kind": {
-                "Enum": [
-                  "create",
-                  "await_tokens",
-                  "active",
-                  "filled",
-                  "cancelled",
-                  "expired"
-                ]
-              },
-              "name": "direct_buy_state"
-            }
-          },
-          "Timestamp",
-          {
-            "Custom": {
-              "kind": {
-                "Enum": [
-                  "create",
-                  "await_tokens",
-                  "active",
-                  "filled",
-                  "cancelled",
-                  "expired"
-                ]
-              },
-              "name": "direct_buy_state"
-            }
-          }
-        ]
-      }
-    },
-    "query": "\n        update nft_direct_buy set state = $1\n        where expired_at < $2 and nft_direct_buy.state = $3\n        "
   },
   "58dad5adfd8bd05588eb0da4667fda1a158f8c0ba252c7f0bf4d23b22ff29b5b": {
     "describe": {
@@ -426,48 +470,6 @@
       }
     },
     "query": "\n        insert into nft_price_history (source, source_type, ts, price, price_token, nft, collection)\n        values ($1, $2, $3, $4, $5, $6, $7)\n        "
-  },
-  "8d8df01cd87376e748dfc23309963c0236373edc6ee16e69fc84e1854e0adcda": {
-    "describe": {
-      "columns": [],
-      "nullable": [],
-      "parameters": {
-        "Left": [
-          {
-            "Custom": {
-              "kind": {
-                "Enum": [
-                  "create",
-                  "await_nft",
-                  "active",
-                  "filled",
-                  "cancelled",
-                  "expired"
-                ]
-              },
-              "name": "direct_sell_state"
-            }
-          },
-          "Timestamp",
-          {
-            "Custom": {
-              "kind": {
-                "Enum": [
-                  "create",
-                  "await_nft",
-                  "active",
-                  "filled",
-                  "cancelled",
-                  "expired"
-                ]
-              },
-              "name": "direct_sell_state"
-            }
-          }
-        ]
-      }
-    },
-    "query": "\n        update nft_direct_sell set state = $1\n        where expired_at < $2 and nft_direct_sell.state = $3\n        "
   },
   "8ecdb525bc647d2cee353ceae65cc873c93b531296da06233d2f779d9b3c091c": {
     "describe": {

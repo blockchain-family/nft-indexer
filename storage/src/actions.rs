@@ -1,5 +1,6 @@
 use crate::{traits::EventRecord, types::*};
 use anyhow::{anyhow, Result};
+use chrono::NaiveDateTime;
 use serde::Serialize;
 use sqlx::{types::BigDecimal, PgPool};
 use std::str::FromStr;
@@ -553,13 +554,15 @@ pub async fn update_offers_status(pool: &PgPool) -> Result<()> {
     let mut tx = pool.begin().await?;
 
     let now = chrono::Utc::now().naive_utc();
+    let begin_of_epoch = NaiveDateTime::default();
 
     sqlx::query!(
         r#"
         update nft_direct_sell set state = $1
-        where expired_at < $2 and nft_direct_sell.state = $3
+        where expired_at != $2 and expired_at < $3 and nft_direct_sell.state = $4
         "#,
         DirectSellState::Expired as DirectSellState,
+        begin_of_epoch,
         now,
         DirectSellState::Active as DirectSellState,
     )
@@ -569,9 +572,10 @@ pub async fn update_offers_status(pool: &PgPool) -> Result<()> {
     sqlx::query!(
         r#"
         update nft_direct_buy set state = $1
-        where expired_at < $2 and nft_direct_buy.state = $3
+        where expired_at != $2 and expired_at < $3 and nft_direct_buy.state = $4
         "#,
         DirectBuyState::Expired as DirectBuyState,
+        begin_of_epoch,
         now,
         DirectBuyState::Active as DirectBuyState,
     )
