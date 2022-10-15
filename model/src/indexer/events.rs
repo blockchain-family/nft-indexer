@@ -429,7 +429,6 @@ pub struct DirectBuyStateChanged {
     pub _price: BigDecimal,
     pub spent_wallet: Address,
     pub status: i16,
-    pub sender: Address,
     pub start_time_buy: i64,
     pub duration_time_buy: i64,
     pub end_time_buy: i64,
@@ -469,7 +468,6 @@ pub struct DirectSellStateChanged {
     pub _price: BigDecimal,
     pub wallet: Address,
     pub status: i16,
-    pub sender: Address,
 }
 
 // Nft events
@@ -1871,7 +1869,6 @@ impl ContractEvent for DirectBuyStateChanged {
             _price: to_big_decimal("_price")?,
             spent_wallet: to_address("spentWallet")?,
             status: to_i16("status")?,
-            sender: to_address("sender")?,
             start_time_buy: to_i64("startTimeBuy")?,
             duration_time_buy: to_i64("durationTimeBuy")?,
             end_time_buy: to_i64("endTimeBuy")?,
@@ -2001,7 +1998,6 @@ impl ContractEvent for DirectSellStateChanged {
             _price: to_big_decimal("_price")?,
             wallet: to_address("wallet")?,
             status: to_i16("status")?,
-            sender: to_address("sender")?,
         })
     }
 
