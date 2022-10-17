@@ -222,8 +222,10 @@ pub struct NftAuctionBid {
     pub auction: Address,
     pub buyer: Address,
     pub price: BigDecimal,
+    pub next_bid_value: Option<BigDecimal>,
     pub declined: bool,
     pub created_at: NaiveDateTime,
+    pub tx_lt: i64,
 }
 
 #[derive(Clone, Debug)]

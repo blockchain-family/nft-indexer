@@ -294,6 +294,7 @@ pub async fn upsert_auction(auction: &NftAuction, pool: &PgPool) -> Result<()> {
     {
         if auction.tx_lt > saved_auction.tx_lt {
             saved_auction.max_bid = auction.max_bid.clone();
+            saved_auction.min_bid = auction.min_bid.clone();
             saved_auction.tx_lt = auction.tx_lt;
 
             if auction.status.is_some() {
@@ -326,7 +327,17 @@ pub async fn upsert_auction(auction: &NftAuction, pool: &PgPool) -> Result<()> {
         }
 
         if saved_auction.min_bid.is_none() {
-            saved_auction.min_bid = auction.min_bid.clone();
+            saved_auction.min_bid = sqlx::query_scalar!(
+                r#"
+                select next_bid_value from nft_auction_bid
+                where auction = $1 and declined = false
+                order by tx_lt desc limit 1
+                "#,
+                &auction.address as &Address
+            )
+            .fetch_one(pool)
+            .await
+            .unwrap_or_default();
         }
 
         if saved_auction.max_bid.is_none() {
@@ -387,16 +398,18 @@ pub async fn upsert_auction(auction: &NftAuction, pool: &PgPool) -> Result<()> {
 pub async fn upsert_bid(bid: &NftAuctionBid, pool: &PgPool) -> Result<()> {
     Ok(sqlx::query!(
         r#"
-        insert into nft_auction_bid (auction, buyer, price, declined, created_at)
-        values ($1, $2, $3, $4, $5)
+        insert into nft_auction_bid (auction, buyer, price, next_bid_value, declined, created_at, tx_lt)
+        values ($1, $2, $3, $4, $5, $6, $7)
         on conflict (auction, buyer, price) where declined = false do update
-        set declined = $4
+        set declined = $5
         "#,
         &bid.auction as &Address,
         &bid.buyer as &Address,
         bid.price,
+        bid.next_bid_value,
         bid.declined,
         bid.created_at,
+        bid.tx_lt,
     )
     .execute(pool)
     .await

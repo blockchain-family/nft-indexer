@@ -140,8 +140,10 @@ create table nft_auction_bid(
     auction t_address not null,
     buyer t_address not null,
     price numeric(40) not null,
+    next_bid_value numeric(40),
     declined boolean default false,
     created_at timestamp not null,
+    tx_lt bigint not null,
 
     constraint nft_auction_bid_pk primary key (auction, buyer, price)
 );
