@@ -9,7 +9,7 @@ use storage::{actions, traits::*};
 use transaction_consumer::{StreamFrom, TransactionConsumer};
 
 const AUCTION_ROOT_TIP3: &str =
-    "0:905d592a14b05a598ee7ce16d4e1b066861b347ab0b788cfea9175cd01890e99";
+    "0:fa14f8cc501e790ce7879cb271bf68080578ccab73fa1c44ef7862170d10c4d0";
 const FACTORY_DIRECT_BUY: &str =
     "0:df8bfb5ce683c139f6d4c08e4741a5d0b079d884a582a90f314fc8d6510b4ccf";
 const FACTORY_DIRECT_SELL: &str =
