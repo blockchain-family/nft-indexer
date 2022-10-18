@@ -706,7 +706,7 @@ impl ContractEvent for AuctionDeclined {
             created_at: get_created_at(event)?,
 
             event_collection: None,
-            event_nft: None,
+            event_nft: Some(to_address("nft")?),
 
             nft_owner: to_address("nftOwner")?,
             nft: to_address("nft")?,
@@ -1510,7 +1510,7 @@ impl ContractEvent for DirectBuyDeclined {
             created_at: get_created_at(event)?,
 
             event_collection: None,
-            event_nft: None,
+            event_nft: Some(to_address("nft")?),
 
             sender: to_address("sender")?,
             token: to_address("token")?,
@@ -1717,7 +1717,7 @@ impl ContractEvent for DirectSellDeclined {
             created_at: get_created_at(event)?,
 
             event_collection: None,
-            event_nft: None,
+            event_nft: Some(to_address("nft")?),
 
             sender: to_address("sender")?,
             nft: to_address("nft")?,
