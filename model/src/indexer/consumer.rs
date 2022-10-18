@@ -9,11 +9,11 @@ use storage::{actions, traits::*};
 use transaction_consumer::{StreamFrom, TransactionConsumer};
 
 const AUCTION_ROOT_TIP3: &str =
-    "0:fa14f8cc501e790ce7879cb271bf68080578ccab73fa1c44ef7862170d10c4d0";
+    "0:a9adf011a072ae8efac041aa4cdc046f973e275208eba607543ac08690ebab3c";
 const FACTORY_DIRECT_BUY: &str =
-    "0:df8bfb5ce683c139f6d4c08e4741a5d0b079d884a582a90f314fc8d6510b4ccf";
+    "0:41ffcebbdc210ed279edaeae705be303a63610eae03bba18014e9945a0f34039";
 const FACTORY_DIRECT_SELL: &str =
-    "0:294f6367c4625d91b7b0265e357fced2b8be3c536f2516a06481097135c5f94b";
+    "0:0cd020840266c5ee7ad575787379c4894f9d494c00d0fc00e22889d721df3f8c";
 
 pub async fn serve(pool: PgPool, consumer: Arc<TransactionConsumer>) -> Result<()> {
     let stream = consumer.stream_transactions(StreamFrom::Stored).await?;
@@ -156,10 +156,10 @@ async fn handle_auction_root_tip3(
         handle_event::<AuctionDeployed>("AuctionDeployed", &extracted, &pool, &consumer).await
     {
         if record.address == AUCTION_ROOT_TIP3.into() {
-            if let Err(e) = actions::add_whitelist_address(&record.offer_address, &pool).await {
+            if let Err(e) = actions::add_whitelist_address(&record.offer, &pool).await {
                 log::error!(
                     "Failed adding address {:#?} in whitelist: {:#?}",
-                    &record.offer_address,
+                    &record.offer,
                     e
                 );
             }
@@ -217,11 +217,10 @@ async fn handle_factory_direct_buy(
         handle_event::<DirectBuyDeployed>("DirectBuyDeployed", &extracted, &pool, &consumer).await
     {
         if record.address == FACTORY_DIRECT_BUY.into() {
-            if let Err(e) = actions::add_whitelist_address(&record.direct_buy_address, &pool).await
-            {
+            if let Err(e) = actions::add_whitelist_address(&record.direct_buy, &pool).await {
                 log::error!(
                     "Failed adding address {:#?} in whitelist: {:#?}",
-                    &record.direct_buy_address,
+                    &record.direct_buy,
                     e
                 );
             }
@@ -246,11 +245,10 @@ async fn handle_factory_direct_sell(
         handle_event::<DirectSellDeployed>("DirectSellDeployed", &extracted, &pool, &consumer).await
     {
         if record.address == FACTORY_DIRECT_SELL.into() {
-            if let Err(e) = actions::add_whitelist_address(&record.direct_sell_address, &pool).await
-            {
+            if let Err(e) = actions::add_whitelist_address(&record.direct_sell, &pool).await {
                 log::error!(
                     "Failed adding address {:#?} in whitelist: {:#?}",
-                    &record.direct_sell_address,
+                    &record.direct_sell,
                     e
                 );
             }

@@ -34,8 +34,7 @@ pub struct AuctionDeployed {
     #[serde(skip_serializing)]
     pub event_collection: Option<Address>,
 
-    pub offer_address: Address,
-
+    //pub offer: Address,
     pub collection: Address,
     pub nft_owner: Address,
     pub nft: Address,
@@ -65,7 +64,7 @@ pub struct AuctionDeclined {
     pub event_collection: Option<Address>,
 
     pub nft_owner: Address,
-    pub data_address: Address,
+    pub nft: Address,
 }
 
 #[derive(Clone, Serialize, EventRecord)]
@@ -267,7 +266,7 @@ pub struct DirectBuyDeployed {
     #[serde(skip_serializing)]
     pub event_collection: Option<Address>,
 
-    pub direct_buy_address: Address,
+    pub direct_buy: Address,
     pub sender: Address,
     pub token: Address,
     pub nft: Address,
@@ -297,6 +296,7 @@ pub struct DirectBuyDeclined {
     pub sender: Address,
     pub token: Address,
     pub amount: BigDecimal,
+    pub nft: Address,
 }
 
 #[derive(Clone, Serialize, EventRecord)]
@@ -343,7 +343,7 @@ pub struct DirectSellDeployed {
     #[serde(skip_serializing)]
     pub event_collection: Option<Address>,
 
-    pub direct_sell_address: Address,
+    pub direct_sell: Address,
     pub sender: Address,
     pub payment_token: Address,
     pub nft: Address,
@@ -371,7 +371,7 @@ pub struct DirectSellDeclined {
     pub event_collection: Option<Address>,
 
     pub sender: Address,
-    pub _nft_address: Address,
+    pub nft: Address,
 }
 
 #[derive(Clone, Serialize, EventRecord)]
@@ -613,25 +613,25 @@ impl ContractEvent for AuctionDeployed {
     where
         Self: Sized,
     {
-        let offer_address_token = event
-            .tokens
-            .iter()
-            .find(|t| t.name == "offerAddress")
-            .ok_or_else(|| anyhow!("Couldn't find offerAddress token"))?
-            .clone();
+        // let offer_token = event
+        //     .tokens
+        //     .iter()
+        //     .find(|t| t.name == "offer")
+        //     .ok_or_else(|| anyhow!("Couldn't find offer token"))?
+        //     .clone();
 
         let offer_info = event
             .tokens
             .iter()
             .find(|t| t.name == "offerInfo")
             .ok_or_else(|| anyhow!("Couldn't find offerInfo token"))?;
-        let mut tokens = match &offer_info.value {
+        let tokens = match &offer_info.value {
             Tuple(v) => Some(v.clone()),
             _ => None,
         }
         .ok_or_else(|| anyhow!("offerInfo token value is not tuple"))?;
 
-        tokens.push(offer_address_token);
+        // tokens.push(offer_token);
 
         let to_address = get_token_processor(&tokens, token_to_addr);
         let to_i64 = get_token_processor(&tokens, token_to_i64);
@@ -648,8 +648,7 @@ impl ContractEvent for AuctionDeployed {
             event_collection: Some(to_address("collection")?),
             event_nft: Some(to_address("nft")?),
 
-            offer_address: to_address("offerAddress")?,
-
+            // offer: to_address("offer")?,
             collection: to_address("collection")?,
             nft_owner: to_address("nftOwner")?,
             nft: to_address("nft")?,
@@ -687,14 +686,14 @@ impl ContractEvent for AuctionDeclined {
             .ok_or_else(|| anyhow!("Couldn't find nftOwner token"))?
             .clone();
 
-        let data_address_token = event
+        let nft_token = event
             .tokens
             .iter()
-            .find(|t| t.name == "dataAddress")
-            .ok_or_else(|| anyhow!("Couldn't find dataAddress token"))?
+            .find(|t| t.name == "nft")
+            .ok_or_else(|| anyhow!("Couldn't find nft token"))?
             .clone();
 
-        let tokens = vec![nft_owner_token, data_address_token];
+        let tokens = vec![nft_owner_token, nft_token];
 
         let to_address = get_token_processor(&tokens, token_to_addr);
 
@@ -710,7 +709,7 @@ impl ContractEvent for AuctionDeclined {
             event_nft: None,
 
             nft_owner: to_address("nftOwner")?,
-            data_address: to_address("dataAddress")?,
+            nft: to_address("nft")?,
         })
     }
 
@@ -1372,11 +1371,11 @@ impl ContractEvent for DirectBuyDeployed {
     where
         Self: Sized,
     {
-        let direct_buy_address_token = event
+        let direct_buy_token = event
             .tokens
             .iter()
-            .find(|t| t.name == "directBuyAddress")
-            .ok_or_else(|| anyhow!("Couldn't find directBuyAddress token"))?
+            .find(|t| t.name == "directBuy")
+            .ok_or_else(|| anyhow!("Couldn't find directBuy token"))?
             .clone();
 
         let sender_token = event
@@ -1415,7 +1414,7 @@ impl ContractEvent for DirectBuyDeployed {
             .clone();
 
         let tokens = vec![
-            direct_buy_address_token,
+            direct_buy_token,
             sender_token,
             token_token,
             nft_token,
@@ -1437,7 +1436,7 @@ impl ContractEvent for DirectBuyDeployed {
             event_collection: None,
             event_nft: Some(to_address("nft")?),
 
-            direct_buy_address: to_address("directBuyAddress")?,
+            direct_buy: to_address("directBuy")?,
             sender: to_address("sender")?,
             token: to_address("token")?,
             nft: to_address("nft")?,
@@ -1490,7 +1489,14 @@ impl ContractEvent for DirectBuyDeclined {
             .ok_or_else(|| anyhow!("Couldn't find amount token"))?
             .clone();
 
-        let tokens = vec![sender_token, token_token, amount_token];
+        let nft_token = event
+            .tokens
+            .iter()
+            .find(|t| t.name == "nft")
+            .ok_or_else(|| anyhow!("Couldn't find nft token"))?
+            .clone();
+
+        let tokens = vec![sender_token, token_token, amount_token, nft_token];
 
         let to_address = get_token_processor(&tokens, token_to_addr);
         let to_bigdecimal = get_token_processor(&tokens, token_to_big_decimal);
@@ -1509,6 +1515,7 @@ impl ContractEvent for DirectBuyDeclined {
             sender: to_address("sender")?,
             token: to_address("token")?,
             amount: to_bigdecimal("amount")?,
+            nft: to_address("nft")?,
         })
     }
 
@@ -1586,11 +1593,11 @@ impl ContractEvent for DirectSellDeployed {
     where
         Self: Sized,
     {
-        let direct_sell_address_token = event
+        let direct_sell_token = event
             .tokens
             .iter()
-            .find(|t| t.name == "directSellAddress")
-            .ok_or_else(|| anyhow!("Couldn't find directSellAddress token"))?
+            .find(|t| t.name == "directSell")
+            .ok_or_else(|| anyhow!("Couldn't find directSell token"))?
             .clone();
 
         let sender_token = event
@@ -1629,7 +1636,7 @@ impl ContractEvent for DirectSellDeployed {
             .clone();
 
         let tokens = vec![
-            direct_sell_address_token,
+            direct_sell_token,
             sender_token,
             payment_token_token,
             nft_token,
@@ -1651,11 +1658,11 @@ impl ContractEvent for DirectSellDeployed {
             event_collection: None,
             event_nft: Some(to_address("nft")?),
 
-            direct_sell_address: to_address("_directSellAddress")?,
+            direct_sell: to_address("directSell")?,
             sender: to_address("sender")?,
             payment_token: to_address("paymentToken")?,
             nft: to_address("nft")?,
-            nonce: to_bigdecimal("_nonce")?,
+            nonce: to_bigdecimal("nonce")?,
             price: to_bigdecimal("price")?,
         })
     }
@@ -1690,14 +1697,14 @@ impl ContractEvent for DirectSellDeclined {
             .ok_or_else(|| anyhow!("Couldn't find sender token"))?
             .clone();
 
-        let _nft_address_token = event
+        let nft_token = event
             .tokens
             .iter()
-            .find(|t| t.name == "_nftAddress")
-            .ok_or_else(|| anyhow!("Couldn't find _nftAddress token"))?
+            .find(|t| t.name == "nft")
+            .ok_or_else(|| anyhow!("Couldn't find nft token"))?
             .clone();
 
-        let tokens = vec![sender_token, _nft_address_token];
+        let tokens = vec![sender_token, nft_token];
 
         let to_address = get_token_processor(&tokens, token_to_addr);
 
@@ -1713,7 +1720,7 @@ impl ContractEvent for DirectSellDeclined {
             event_nft: None,
 
             sender: to_address("sender")?,
-            _nft_address: to_address("_nftAddress")?,
+            nft: to_address("nft")?,
         })
     }
 
