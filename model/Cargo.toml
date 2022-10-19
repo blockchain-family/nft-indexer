@@ -22,7 +22,7 @@ storage = { path = "../storage" }
 sqlx = { version = "0.6", features = ["postgres", "runtime-tokio-native-tls", "offline"] }
 tokio = { version = "1.2", features = ["macros", "rt-multi-thread"] }
 traits_derive = { path = "../traits_derive" }
-transaction-consumer = { git = "https://github.com/broxus/transaction-consumer.git" }
+transaction-consumer = { git = "https://github.com/broxus/transaction-consumer.git", rev = "f3806978e266323611a27e7a0280fb01eb035bb5" }
 ton_abi = { git = "https://github.com/broxus/ton-labs-abi" }
 ton_block = { git = "https://github.com/broxus/ton-labs-block" }
 url = { version = "2", features = ["serde"] }

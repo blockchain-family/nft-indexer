@@ -133,9 +133,11 @@ pub async fn upsert_collection(collection: &NftCollection, pool: &PgPool) -> Res
             total_price, max_price, owners_count)
         values ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11)
         on conflict (address) where updated <= $6 do update
-        set owner = $2, name = $3, description = $4, 
-            created = case when nft_collection.created < $5 then nft_collection.created else $5 end,
-            updated = $6, logo = $7, wallpaper = $8, total_price = $9, max_price = $10, owners_count = $11
+        set owner = $2, name = coalesce($3, nft_collection.name), 
+            description = coalesce($4, nft_collection.description), 
+            created = case when nft_collection.created < $5 then nft_collection.created else $5 end, updated = $6,
+            logo = coalesce($7, nft_collection.logo), wallpaper = ($8, nft_collection.wallpaper), total_price = $9,
+            max_price = $10, owners_count = $11
         "#,
         &collection.address as &Address,
         &collection.owner as &Address,
@@ -159,7 +161,7 @@ pub async fn upsert_nft_meta(nft_meta: &NftMeta, pool: &PgPool) -> Result<()> {
         insert into nft_metadata (nft, meta, updated)
         values ($1, $2, $3)
         on conflict (nft) where updated < $3 do update
-        set meta = $2, updated = $3
+        set meta = coalesce($2, nft_metadata.meta), updated = $3
         "#,
         &nft_meta.nft as &Address,
         nft_meta.meta,
@@ -281,8 +283,8 @@ pub async fn upsert_nft(nft: &Nft, pool: &PgPool) -> Result<()> {
         insert into nft (address, collection, owner, manager, name, description, burned, updated, tx_lt)
         values ($1, $2, $3, $4, $5, $6, $7, $8, $9)
         on conflict (address) where tx_lt <= $9 do update
-        set collection = $2, owner = $3, manager = $4, name = $5, description = $6, burned = $7, updated = $8, 
-            tx_lt = $9
+        set collection = $2, owner = $3, manager = $4, name = coalesce($5, nft.name), 
+            description = coalesce($6, nft.description), burned = $7, updated = $8, tx_lt = $9
         "#,
         nft.address as Address,
         nft.collection as Option<Address>,
@@ -350,9 +352,8 @@ pub async fn upsert_auction(auction: &NftAuction, pool: &PgPool) -> Result<()> {
         if saved_auction.min_bid.is_none() {
             saved_auction.min_bid = sqlx::query_scalar!(
                 r#"
-                select next_bid_value from nft_auction_bid
+                select max(next_bid_value) from nft_auction_bid
                 where auction = $1 and declined = false
-                order by tx_lt desc limit 1
                 "#,
                 &auction.address as &Address
             )
@@ -397,7 +398,7 @@ pub async fn upsert_auction(auction: &NftAuction, pool: &PgPool) -> Result<()> {
             created_at, finished_at, tx_lt)
         values ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11)
         on conflict (address) where tx_lt <= $11 do update
-        set nft = $2, wallet_for_bids = $3, price_token = $4, start_price = $5, min_bid = least(nft_auction.min_bid, $6),
+        set nft = $2, wallet_for_bids = $3, price_token = $4, start_price = $5, min_bid = $6,
             max_bid = $7, status = $8, created_at = $9, finished_at = $10, tx_lt = $11
         "#,
         &auction.address as &Address,

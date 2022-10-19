@@ -589,37 +589,19 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "0206175f82b8d6bf6652ff7d71a1e27fd2e4efde587fd368662814d6ec1d9ce0"
 
 [[package]]
-name = "everscale-jrpc-client"
+name = "ever_jrpc_client"
 version = "0.1.0"
-source = "git+https://github.com/broxus/everscale-jrpc.git#5e3e10ffdb936c0eec3a95a61180e86a8f3f2567"
+source = "git+https://github.com/broxus/transaction-consumer.git?rev=f3806978e266323611a27e7a0280fb01eb035bb5#f3806978e266323611a27e7a0280fb01eb035bb5"
 dependencies = [
  "anyhow",
- "everscale-jrpc-models",
  "futures",
  "log",
- "nekoton",
- "nekoton-abi",
  "parking_lot 0.12.1",
  "rand",
  "reqwest",
  "serde 1.0.145",
  "serde_json",
- "thiserror",
  "tokio",
- "ton_abi",
- "ton_block",
- "ton_executor",
-]
-
-[[package]]
-name = "everscale-jrpc-models"
-version = "0.1.0"
-source = "git+https://github.com/broxus/everscale-jrpc.git#5e3e10ffdb936c0eec3a95a61180e86a8f3f2567"
-dependencies = [
- "nekoton-abi",
- "nekoton-utils",
- "serde 1.0.145",
- "ton_block",
 ]
 
 [[package]]
@@ -2713,16 +2695,18 @@ dependencies = [
 
 [[package]]
 name = "transaction-consumer"
-version = "0.14.0"
-source = "git+https://github.com/broxus/transaction-consumer.git#e172fa7412b34abdc3990fccbee229cd2f752f27"
+version = "0.13.0"
+source = "git+https://github.com/broxus/transaction-consumer.git?rev=f3806978e266323611a27e7a0280fb01eb035bb5#f3806978e266323611a27e7a0280fb01eb035bb5"
 dependencies = [
  "anyhow",
- "everscale-jrpc-client",
+ "ever_jrpc_client",
  "futures",
  "log",
  "nekoton",
  "nekoton-abi",
+ "nekoton-utils",
  "rdkafka",
+ "serde 1.0.145",
  "tokio",
  "ton-block-compressor",
  "ton_abi",
