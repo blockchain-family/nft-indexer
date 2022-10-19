@@ -908,7 +908,7 @@ impl ContractEvent for AuctionActive {
             wallet_for_bids: Some(self.wallet_for_bids.clone()),
             price_token: Some(self._payment_token.clone()),
             start_price: Some(self._price.clone()),
-            min_bid: Some(self._price.clone()),
+            min_bid: None,
             max_bid: Some(self._price.clone()),
             status: Some(AuctionStatus::Active),
             created_at: Some(NaiveDateTime::from_timestamp(self.start_time, 0)),
@@ -2107,6 +2107,25 @@ impl ContractEvent for NftOwnerChanged {
         )
         .await;
 
+        if let Some(attributes) = meta.get("attributes").and_then(|v| v.as_array()) {
+            let nft_attributes: Vec<NftAttribute> = attributes
+                .iter()
+                .map(|item| {
+                    NftAttribute::new(
+                        self.address.clone(),
+                        self.event_collection.clone(),
+                        item.clone(),
+                    )
+                })
+                .collect();
+
+            await_logging_error(
+                actions::upsert_nft_attributes(&nft_attributes, &self.pool),
+                "Updating nft attributes",
+            )
+            .await;
+        }
+
         let nft_meta = NftMeta {
             nft: self.address.clone(),
             meta,
@@ -2206,6 +2225,25 @@ impl ContractEvent for NftManagerChanged {
             &self.consumer,
         )
         .await;
+
+        if let Some(attributes) = meta.get("attributes").and_then(|v| v.as_array()) {
+            let nft_attributes: Vec<NftAttribute> = attributes
+                .iter()
+                .map(|item| {
+                    NftAttribute::new(
+                        self.address.clone(),
+                        self.event_collection.clone(),
+                        item.clone(),
+                    )
+                })
+                .collect();
+
+            await_logging_error(
+                actions::upsert_nft_attributes(&nft_attributes, &self.pool),
+                "Updating nft attributes",
+            )
+            .await;
+        }
 
         let nft_meta = NftMeta {
             nft: self.address.clone(),
@@ -2402,6 +2440,26 @@ impl ContractEvent for NftCreated {
             &self.consumer,
         )
         .await;
+
+        if let Some(attributes) = meta.get("attributes").and_then(|v| v.as_array()) {
+            let nft_attributes: Vec<NftAttribute> = attributes
+                .iter()
+                .map(|item| {
+                    NftAttribute::new(
+                        self.nft.clone(),
+                        self.event_collection.clone(),
+                        item.clone(),
+                    )
+                })
+                .collect();
+
+            await_logging_error(
+                actions::upsert_nft_attributes(&nft_attributes, &self.pool),
+                "Updating nft attributes",
+            )
+            .await;
+        }
+
         let nft_meta = NftMeta {
             nft: self.nft.clone(),
             meta,
@@ -2488,6 +2546,16 @@ impl ContractEvent for NftCreated {
             "Updating collection by nft",
         )
         .await;
+        await_logging_error(
+            actions::update_collection_by_nft(
+                "nft_attributes",
+                &self.nft,
+                &self.address,
+                &self.pool,
+            ),
+            "Updating collection by nft",
+        )
+        .await;
 
         Ok(())
     }
@@ -2560,6 +2628,25 @@ impl ContractEvent for NftBurned {
             &self.consumer,
         )
         .await;
+
+        if let Some(attributes) = meta.get("attributes").and_then(|v| v.as_array()) {
+            let nft_attributes: Vec<NftAttribute> = attributes
+                .iter()
+                .map(|item| {
+                    NftAttribute::new(
+                        self.nft.clone(),
+                        self.event_collection.clone(),
+                        item.clone(),
+                    )
+                })
+                .collect();
+
+            await_logging_error(
+                actions::upsert_nft_attributes(&nft_attributes, &self.pool),
+                "Updating nft attributes",
+            )
+            .await;
+        }
 
         let nft_meta = NftMeta {
             nft: self.nft.clone(),

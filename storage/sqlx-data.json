@@ -384,6 +384,36 @@
     },
     "query": "\n        insert into nft (address, collection, owner, manager, name, description, burned, updated, tx_lt)\n        values ($1, $2, $3, $4, $5, $6, $7, $8, $9)\n        on conflict (address) where tx_lt <= $9 do update\n        set collection = $2, owner = $3, manager = $4, name = $5, description = $6, burned = $7, updated = $8, \n            tx_lt = $9\n        "
   },
+  "724544be17810759c9e9dd2ecede80fcc21ec4ae5526c09b681d3673f623d324": {
+    "describe": {
+      "columns": [],
+      "nullable": [],
+      "parameters": {
+        "Left": [
+          {
+            "Custom": {
+              "kind": {
+                "Domain": "Varchar"
+              },
+              "name": "t_address"
+            }
+          },
+          {
+            "Custom": {
+              "kind": {
+                "Domain": "Varchar"
+              },
+              "name": "t_address"
+            }
+          },
+          "Jsonb",
+          "Varchar",
+          "Jsonb"
+        ]
+      }
+    },
+    "query": "\n        insert into nft_attributes (nft, collection, raw, trait_type, value)\n        values ($1, $2, $3, $4, $5)\n        on conflict (nft, collection, raw, trait_type, value) do nothing\n        "
+  },
   "74cde259acad5d78d6ec5e83afcabc1080bc7e418cfe47f92f4ec4402857ce66": {
     "describe": {
       "columns": [],

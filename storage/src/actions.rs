@@ -2,7 +2,7 @@ use crate::{traits::EventRecord, types::*};
 use anyhow::{anyhow, Result};
 use chrono::NaiveDateTime;
 use serde::Serialize;
-use sqlx::{types::BigDecimal, PgPool};
+use sqlx::{types::BigDecimal, PgPool, Postgres, QueryBuilder};
 use std::str::FromStr;
 
 pub async fn save_event<T: EventRecord + Serialize>(record: &T, pool: &PgPool) -> Result<()> {
@@ -170,6 +170,27 @@ pub async fn upsert_nft_meta(nft_meta: &NftMeta, pool: &PgPool) -> Result<()> {
     .map(|_| {})?)
 }
 
+pub async fn upsert_nft_attributes(
+    nft_attributes: &Vec<NftAttribute>,
+    pool: &PgPool,
+) -> Result<()> {
+    let mut query = QueryBuilder::<Postgres>::new(
+        "insert into nft_attributes (nft, collection, raw, trait_type, value) ",
+    );
+
+    query.push_values(nft_attributes, |mut b, nft_attribute| {
+        b.push_bind(&nft_attribute.nft)
+            .push_bind(&nft_attribute.collection)
+            .push_bind(&nft_attribute.raw)
+            .push_bind(&nft_attribute.trait_type)
+            .push_bind(&nft_attribute.value);
+    });
+
+    query.push(" on conflict (nft, collection, raw, trait_type, value) do nothing");
+
+    Ok(query.build().execute(pool).await.map(|_| {})?)
+}
+
 pub async fn update_collection_by_nft(
     table_name: &str,
     nft: &Address,
@@ -216,7 +237,7 @@ pub async fn upsert_nft(nft: &Nft, pool: &PgPool) -> Result<()> {
     .fetch_optional(pool)
     .await?
     {
-        if nft.tx_lt > saved_nft.tx_lt {
+        if nft.tx_lt >= saved_nft.tx_lt {
             if nft.owner.is_some() {
                 saved_nft.owner = nft.owner.clone();
             }
@@ -292,7 +313,7 @@ pub async fn upsert_auction(auction: &NftAuction, pool: &PgPool) -> Result<()> {
     .fetch_optional(pool)
     .await?
     {
-        if auction.tx_lt > saved_auction.tx_lt {
+        if auction.tx_lt >= saved_auction.tx_lt {
             saved_auction.max_bid = auction.max_bid.clone();
             saved_auction.min_bid = auction.min_bid.clone();
             saved_auction.tx_lt = auction.tx_lt;

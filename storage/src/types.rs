@@ -270,3 +270,38 @@ pub struct NftPriceHistory {
     pub nft: Option<Address>,
     pub collection: Option<Address>,
 }
+
+#[derive(Clone, Debug)]
+pub struct NftAttribute {
+    pub nft: Address,
+    pub collection: Option<Address>,
+    pub raw: serde_json::Value,
+    pub trait_type: String,
+    pub value: Option<serde_json::Value>,
+}
+
+impl NftAttribute {
+    pub fn new(nft: Address, collection: Option<Address>, raw: serde_json::Value) -> Self {
+        let trait_type = raw
+            .get("trait_type")
+            .cloned()
+            .unwrap_or_default()
+            .as_str()
+            .map(str::to_string)
+            .unwrap_or_default();
+
+        let value = if let Some(value) = raw.get("display_value").cloned() {
+            Some(value)
+        } else {
+            raw.get("value").cloned()
+        };
+
+        Self {
+            nft,
+            collection,
+            raw,
+            trait_type,
+            value,
+        }
+    }
+}

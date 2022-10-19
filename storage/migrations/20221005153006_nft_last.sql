@@ -226,3 +226,15 @@ create table nft_price_history(
 create index idx_nft_price_history_nft on nft_price_history using btree (nft);
 create index idx_nft_price_history_collection on nft_price_history using btree (collection);
 create index idx_nft_price_history_ts on nft_price_history using btree (ts);
+
+create table nft_attributes(
+    nft t_address not null,
+    collection t_address null,
+    raw jsonb not null,
+    trait_type varchar(200) not null,
+    value jsonb null
+);
+
+create index ix_nft_attributes_nft on nft_attributes using btree (nft);
+create index ix_nft_attributes_collection on nft_attributes using btree (collection);
+create index ix_nft_attributes_trait_type on nft_attributes using btree (trait_type);
