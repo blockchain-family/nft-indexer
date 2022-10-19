@@ -25,3 +25,4 @@ traits_derive = { path = "../traits_derive" }
 transaction-consumer = { git = "https://github.com/broxus/transaction-consumer.git" }
 ton_abi = { git = "https://github.com/broxus/ton-labs-abi" }
 ton_block = { git = "https://github.com/broxus/ton-labs-block" }
+url = { version = "2", features = ["serde"] }

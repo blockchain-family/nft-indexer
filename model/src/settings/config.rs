@@ -8,7 +8,7 @@ pub struct Config {
     pub kafka_topic: String,
     pub kafka_consumer_group: String,
     pub kafka_reset: Option<bool>,
-    pub states_rpc_endpoints: Vec<String>,
+    pub states_rpc_endpoints: Vec<url::Url>,
     pub kafka_settings: HashMap<String, String>,
 }
 
