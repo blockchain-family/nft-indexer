@@ -54,6 +54,16 @@ mod tests {
     }
 
     #[tokio::test]
+    async fn usdt_to_usdt() {
+        let token = "0:a519f99bb5d6d51ef958ed24d337ad75a1c770885dcd42d51d6663f9fcdacfb2";
+        let usdt = crate::actions::token_to_usdt(token)
+            .await
+            .expect("Can't get usdt price");
+
+        println!("usdt = {:#?}", usdt);
+    }
+
+    #[tokio::test]
     async fn prices() {
         let db_url = env::var("DATABASE_URL").unwrap();
 

@@ -41,6 +41,10 @@ pub async fn get_owners_count(collection: &Address, pool: &PgPool) -> Result<Opt
 }
 
 pub async fn token_to_usdt(token: &str) -> Result<BigDecimal> {
+    if token == USDT_TOKEN_ROOT {
+        return Ok(1.into());
+    }
+
     let request_body = format!(
         r#"
         {{
