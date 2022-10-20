@@ -136,7 +136,7 @@ pub async fn upsert_collection(collection: &NftCollection, pool: &PgPool) -> Res
         set owner = $2, name = coalesce($3, nft_collection.name), 
             description = coalesce($4, nft_collection.description), 
             created = case when nft_collection.created < $5 then nft_collection.created else $5 end, updated = $6,
-            logo = coalesce($7, nft_collection.logo), wallpaper = ($8, nft_collection.wallpaper), total_price = $9,
+            logo = coalesce($7, nft_collection.logo), wallpaper = coalesce($8, nft_collection.wallpaper), total_price = $9,
             max_price = $10, owners_count = $11
         "#,
         &collection.address as &Address,

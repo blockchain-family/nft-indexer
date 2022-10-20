@@ -541,6 +541,56 @@
     },
     "query": "\n        insert into nft (address, collection, owner, manager, name, description, burned, updated, tx_lt)\n        values ($1, $2, $3, $4, $5, $6, $7, $8, $9)\n        on conflict (address) where tx_lt <= $9 do update\n        set collection = $2, owner = $3, manager = $4, name = coalesce($5, nft.name), \n            description = coalesce($6, nft.description), burned = $7, updated = $8, tx_lt = $9\n        "
   },
+  "b475afeb63d06bfb7ef05068ef6a7c5314770c19a027d1e971da89024134279a": {
+    "describe": {
+      "columns": [],
+      "nullable": [],
+      "parameters": {
+        "Left": [
+          {
+            "Custom": {
+              "kind": {
+                "Domain": "Varchar"
+              },
+              "name": "t_address"
+            }
+          },
+          {
+            "Custom": {
+              "kind": {
+                "Domain": "Varchar"
+              },
+              "name": "t_address"
+            }
+          },
+          "Text",
+          "Text",
+          "Timestamp",
+          "Timestamp",
+          {
+            "Custom": {
+              "kind": {
+                "Domain": "Varchar"
+              },
+              "name": "t_uri"
+            }
+          },
+          {
+            "Custom": {
+              "kind": {
+                "Domain": "Varchar"
+              },
+              "name": "t_uri"
+            }
+          },
+          "Numeric",
+          "Numeric",
+          "Int4"
+        ]
+      }
+    },
+    "query": "\n        insert into nft_collection (address, owner, name, description, created, updated, logo, wallpaper,\n            total_price, max_price, owners_count)\n        values ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11)\n        on conflict (address) where updated <= $6 do update\n        set owner = $2, name = coalesce($3, nft_collection.name), \n            description = coalesce($4, nft_collection.description), \n            created = case when nft_collection.created < $5 then nft_collection.created else $5 end, updated = $6,\n            logo = coalesce($7, nft_collection.logo), wallpaper = coalesce($8, nft_collection.wallpaper), total_price = $9,\n            max_price = $10, owners_count = $11\n        "
+  },
   "be9c96ef3e4de7abf5191d475263341720cdeb6661ad82957a0767cb1c2e76b0": {
     "describe": {
       "columns": [],
@@ -709,56 +759,6 @@
       }
     },
     "query": "\n        update nft_price_history as nph\n        set price_token = coalesce(nph.price_token, $2), nft = coalesce(nph.nft, $3), \n            collection = coalesce(nph.collection, $4)\n        where source = $1\n        "
-  },
-  "e99159bc8dd0a45c965bc4fe950080f8ef5375874f37f1fb27ad925252bdf1a4": {
-    "describe": {
-      "columns": [],
-      "nullable": [],
-      "parameters": {
-        "Left": [
-          {
-            "Custom": {
-              "kind": {
-                "Domain": "Varchar"
-              },
-              "name": "t_address"
-            }
-          },
-          {
-            "Custom": {
-              "kind": {
-                "Domain": "Varchar"
-              },
-              "name": "t_address"
-            }
-          },
-          "Text",
-          "Text",
-          "Timestamp",
-          "Timestamp",
-          {
-            "Custom": {
-              "kind": {
-                "Domain": "Varchar"
-              },
-              "name": "t_uri"
-            }
-          },
-          {
-            "Custom": {
-              "kind": {
-                "Domain": "Varchar"
-              },
-              "name": "t_uri"
-            }
-          },
-          "Numeric",
-          "Numeric",
-          "Int4"
-        ]
-      }
-    },
-    "query": "\n        insert into nft_collection (address, owner, name, description, created, updated, logo, wallpaper,\n            total_price, max_price, owners_count)\n        values ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11)\n        on conflict (address) where updated <= $6 do update\n        set owner = $2, name = coalesce($3, nft_collection.name), \n            description = coalesce($4, nft_collection.description), \n            created = case when nft_collection.created < $5 then nft_collection.created else $5 end, updated = $6,\n            logo = coalesce($7, nft_collection.logo), wallpaper = ($8, nft_collection.wallpaper), total_price = $9,\n            max_price = $10, owners_count = $11\n        "
   },
   "ed5271faa0edea5031ec0f7204eabc4cad00034df488e6fec8fbc04a5d94081e": {
     "describe": {
