@@ -1162,7 +1162,7 @@ impl ContractEvent for AuctionBidDeclined {
             price_token: None,
             start_price: None,
             min_bid: None,
-            max_bid: None,
+            max_bid: Some(self.value.clone()),
             status: None,
             created_at: None,
             finished_at: None,

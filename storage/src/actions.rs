@@ -101,7 +101,7 @@ pub async fn get_prices(collection: &Address, pool: &PgPool) -> Result<(BigDecim
         on nft.address = auction.nft
         inner join nft_auction_bid as bid
         on auction.address = bid.auction
-        where nft.collection = $1 and auction.status = 'active' and bid.declined = false
+        where nft.collection = $1 and auction.status = 'active'
         "#,
         collection as &Address,
     )
@@ -230,192 +230,53 @@ pub async fn update_nft_by_auction(
 }
 
 pub async fn upsert_nft(nft: &Nft, pool: &PgPool) -> Result<()> {
-    let updated_nft = if let Some(mut saved_nft) = sqlx::query_as!(
-        Nft,
-        r#"
-        select address as "address!: Address", collection as "collection?: Address", owner as "owner?: Address", 
-            manager as "manager?: Address", name as "name?", description as "description?", burned as "burned!", 
-            updated as "updated!", tx_lt as "tx_lt!"
-        from nft where address = $1
-        "#,
-        &nft.address as &Address
-    )
-    .fetch_optional(pool)
-    .await?
-    {
-        if nft.tx_lt >= saved_nft.tx_lt {
-            if nft.owner.is_some() {
-                saved_nft.owner = nft.owner.clone();
-            }
-
-            if nft.manager.is_some() {
-                saved_nft.manager = nft.manager.clone();
-            }
-
-            saved_nft.burned = nft.burned;
-            saved_nft.updated = nft.updated;
-            saved_nft.tx_lt = nft.tx_lt;
-        }
-
-        if saved_nft.collection.is_none() {
-            saved_nft.collection = nft.collection.clone();
-        }
-
-        if saved_nft.owner.is_none() {
-            saved_nft.owner = nft.owner.clone();
-        }
-
-        if saved_nft.manager.is_none() {
-            saved_nft.manager = nft.manager.clone();
-        }
-
-        if saved_nft.name.is_none() {
-            saved_nft.name = nft.name.clone();
-        }
-
-        if saved_nft.description.is_none() {
-            saved_nft.description = nft.description.clone();
-        }
-
-        saved_nft
-    } else {
-        nft.clone()
-    };
-
     sqlx::query!(
         r#"
         insert into nft (address, collection, owner, manager, name, description, burned, updated, tx_lt)
         values ($1, $2, $3, $4, $5, $6, $7, $8, $9)
         on conflict (address) where tx_lt <= $9 do update
-        set collection = $2, owner = $3, manager = $4, name = coalesce($5, nft.name), 
-            description = coalesce($6, nft.description), burned = $7, updated = $8, tx_lt = $9
+        set collection = coalesce($2, nft.collection), owner = coalesce($3, nft.owner),
+            manager = coalesce($4, nft.manager), name = coalesce($5, nft.name), 
+            description = coalesce($6, nft.description), burned = $7 or nft.burned, updated = $8, tx_lt = $9
         "#,
-        updated_nft.address as Address,
-        updated_nft.collection as Option<Address>,
-        updated_nft.owner as Option<Address>,
-        updated_nft.manager as Option<Address>,
-        updated_nft.name,
-        updated_nft.description,
-        updated_nft.burned,
-        updated_nft.updated,
-        updated_nft.tx_lt
+        &nft.address as &Address,
+        &nft.collection as &Option<Address>,
+        &nft.owner as &Option<Address>,
+        &nft.manager as &Option<Address>,
+        nft.name,
+        nft.description,
+        nft.burned,
+        nft.updated,
+        nft.tx_lt
     )
     .execute(pool)
     .await.map_err(|e| { anyhow!(e).context(format!("value: {:#?}", nft)) }).map(|_| {})
 }
 
 pub async fn upsert_auction(auction: &NftAuction, pool: &PgPool) -> Result<()> {
-    let updated_auction = if let Some(mut saved_auction) = sqlx::query_as!(
-        NftAuction,
-        r#"
-        select address as "address!: Address", nft as "nft?: Address", wallet_for_bids as "wallet_for_bids?: Address",
-            price_token as "price_token?: Address", start_price as "start_price?", min_bid as "min_bid?", 
-            max_bid as "max_bid?", status as "status?: AuctionStatus", created_at as "created_at?", 
-            finished_at as "finished_at?", tx_lt as "tx_lt!"
-        from nft_auction where address = $1
-        "#,
-        &auction.address as &Address
-    )
-    .fetch_optional(pool)
-    .await?
-    {
-        if auction.tx_lt >= saved_auction.tx_lt {
-            saved_auction.max_bid = auction.max_bid.clone();
-            saved_auction.min_bid = auction.min_bid.clone();
-            saved_auction.tx_lt = auction.tx_lt;
-
-            if auction.status.is_some() {
-                saved_auction.status = auction.status.clone();
-            }
-
-            if auction.created_at.is_some() {
-                saved_auction.created_at = auction.created_at;
-            }
-
-            if auction.finished_at.is_some() {
-                saved_auction.finished_at = auction.finished_at;
-            }
-        }
-
-        if saved_auction.nft.is_none() {
-            saved_auction.nft = auction.nft.clone();
-        }
-
-        if saved_auction.wallet_for_bids.is_none() {
-            saved_auction.wallet_for_bids = auction.wallet_for_bids.clone();
-        }
-
-        if saved_auction.price_token.is_none() {
-            saved_auction.price_token = auction.price_token.clone();
-        }
-
-        if saved_auction.start_price.is_none() {
-            saved_auction.start_price = auction.start_price.clone();
-        }
-
-        if saved_auction.min_bid.is_none() {
-            saved_auction.min_bid = sqlx::query_scalar!(
-                r#"
-                select max(next_bid_value) from nft_auction_bid
-                where auction = $1 and declined = false
-                "#,
-                &auction.address as &Address
-            )
-            .fetch_one(pool)
-            .await
-            .unwrap_or_default();
-        }
-
-        if saved_auction.max_bid.is_none() {
-            saved_auction.max_bid = sqlx::query_scalar!(
-                r#"
-                select max(price) from nft_auction_bid
-                where auction = $1 and declined = false
-                "#,
-                &auction.address as &Address
-            )
-            .fetch_one(pool)
-            .await
-            .unwrap_or_default();
-        }
-
-        if saved_auction.status.is_none() {
-            saved_auction.status = auction.status.clone();
-        }
-
-        if saved_auction.created_at.is_none() {
-            saved_auction.created_at = auction.created_at;
-        }
-
-        if saved_auction.finished_at.is_none() {
-            saved_auction.finished_at = auction.finished_at;
-        }
-
-        saved_auction
-    } else {
-        auction.clone()
-    };
-
     sqlx::query!(
         r#"
         insert into nft_auction (address, nft, wallet_for_bids, price_token, start_price, min_bid, max_bid, status,
             created_at, finished_at, tx_lt)
         values ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11)
         on conflict (address) where tx_lt <= $11 do update
-        set nft = $2, wallet_for_bids = $3, price_token = $4, start_price = $5, min_bid = $6,
-            max_bid = $7, status = $8, created_at = $9, finished_at = $10, tx_lt = $11
+        set nft = coalesce($2, nft_auction.nft), wallet_for_bids = coalesce($3, nft_auction.wallet_for_bids),
+            price_token = coalesce($4, nft_auction.price_token), start_price = coalesce($5, nft_auction.start_price),
+            min_bid = coalesce($6, nft_auction.min_bid), max_bid = coalesce($7, nft_auction.max_bid),
+            status = coalesce($8, nft_auction.status), created_at = coalesce($9, nft_auction.created_at), 
+            finished_at = coalesce($10, nft_auction.finished_at), tx_lt = $11
         "#,
-        updated_auction.address as Address,
-        updated_auction.nft as Option<Address>,
-        updated_auction.wallet_for_bids as Option<Address>,
-        updated_auction.price_token as Option<Address>,
-        updated_auction.start_price,
-        updated_auction.min_bid,
-        updated_auction.max_bid,
-        updated_auction.status as Option<AuctionStatus>,
-        updated_auction.created_at,
-        updated_auction.finished_at,
-        updated_auction.tx_lt,
+        &auction.address as &Address,
+        &auction.nft as &Option<Address>,
+        &auction.wallet_for_bids as &Option<Address>,
+        &auction.price_token as &Option<Address>,
+        auction.start_price,
+        auction.min_bid,
+        auction.max_bid,
+        &auction.status as &Option<AuctionStatus>,
+        auction.created_at,
+        auction.finished_at,
+        auction.tx_lt,
     )
     .execute(pool)
     .await.map_err(|e| { anyhow!(e).context(format!("value: {:#?}", auction)) }).map(|_| {})
