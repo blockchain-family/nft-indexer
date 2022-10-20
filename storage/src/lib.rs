@@ -44,8 +44,28 @@ mod tests {
     }
 
     #[tokio::test]
-    async fn token_to_usdt() {
+    async fn ever_to_usdt() {
         let token = "0:a49cd4e158a9a15555e624759e2e4e766d22600b7800d891e46f9291f044a93d";
+        let usdt = crate::actions::token_to_usdt(token)
+            .await
+            .expect("Can't get usdt price");
+
+        println!("usdt = {:#?}", usdt);
+    }
+
+    #[tokio::test]
+    async fn bridge_to_usdt() {
+        let token = "0:f2679d80b682974e065e03bf42bbee285ce7c587eb153b41d761ebfd954c45e1";
+        let usdt = crate::actions::token_to_usdt(token)
+            .await
+            .expect("Can't get usdt price");
+
+        println!("usdt = {:#?}", usdt);
+    }
+
+    #[tokio::test]
+    async fn qube_to_usdt() {
+        let token = "0:9f20666ce123602fd7a995508aeaa0ece4f92133503c0dfbd609b3239f3901e2";
         let usdt = crate::actions::token_to_usdt(token)
             .await
             .expect("Can't get usdt price");
@@ -56,6 +76,16 @@ mod tests {
     #[tokio::test]
     async fn usdt_to_usdt() {
         let token = "0:a519f99bb5d6d51ef958ed24d337ad75a1c770885dcd42d51d6663f9fcdacfb2";
+        let usdt = crate::actions::token_to_usdt(token)
+            .await
+            .expect("Can't get usdt price");
+
+        println!("usdt = {:#?}", usdt);
+    }
+
+    #[tokio::test]
+    async fn usdc_to_usdt() {
+        let token = "0:c37b3fafca5bf7d3704b081fde7df54f298736ee059bf6d32fac25f5e6085bf6";
         let usdt = crate::actions::token_to_usdt(token)
             .await
             .expect("Can't get usdt price");
