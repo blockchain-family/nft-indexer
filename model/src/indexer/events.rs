@@ -1141,9 +1141,6 @@ impl ContractEvent for AuctionBidDeclined {
     }
 
     async fn update_dependent_tables(&mut self) -> Result<()> {
-        (self.event_nft, self.event_collection) =
-            actions::get_nft_and_collection_by_auction(&self.address, &self.pool).await;
-
         let bid = NftAuctionBid {
             auction: self.address.clone(),
             buyer: self.buyer.clone(),
@@ -1155,39 +1152,11 @@ impl ContractEvent for AuctionBidDeclined {
         };
         await_logging_error(actions::upsert_bid(&bid, &self.pool), "Updating AuctionBid").await;
 
-        let auction = NftAuction {
-            address: self.address.clone(),
-            nft: self.event_nft.clone(),
-            wallet_for_bids: None,
-            price_token: None,
-            start_price: None,
-            min_bid: None,
-            max_bid: Some(self.value.clone()),
-            status: None,
-            created_at: None,
-            finished_at: None,
-            tx_lt: self.created_lt,
-        };
         await_logging_error(
-            actions::upsert_auction(&auction, &self.pool),
-            "Updating Auction",
+            actions::save_event(self, &self.pool),
+            "Saving AuctionBidDeclined",
         )
         .await;
-
-        if let Some(collection) = self.event_collection.as_ref() {
-            let collection = get_collection_data(
-                MsgAddressInt::from_str(collection.0.as_str())?,
-                &self.consumer,
-            )
-            .await;
-            await_logging_error(
-                actions::upsert_collection(&collection, &self.pool),
-                "Inserting collection",
-            )
-            .await;
-        }
-
-        await_logging_error(actions::save_event(self, &self.pool), "Saving AuctionBid").await;
 
         Ok(())
     }
