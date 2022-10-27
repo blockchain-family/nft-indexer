@@ -908,6 +908,7 @@ impl ContractEvent for AuctionActive {
             wallet_for_bids: Some(self.wallet_for_bids.clone()),
             price_token: Some(self._payment_token.clone()),
             start_price: Some(self._price.clone()),
+            closing_price_usd: None,
             min_bid: Some(self._price.clone()),
             max_bid: None,
             status: Some(AuctionStatus::Active),
@@ -1048,6 +1049,7 @@ impl ContractEvent for AuctionBidPlaced {
             wallet_for_bids: None,
             price_token: None,
             start_price: None,
+            closing_price_usd: None,
             min_bid,
             max_bid: Some(self.value.clone()),
             status: None,
@@ -1219,12 +1221,23 @@ impl ContractEvent for AuctionComplete {
         (self.event_nft, self.event_collection) =
             actions::get_nft_and_collection_by_auction(&self.address, &self.pool).await;
 
+        let price_token = actions::get_auction_price_token(&self.address, &self.pool).await;
+        let closing_price_usd = if price_token.is_some() {
+            let usd_price = rpc::token_to_usd(&price_token.as_ref().unwrap().0)
+                .await
+                .unwrap_or_default();
+            Some(usd_price * self.value.clone())
+        } else {
+            None
+        };
+
         let auction = NftAuction {
             address: self.address.clone(),
             nft: self.event_nft.clone(),
             wallet_for_bids: None,
-            price_token: None,
+            price_token,
             start_price: None,
+            closing_price_usd,
             min_bid: None,
             max_bid: Some(self.value.clone()),
             status: Some(AuctionStatus::Completed),
@@ -1294,6 +1307,7 @@ impl ContractEvent for AuctionCancelled {
             wallet_for_bids: None,
             price_token: None,
             start_price: None,
+            closing_price_usd: None,
             min_bid: None,
             max_bid: None,
             status: Some(AuctionStatus::Cancelled),
@@ -1850,18 +1864,24 @@ impl ContractEvent for DirectBuyStateChanged {
             .await;
         }
 
+        let (buy_price_usd, finished_at) = if state == DirectBuyState::Filled {
+            let usd_price = rpc::token_to_usd(&self.spent_token.0)
+                .await
+                .unwrap_or_default();
+            (Some(usd_price * self._price.clone()), Some(created_ts))
+        } else {
+            (None, None)
+        };
+
         let direct_buy = NftDirectBuy {
             address: self.address.clone(),
             nft: self.nft.clone(),
             collection: self.event_collection.clone(),
             price_token: self.spent_token.clone(),
             price: self._price.clone(),
+            buy_price_usd,
             buyer: self.creator.clone(),
-            finished_at: if state == DirectBuyState::Filled {
-                Some(created_ts)
-            } else {
-                None
-            },
+            finished_at,
             expired_at: NaiveDateTime::from_timestamp(self.end_time_buy, 0),
             state,
             created: NaiveDateTime::from_timestamp(self.start_time_buy, 0),
@@ -1976,18 +1996,22 @@ impl ContractEvent for DirectSellStateChanged {
             .await;
         }
 
+        let (sell_price_usd, finished_at) = if state == DirectSellState::Filled {
+            let usd_price = rpc::token_to_usd(&self.token.0).await.unwrap_or_default();
+            (Some(usd_price * self._price.clone()), Some(created_ts))
+        } else {
+            (None, None)
+        };
+
         let direct_sell = NftDirectSell {
             address: self.address.clone(),
             nft: self.nft.clone(),
             collection: self.event_collection.clone(),
             price_token: self.token.clone(),
             price: self._price.clone(),
+            sell_price_usd,
             seller: self.creator.clone(),
-            finished_at: if state == DirectSellState::Filled {
-                Some(created_ts)
-            } else {
-                None
-            },
+            finished_at,
             expired_at: NaiveDateTime::from_timestamp(self.end, 0),
             state,
             created: NaiveDateTime::from_timestamp(self.start, 0),

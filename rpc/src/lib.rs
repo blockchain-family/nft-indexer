@@ -97,3 +97,26 @@ pub async fn next_bid_value(
             .to_string(),
     )?)
 }
+
+pub async fn token_to_usd(token: &str) -> Result<BigDecimal> {
+    let client = reqwest::Client::new();
+    let response = crate::retrier::Retrier::new(move || {
+        let request = client.post(format!("https://api.flatqube.io/v1/currencies/{token}"));
+        Box::pin(request.send())
+    })
+    .attempts(5)
+    .backoff(50)
+    .factor(2)
+    .trace_id(format!("usd price for {}", token))
+    .run()
+    .await?;
+
+    let object: serde_json::Value = serde_json::from_slice(&response.bytes().await?)?;
+    let usd = object
+        .get("price")
+        .ok_or_else(|| anyhow!("No price in response"))?
+        .as_str()
+        .ok_or_else(|| anyhow!("Can't get price"))?;
+
+    Ok(BigDecimal::from_str(usd)?)
+}
