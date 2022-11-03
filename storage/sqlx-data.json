@@ -286,7 +286,8 @@
                   "created",
                   "active",
                   "cancelled",
-                  "completed"
+                  "completed",
+                  "expired"
                 ]
               },
               "name": "auction_status"
@@ -688,7 +689,8 @@
                   "created",
                   "active",
                   "cancelled",
-                  "completed"
+                  "completed",
+                  "expired"
                 ]
               },
               "name": "auction_status"
@@ -703,7 +705,8 @@
                   "created",
                   "active",
                   "cancelled",
-                  "completed"
+                  "completed",
+                  "expired"
                 ]
               },
               "name": "auction_status"

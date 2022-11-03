@@ -60,6 +60,7 @@ pub enum AuctionStatus {
     Active,
     Completed,
     Cancelled,
+    Expired,
 }
 
 #[derive(Clone, Debug, Serialize, PartialEq, Eq, sqlx::Type)]

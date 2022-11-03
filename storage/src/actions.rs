@@ -430,7 +430,7 @@ pub async fn update_offers_status(pool: &PgPool) -> Result<()> {
         update nft_auction set status = $1
         where finished_at != $2 and finished_at < $3 and nft_auction.status = $4
         "#,
-        AuctionStatus::Completed as AuctionStatus,
+        AuctionStatus::Expired as AuctionStatus,
         begin_of_epoch,
         now,
         AuctionStatus::Active as AuctionStatus,

@@ -115,7 +115,8 @@ create type auction_status as enum (
     'created',
     'active',
     'cancelled',
-    'completed'
+    'completed',
+    'expired'
 );
 
 create table nft_auction(
