@@ -675,6 +675,45 @@
     },
     "query": "\n        insert into nft (address, collection, owner, manager, name, description, burned, updated, tx_lt)\n        values ($1, $2, $3, $4, $5, $6, $7, $8, $9)\n        on conflict (address) where tx_lt <= $9 do update\n        set collection = coalesce($2, nft.collection), owner = coalesce($3, nft.owner),\n            manager = coalesce($4, nft.manager), name = coalesce($5, nft.name), \n            description = coalesce($6, nft.description), burned = $7 or nft.burned, updated = $8, tx_lt = $9\n        "
   },
+  "e2fa951a32b15efd066dae996817eb4a11e27f72629dbef55dd204d3c81acb1f": {
+    "describe": {
+      "columns": [],
+      "nullable": [],
+      "parameters": {
+        "Left": [
+          {
+            "Custom": {
+              "kind": {
+                "Enum": [
+                  "created",
+                  "active",
+                  "cancelled",
+                  "completed"
+                ]
+              },
+              "name": "auction_status"
+            }
+          },
+          "Timestamp",
+          "Timestamp",
+          {
+            "Custom": {
+              "kind": {
+                "Enum": [
+                  "created",
+                  "active",
+                  "cancelled",
+                  "completed"
+                ]
+              },
+              "name": "auction_status"
+            }
+          }
+        ]
+      }
+    },
+    "query": "\n        update nft_auction set status = $1\n        where finished_at != $2 and finished_at < $3 and nft_auction.status = $4\n        "
+  },
   "ed5271faa0edea5031ec0f7204eabc4cad00034df488e6fec8fbc04a5d94081e": {
     "describe": {
       "columns": [],

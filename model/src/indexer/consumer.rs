@@ -1,18 +1,38 @@
-use super::super::settings::config::{
-    trusted_auction_roots, trusted_direct_buy_factories, trusted_direct_sell_factories,
-};
-use crate::indexer::{events::*, traits::ContractEvent};
-use anyhow::Result;
+use crate::{settings::config::Config, indexer::{events::*, traits::ContractEvent}};
+use anyhow::{anyhow, Result};
 use futures::{future::BoxFuture, StreamExt};
 use nekoton_abi::{transaction_parser::ExtractedOwned, TransactionParser};
+use once_cell::sync::OnceCell;
 use serde::Serialize;
 use sqlx::PgPool;
-use std::sync::Arc;
+use std::{sync::Arc, collections::HashMap};
 use storage::{actions, traits::*};
 use transaction_consumer::{StreamFrom, TransactionConsumer};
 
-pub async fn serve(pool: PgPool, consumer: Arc<TransactionConsumer>) -> Result<()> {
-    let stream = consumer.stream_transactions(StreamFrom::Stored).await?;
+#[derive(PartialEq, Eq, Hash)]
+enum OfferRootType {
+    AuctionRoot = 0,
+    FactoryDirectBuy,
+    FactoryDirectSell,
+}
+
+static TRUSTED_ADDRESSES: OnceCell<HashMap<OfferRootType, Vec<String>>> = OnceCell::new();
+
+fn init_trusted_addresses(config: Config) -> Result<()> {
+    let mut m = HashMap::new();
+    m.insert(OfferRootType::AuctionRoot, config.trusted_auction_roots);
+    m.insert(OfferRootType::FactoryDirectBuy, config.trusted_direct_buy_factories);
+    m.insert(OfferRootType::FactoryDirectSell, config.trusted_direct_sell_factories);
+
+    TRUSTED_ADDRESSES.set(m).map_err(|_| anyhow!("Unable to inititalize trusted addresses"))
+}
+
+pub async fn serve(pool: PgPool, consumer: Arc<TransactionConsumer>, config: Config) -> Result<()> {
+    let from = if config.reset { StreamFrom::Beginning } else { StreamFrom::Stored };
+
+    init_trusted_addresses(config)?;
+
+    let stream = consumer.stream_transactions(from).await?;
     let mut fs = futures::stream::StreamExt::fuse(stream);
 
     let parsers_and_handlers = initialize_parsers_and_handlers()?;
@@ -151,7 +171,7 @@ async fn handle_auction_root_tip3(
     if let Some(record) =
         handle_event::<AuctionDeployed>("AuctionDeployed", &extracted, &pool, &consumer).await
     {
-        if trusted_auction_roots().contains(&record.address.0.as_str()) {
+        if TRUSTED_ADDRESSES.get().unwrap()[&OfferRootType::AuctionRoot].contains(&record.address.0) {
             if let Err(e) = actions::add_whitelist_address(&record.offer, &pool).await {
                 log::error!(
                     "Failed adding address {:#?} in whitelist: {:#?}",
@@ -212,7 +232,7 @@ async fn handle_factory_direct_buy(
     if let Some(record) =
         handle_event::<DirectBuyDeployed>("DirectBuyDeployed", &extracted, &pool, &consumer).await
     {
-        if trusted_direct_buy_factories().contains(&record.address.0.as_str()) {
+        if TRUSTED_ADDRESSES.get().unwrap()[&OfferRootType::FactoryDirectBuy].contains(&record.address.0) {
             if let Err(e) = actions::add_whitelist_address(&record.direct_buy, &pool).await {
                 log::error!(
                     "Failed adding address {:#?} in whitelist: {:#?}",
@@ -240,7 +260,7 @@ async fn handle_factory_direct_sell(
     if let Some(record) =
         handle_event::<DirectSellDeployed>("DirectSellDeployed", &extracted, &pool, &consumer).await
     {
-        if trusted_direct_sell_factories().contains(&record.address.0.as_str()) {
+        if TRUSTED_ADDRESSES.get().unwrap()[&OfferRootType::FactoryDirectSell].contains(&record.address.0) {
             if let Err(e) = actions::add_whitelist_address(&record.direct_sell, &pool).await {
                 log::error!(
                     "Failed adding address {:#?} in whitelist: {:#?}",
@@ -286,14 +306,14 @@ async fn handle_collection(
 }
 
 async fn initialize_whitelist_addresses(pool: &PgPool) {
-    for addr in trusted_auction_roots() {
-        if let Err(e) = actions::add_whitelist_address(&addr.into(), pool).await {
+    for addr in TRUSTED_ADDRESSES.get().unwrap()[&OfferRootType::AuctionRoot].iter() {
+        if let Err(e) = actions::add_whitelist_address(&(*addr.clone()).into(), pool).await {
             log::error!("Failed adding AuctionTip3 address in whitelist: {:#?}", e);
         }
     }
 
-    for addr in trusted_direct_buy_factories() {
-        if let Err(e) = actions::add_whitelist_address(&addr.into(), pool).await {
+    for addr in TRUSTED_ADDRESSES.get().unwrap()[&OfferRootType::FactoryDirectBuy].iter() {
+        if let Err(e) = actions::add_whitelist_address(&(*addr.clone()).into(), pool).await {
             log::error!(
                 "Failed adding FactoryDirectBuy address in whitelist: {:#?}",
                 e
@@ -301,8 +321,8 @@ async fn initialize_whitelist_addresses(pool: &PgPool) {
         }
     }
 
-    for addr in trusted_direct_sell_factories() {
-        if let Err(e) = actions::add_whitelist_address(&addr.into(), pool).await {
+    for addr in TRUSTED_ADDRESSES.get().unwrap()[&OfferRootType::FactoryDirectSell].iter() {
+        if let Err(e) = actions::add_whitelist_address(&(*addr.clone()).into(), pool).await {
             log::error!(
                 "Failed adding FactoryDirectSell address in whitelist: {:#?}",
                 e

@@ -427,6 +427,19 @@ pub async fn update_offers_status(pool: &PgPool) -> Result<()> {
 
     sqlx::query!(
         r#"
+        update nft_auction set status = $1
+        where finished_at != $2 and finished_at < $3 and nft_auction.status = $4
+        "#,
+        AuctionStatus::Completed as AuctionStatus,
+        begin_of_epoch,
+        now,
+        AuctionStatus::Active as AuctionStatus,
+    )
+    .execute(pool)
+    .await?;
+
+    sqlx::query!(
+        r#"
         update nft_direct_sell set state = $1
         where expired_at != $2 and expired_at < $3 and nft_direct_sell.state = $4
         "#,

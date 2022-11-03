@@ -32,7 +32,7 @@ async fn main() -> Result<()> {
         });
     }
 
-    consumer::serve(pg_pool, consumer).await
+    consumer::serve(pg_pool, consumer, config).await
 }
 
 pub async fn init_transactions_consumer(config: Config) -> Result<Arc<TransactionConsumer>> {

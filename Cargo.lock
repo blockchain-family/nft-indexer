@@ -1265,6 +1265,7 @@ dependencies = [
  "nekoton-abi",
  "nekoton-contracts",
  "nekoton-utils",
+ "once_cell",
  "rpc",
  "serde 1.0.147",
  "serde_json",
