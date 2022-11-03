@@ -22,3 +22,15 @@ impl Config {
             .unwrap_or_else(|e| panic!("Error parsing config: {}", e))
     }
 }
+
+pub fn trusted_auction_roots() -> [&'static str; 1] {
+    ["0:a9adf011a072ae8efac041aa4cdc046f973e275208eba607543ac08690ebab3c"]
+}
+
+pub fn trusted_direct_buy_factories() -> [&'static str; 1] {
+    ["0:41ffcebbdc210ed279edaeae705be303a63610eae03bba18014e9945a0f34039"]
+}
+
+pub fn trusted_direct_sell_factories() -> [&'static str; 1] {
+    ["0:0cd020840266c5ee7ad575787379c4894f9d494c00d0fc00e22889d721df3f8c"]
+}
