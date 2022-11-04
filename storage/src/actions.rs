@@ -2,7 +2,7 @@ use crate::{traits::EventRecord, types::*};
 use anyhow::{anyhow, Result};
 use chrono::NaiveDateTime;
 use serde::Serialize;
-use sqlx::{types::BigDecimal, PgPool, Postgres, QueryBuilder};
+use sqlx::{types::BigDecimal, PgPool};
 
 pub async fn save_event<T: EventRecord + Serialize>(record: &T, pool: &PgPool) -> Result<()> {
     Ok(sqlx::query!(
@@ -132,24 +132,28 @@ pub async fn upsert_nft_attributes(
     nft_attributes: &Vec<NftAttribute>,
     pool: &PgPool,
 ) -> Result<()> {
-    let mut query = QueryBuilder::<Postgres>::new(
-        "insert into nft_attributes (nft, collection, raw, trait_type, value) ",
-    );
+    let mut tx = pool.begin().await?;
 
-    query.push_values(nft_attributes, |mut b, nft_attribute| {
-        b.push_bind(&nft_attribute.nft)
-            .push_bind(&nft_attribute.collection)
-            .push_bind(&nft_attribute.raw)
-            .push_bind(&nft_attribute.trait_type)
-            .push_bind(&nft_attribute.value);
-    });
+    for nft_attribute in nft_attributes.iter() {
+        sqlx::query!(
+            r#"
+            insert into nft_attributes (nft, collection, raw, trait_type, value)
+            values ($1, $2, $3, $4, $5)
+            on conflict (nft, collection, raw, trait_type, value) do update
+            set collection = coalesce($2, nft_attributes.collection), raw = coalesce($3, nft_attributes.raw),
+                trait_type = coalesce($4, nft_attributes.trait_type), value = coalesce($5, nft_attributes.value)
+            "#,
+            &nft_attribute.nft as &Address,
+            &nft_attribute.collection as &Option<Address>,
+            nft_attribute.raw,
+            nft_attribute.trait_type,
+            nft_attribute.value,
+        )
+        .execute(&mut tx)
+        .await?;
+    }
 
-    query
-        .build()
-        .execute(pool)
-        .await
-        .map_err(|e| anyhow!(e).context(format!("value: {:#?}", nft_attributes)))
-        .map(|_| {})
+    Ok(tx.commit().await?)
 }
 
 pub async fn update_collection_by_nft(

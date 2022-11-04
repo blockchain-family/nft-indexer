@@ -1,11 +1,14 @@
-use crate::{settings::config::Config, indexer::{events::*, traits::ContractEvent}};
+use crate::{
+    indexer::{events::*, traits::ContractEvent},
+    settings::config::Config,
+};
 use anyhow::{anyhow, Result};
 use futures::{future::BoxFuture, StreamExt};
 use nekoton_abi::{transaction_parser::ExtractedOwned, TransactionParser};
 use once_cell::sync::OnceCell;
 use serde::Serialize;
 use sqlx::PgPool;
-use std::{sync::Arc, collections::HashMap};
+use std::{collections::HashMap, sync::Arc};
 use storage::{actions, traits::*};
 use transaction_consumer::{StreamFrom, TransactionConsumer};
 
@@ -21,14 +24,26 @@ static TRUSTED_ADDRESSES: OnceCell<HashMap<OfferRootType, Vec<String>>> = OnceCe
 fn init_trusted_addresses(config: Config) -> Result<()> {
     let mut m = HashMap::new();
     m.insert(OfferRootType::AuctionRoot, config.trusted_auction_roots);
-    m.insert(OfferRootType::FactoryDirectBuy, config.trusted_direct_buy_factories);
-    m.insert(OfferRootType::FactoryDirectSell, config.trusted_direct_sell_factories);
+    m.insert(
+        OfferRootType::FactoryDirectBuy,
+        config.trusted_direct_buy_factories,
+    );
+    m.insert(
+        OfferRootType::FactoryDirectSell,
+        config.trusted_direct_sell_factories,
+    );
 
-    TRUSTED_ADDRESSES.set(m).map_err(|_| anyhow!("Unable to inititalize trusted addresses"))
+    TRUSTED_ADDRESSES
+        .set(m)
+        .map_err(|_| anyhow!("Unable to inititalize trusted addresses"))
 }
 
 pub async fn serve(pool: PgPool, consumer: Arc<TransactionConsumer>, config: Config) -> Result<()> {
-    let from = if config.reset { StreamFrom::Beginning } else { StreamFrom::Stored };
+    let from = if config.reset {
+        StreamFrom::Beginning
+    } else {
+        StreamFrom::Stored
+    };
 
     init_trusted_addresses(config)?;
 
@@ -171,7 +186,8 @@ async fn handle_auction_root_tip3(
     if let Some(record) =
         handle_event::<AuctionDeployed>("AuctionDeployed", &extracted, &pool, &consumer).await
     {
-        if TRUSTED_ADDRESSES.get().unwrap()[&OfferRootType::AuctionRoot].contains(&record.address.0) {
+        if TRUSTED_ADDRESSES.get().unwrap()[&OfferRootType::AuctionRoot].contains(&record.address.0)
+        {
             if let Err(e) = actions::add_whitelist_address(&record.offer, &pool).await {
                 log::error!(
                     "Failed adding address {:#?} in whitelist: {:#?}",
@@ -232,7 +248,9 @@ async fn handle_factory_direct_buy(
     if let Some(record) =
         handle_event::<DirectBuyDeployed>("DirectBuyDeployed", &extracted, &pool, &consumer).await
     {
-        if TRUSTED_ADDRESSES.get().unwrap()[&OfferRootType::FactoryDirectBuy].contains(&record.address.0) {
+        if TRUSTED_ADDRESSES.get().unwrap()[&OfferRootType::FactoryDirectBuy]
+            .contains(&record.address.0)
+        {
             if let Err(e) = actions::add_whitelist_address(&record.direct_buy, &pool).await {
                 log::error!(
                     "Failed adding address {:#?} in whitelist: {:#?}",
@@ -260,7 +278,9 @@ async fn handle_factory_direct_sell(
     if let Some(record) =
         handle_event::<DirectSellDeployed>("DirectSellDeployed", &extracted, &pool, &consumer).await
     {
-        if TRUSTED_ADDRESSES.get().unwrap()[&OfferRootType::FactoryDirectSell].contains(&record.address.0) {
+        if TRUSTED_ADDRESSES.get().unwrap()[&OfferRootType::FactoryDirectSell]
+            .contains(&record.address.0)
+        {
             if let Err(e) = actions::add_whitelist_address(&record.direct_sell, &pool).await {
                 log::error!(
                     "Failed adding address {:#?} in whitelist: {:#?}",

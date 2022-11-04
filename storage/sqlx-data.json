@@ -613,6 +613,36 @@
     },
     "query": "\n        insert into nft_collection (address, owner, name, description, created, updated, logo, wallpaper,\n            total_price, max_price, owners_count)\n        values ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11)\n        on conflict (address) where updated <= $6 do update\n        set owner = $2, name = coalesce($3, nft_collection.name), \n            description = coalesce($4, nft_collection.description), \n            created = case when nft_collection.created < $5 then nft_collection.created else $5 end, updated = $6,\n            logo = coalesce($7, nft_collection.logo), wallpaper = coalesce($8, nft_collection.wallpaper), total_price = $9,\n            max_price = $10, owners_count = $11\n        "
   },
+  "cd19b1cdedf24b571e203e17cc9317d2cb2286a8b35d6faf9562212449932814": {
+    "describe": {
+      "columns": [],
+      "nullable": [],
+      "parameters": {
+        "Left": [
+          {
+            "Custom": {
+              "kind": {
+                "Domain": "Varchar"
+              },
+              "name": "t_address"
+            }
+          },
+          {
+            "Custom": {
+              "kind": {
+                "Domain": "Varchar"
+              },
+              "name": "t_address"
+            }
+          },
+          "Jsonb",
+          "Varchar",
+          "Jsonb"
+        ]
+      }
+    },
+    "query": "\n            insert into nft_attributes (nft, collection, raw, trait_type, value)\n            values ($1, $2, $3, $4, $5)\n            on conflict (nft, collection, raw, trait_type, value) do update\n            set collection = coalesce($2, nft_attributes.collection), raw = coalesce($3, nft_attributes.raw),\n                trait_type = coalesce($4, nft_attributes.trait_type), value = coalesce($5, nft_attributes.value)\n            "
+  },
   "dd3744fad49c559fff0d921b279127301f6a71b4c332bdd51a148e6b000e8727": {
     "describe": {
       "columns": [],
