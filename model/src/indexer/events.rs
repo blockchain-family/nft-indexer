@@ -1039,7 +1039,11 @@ impl ContractEvent for AuctionBidPlaced {
             created_at: NaiveDateTime::from_timestamp(self.created_at, 0),
             tx_lt: self.created_lt,
         };
-        await_logging_error(actions::upsert_bid(&bid, &self.pool), "Updating AuctionBid").await;
+        await_logging_error(
+            actions::insert_auction_bid(&bid, &self.pool),
+            "Updating AuctionBid",
+        )
+        .await;
 
         let min_bid = Some(self.next_bid_value.clone());
 
@@ -1152,7 +1156,11 @@ impl ContractEvent for AuctionBidDeclined {
             created_at: NaiveDateTime::from_timestamp(self.created_at, 0),
             tx_lt: self.created_lt,
         };
-        await_logging_error(actions::upsert_bid(&bid, &self.pool), "Updating AuctionBid").await;
+        await_logging_error(
+            actions::insert_auction_bid(&bid, &self.pool),
+            "Updating AuctionBid",
+        )
+        .await;
 
         await_logging_error(
             actions::save_event(self, &self.pool),
@@ -2146,7 +2154,8 @@ impl ContractEvent for NftOwnerChanged {
                 .map(str::to_string),
             burned: false,
             updated: NaiveDateTime::from_timestamp(self.created_at, 0),
-            tx_lt: self.created_lt,
+            owner_update_lt: self.created_lt,
+            manager_update_lt: 0,
         };
 
         await_logging_error(actions::upsert_nft(&nft, &self.pool), "Updating nft").await;
@@ -2265,7 +2274,8 @@ impl ContractEvent for NftManagerChanged {
                 .map(str::to_string),
             burned: false,
             updated: NaiveDateTime::from_timestamp(self.created_at, 0),
-            tx_lt: self.created_lt,
+            owner_update_lt: 0,
+            manager_update_lt: self.created_lt,
         };
 
         await_logging_error(actions::upsert_nft(&nft, &self.pool), "Updating nft").await;
@@ -2480,7 +2490,8 @@ impl ContractEvent for NftCreated {
                 .map(str::to_string),
             burned: false,
             updated: NaiveDateTime::from_timestamp(self.created_at, 0),
-            tx_lt: self.created_lt,
+            owner_update_lt: self.created_lt,
+            manager_update_lt: self.created_lt,
         };
 
         await_logging_error(actions::upsert_nft(&nft, &self.pool), "Updating nft").await;
@@ -2668,7 +2679,8 @@ impl ContractEvent for NftBurned {
                 .map(str::to_string),
             burned: true,
             updated: NaiveDateTime::from_timestamp(self.created_at, 0),
-            tx_lt: self.created_lt,
+            owner_update_lt: self.created_lt,
+            manager_update_lt: self.created_lt,
         };
 
         await_logging_error(actions::upsert_nft(&nft, &self.pool), "Updating nft").await;

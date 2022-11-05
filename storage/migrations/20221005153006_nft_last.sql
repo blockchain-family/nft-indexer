@@ -71,7 +71,8 @@ create table nft(
     description text,
     burned boolean not null default false,
     updated timestamp not null,
-    tx_lt bigint not null
+    owner_update_lt bigint not null,
+    manager_update_lt bigint not null
 );
 
 create index ix_nft_collection on nft using btree (collection);

@@ -181,7 +181,8 @@ pub struct Nft {
     pub description: Option<String>,
     pub burned: bool,
     pub updated: NaiveDateTime,
-    pub tx_lt: i64,
+    pub owner_update_lt: i64,
+    pub manager_update_lt: i64,
 }
 
 #[derive(Clone, Debug)]
