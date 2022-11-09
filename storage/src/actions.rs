@@ -200,7 +200,9 @@ pub async fn update_nft_by_auction(
     sqlx::query(&query).execute(pool).await
 }
 
-pub async fn upsert_nft(nft: &Nft, pool: &PgPool) -> Result<PgQueryResult, sqlx::Error> {
+pub async fn upsert_nft(nft: &Nft, pool: &PgPool) -> Result<(), sqlx::Error> {
+    let mut tx = pool.begin().await?;
+
     let nft = if let Some(mut saved_nft) = sqlx::query_as!(
         Nft,
         r#"
@@ -211,7 +213,7 @@ pub async fn upsert_nft(nft: &Nft, pool: &PgPool) -> Result<PgQueryResult, sqlx:
         "#,
         &nft.address as &Address
     )
-    .fetch_optional(pool)
+    .fetch_optional(&mut tx)
     .await?
     {
         if saved_nft.collection.is_none() {
@@ -258,14 +260,15 @@ pub async fn upsert_nft(nft: &Nft, pool: &PgPool) -> Result<PgQueryResult, sqlx:
         nft.owner_update_lt,
         nft.manager_update_lt,
     )
-    .execute(pool)
-    .await
+    .execute(&mut tx)
+    .await?;
+
+    tx.commit().await
 }
 
-pub async fn upsert_auction(
-    auction: &NftAuction,
-    pool: &PgPool,
-) -> Result<PgQueryResult, sqlx::Error> {
+pub async fn upsert_auction(auction: &NftAuction, pool: &PgPool) -> Result<(), sqlx::Error> {
+    let mut tx = pool.begin().await?;
+
     let auction = if let Some(mut saved_auction) = sqlx::query_as!(
         NftAuction,
         r#"
@@ -278,7 +281,7 @@ pub async fn upsert_auction(
         "#,
         &auction.address as &Address
         )
-        .fetch_optional(pool)
+        .fetch_optional(&mut tx)
         .await?
         {
             if saved_auction.nft.is_none() {
@@ -350,8 +353,10 @@ pub async fn upsert_auction(
         auction.finished_at,
         auction.tx_lt,
         )
-        .execute(pool)
-        .await
+        .execute(&mut tx)
+        .await?;
+
+    tx.commit().await
 }
 
 pub async fn insert_auction_bid(

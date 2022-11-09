@@ -16,6 +16,12 @@ pub struct Config {
     pub trusted_direct_sell_factories: Vec<String>,
 }
 
+impl Default for Config {
+    fn default() -> Self {
+        Self::new()
+    }
+}
+
 impl Config {
     pub fn new() -> Config {
         let conf = config::Config::builder()
@@ -39,7 +45,7 @@ impl Config {
         conf.kafka_settings = conf
             .kafka_settings
             .into_iter()
-            .map(|(k, v)| (k.replace("_", "."), v.clone()))
+            .map(|(k, v)| (k.replace('_', "."), v))
             .collect();
 
         conf
