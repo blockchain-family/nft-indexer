@@ -161,8 +161,6 @@ where
             }
         };
 
-        // TODO: adding to whitelist here?
-
         if let Err(e) = record.update_dependent_tables().await {
             log::error!(
                 "Error updating dependent tables of {}: {:#?}",

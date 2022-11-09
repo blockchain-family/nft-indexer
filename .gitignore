@@ -1,5 +1,5 @@
 /target
 /deployment
 /kafka-creds
-/model/Settings.toml
+/model/.env
 /.vscode

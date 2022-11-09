@@ -17,12 +17,31 @@ pub struct Config {
 }
 
 impl Config {
-    pub fn new(path: &str) -> Config {
-        let mut conf = config::Config::new();
-        if std::path::Path::new(path).exists() {
-            conf.merge(config::File::with_name(path)).unwrap();
-        }
-        conf.try_into::<Config>()
-            .unwrap_or_else(|e| panic!("Error parsing config: {}", e))
+    pub fn new() -> Config {
+        let conf = config::Config::builder()
+            .add_source(
+                config::Environment::default()
+                    .separator("__")
+                    .list_separator(",")
+                    .with_list_parse_key("states_rpc_endpoints")
+                    .with_list_parse_key("trusted_auction_roots")
+                    .with_list_parse_key("trusted_direct_buy_factories")
+                    .with_list_parse_key("trusted_direct_sell_factories")
+                    .try_parsing(true),
+            )
+            .build()
+            .unwrap();
+
+        let mut conf = conf
+            .try_deserialize::<Config>()
+            .unwrap_or_else(|e| panic!("Error parsing config: {}", e));
+
+        conf.kafka_settings = conf
+            .kafka_settings
+            .into_iter()
+            .map(|(k, v)| (k.replace("_", "."), v.clone()))
+            .collect();
+
+        conf
     }
 }

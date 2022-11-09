@@ -5,7 +5,11 @@ use chrono::NaiveDateTime;
 use futures::Future;
 use nekoton_abi::transaction_parser::ExtractedOwned;
 use serde::Serialize;
-use sqlx::{types::BigDecimal, PgPool};
+use sqlx::{
+    postgres::{PgDatabaseError, PgSeverity},
+    types::BigDecimal,
+    PgPool,
+};
 use std::{str::FromStr, sync::Arc};
 use storage::{actions, traits::EventRecord, types::*};
 use ton_abi::TokenValue::Tuple;
@@ -596,9 +600,18 @@ pub struct NftBurned {
 
 async fn await_logging_error<F, T>(f: F, trace_id: &str)
 where
-    F: Future<Output = Result<T>> + Send,
+    F: Future<Output = Result<T, sqlx::Error>> + Send,
 {
     if let Err(e) = f.await {
+        if let Some(e) = e.as_database_error() {
+            if let Some(e) = e.try_downcast_ref::<PgDatabaseError>() {
+                if e.severity() == PgSeverity::Fatal {
+                    // better stop indexer
+                    std::process::exit(1);
+                }
+            }
+        }
+
         log::error!("[{}] Error: {:#?}", trace_id, e);
     }
 }

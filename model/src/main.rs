@@ -15,7 +15,7 @@ async fn main() -> Result<()> {
     let mut builder = Builder::new();
     builder.filter_level(LevelFilter::Info).init();
 
-    let config = Config::new("Settings.toml");
+    let config = Config::new();
 
     let pg_pool = storage::init_pg_pool(&config.database_url, config.database_max_connections)
         .await
