@@ -25,7 +25,7 @@ deploy:stage:
   extends: .deploy
   environment:
     name: stage
-    on_stop: stop:master
+    on_stop: stop:stage
 
 stop:stage:
   only:
