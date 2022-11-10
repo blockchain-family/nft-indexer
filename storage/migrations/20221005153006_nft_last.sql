@@ -153,6 +153,7 @@ create table nft_auction_bid(
 
 create index ix_nft_auction_bid_auction on nft_auction_bid using btree (auction);
 create index ix_nft_auction_bid_buyer on nft_auction_bid using btree (buyer);
+create index ix_nft_auction_bid_created_at on nft_auction_bid using btree (created_at);
 
 create type direct_sell_state as enum(
     'create',
@@ -181,7 +182,10 @@ create table nft_direct_sell(
 
 create index ix_nft_direct_sell_nft on nft_direct_sell using btree (nft);
 create index ix_nft_direct_sell_collection on nft_direct_sell using btree (collection);
+create index ix_nft_direct_sell_buyer on nft_direct_sell using btree (buyer);
 create index ix_nft_direct_sell_seller on nft_direct_sell using btree (seller);
+create index ix_nft_direct_sell_state on nft_direct_sell using btree (state);
+create index ix_nft_direct_sell_created on nft_direct_sell using btree (created);
 
 create type direct_buy_state as enum(
     'create',
@@ -208,40 +212,8 @@ create table nft_direct_buy(
     tx_lt bigint not null
 );
 
-create type nft_price_source as enum(
-    'auctionBid',
-    'directBuy',
-    'directSell'
-);
-
 create index ix_nft_direct_buy_nft on nft_direct_buy using btree (nft);
 create index ix_nft_direct_buy_collection on nft_direct_buy using btree (collection);
 create index ix_nft_direct_buy_buyer on nft_direct_buy using btree (buyer);
-
-create table nft_price_history(
-    source t_address not null,
-    source_type nft_price_source not null,
-    ts timestamp not null,
-    price numeric(40) not null,
-    price_token t_address null,
-    nft t_address null,
-    collection t_address null
-);
-
-create index idx_nft_price_history_nft on nft_price_history using btree (nft);
-create index idx_nft_price_history_collection on nft_price_history using btree (collection);
-create index idx_nft_price_history_ts on nft_price_history using btree (ts);
-
-create table nft_attributes(
-    nft t_address not null,
-    collection t_address null,
-    raw jsonb not null,
-    trait_type varchar(200) not null,
-    value jsonb null,
-
-    constraint nft_attributes_no_dups unique (nft, collection, raw, trait_type, value)
-);
-
-create index ix_nft_attributes_nft on nft_attributes using btree (nft);
-create index ix_nft_attributes_collection on nft_attributes using btree (collection);
-create index ix_nft_attributes_trait_type on nft_attributes using btree (trait_type);
+create index ix_nft_direct_buy_state on nft_direct_buy using btree (state);
+create index ix_nft_direct_buy_created on nft_direct_buy using btree (created);
