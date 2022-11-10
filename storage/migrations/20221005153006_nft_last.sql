@@ -182,7 +182,6 @@ create table nft_direct_sell(
 
 create index ix_nft_direct_sell_nft on nft_direct_sell using btree (nft);
 create index ix_nft_direct_sell_collection on nft_direct_sell using btree (collection);
-create index ix_nft_direct_sell_buyer on nft_direct_sell using btree (buyer);
 create index ix_nft_direct_sell_seller on nft_direct_sell using btree (seller);
 create index ix_nft_direct_sell_state on nft_direct_sell using btree (state);
 create index ix_nft_direct_sell_created on nft_direct_sell using btree (created);
