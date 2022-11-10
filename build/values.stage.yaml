@@ -19,5 +19,13 @@ env:
   TRUSTED_DIRECT_BUY_FACTORIES: 0:ee7dc73ed5d4bd56d1d4363322f0d643597ec4258c5babae1117a99610f485a0
   TRUSTED_DIRECT_SELL_FACTORIES: 0:051ff228d2cca2f69ae3f29654fac0bf4aac1b451613bf9baae55b18b3ee8e25
   RESET: false
+
+sharedSecrets:
+  - mount: /var/kafka/secrets/kafka.broker.keystore.jks
+    type: file
+    name: kafka.broker.keystore.jks
+  - mount: /var/kafka/secrets/ca.pem
+    type: file
+    name: ca.pem
   
 controller: statefulset
