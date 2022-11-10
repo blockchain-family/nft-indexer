@@ -10,14 +10,14 @@ stages:
   - cloudbuild
   - deploy
 
-cloudbuild:image:master:
+cloudbuild:image:stage:
   only:
     - stage
   except:
     - tags
   extends: .cloudbuild:common
 
-deploy:master:
+deploy:stage:
   only:
     - stage
   except:
@@ -27,7 +27,7 @@ deploy:master:
     name: stage
     on_stop: stop:master
 
-stop:master:
+stop:stage:
   only:
     - stage
   except:
@@ -35,3 +35,29 @@ stop:master:
   extends: .stop
   environment:
     name: stage
+
+cloudbuild:image:prod:
+  only:
+    - prod
+  except:
+    - tags
+  extends: .cloudbuild:common
+
+deploy:prod:
+  only:
+    - prod
+  except:
+    - tags
+  extends: .deploy
+  environment:
+    name: prod
+    on_stop: stop:prod
+
+stop:prod:
+  only:
+    - prod
+  except:
+    - tags
+  extends: .stop
+  environment:
+    name: prod
