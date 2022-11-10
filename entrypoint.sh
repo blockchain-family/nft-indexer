@@ -1,3 +1,3 @@
 #!/bin/bash
 
-sqlx migrate && /app/application $1
+sqlx migrate run && /app/application $1

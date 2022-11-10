@@ -20,4 +20,4 @@ env:
   TRUSTED_DIRECT_SELL_FACTORIES: 0:051ff228d2cca2f69ae3f29654fac0bf4aac1b451613bf9baae55b18b3ee8e25
   RESET: false
   
-controller: statefulset
+controller: deployment
