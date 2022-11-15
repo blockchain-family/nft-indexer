@@ -10,7 +10,7 @@ use serde::Serialize;
 use sqlx::PgPool;
 use std::{collections::HashMap, sync::Arc};
 use storage::{actions, traits::*};
-use transaction_consumer::{StreamFrom, TransactionConsumer};
+use transaction_consumer::{ConsumedTransaction, StreamFrom, TransactionConsumer};
 
 #[derive(PartialEq, Eq, Hash)]
 enum OfferRootType {
@@ -31,35 +31,42 @@ pub async fn serve(pool: PgPool, consumer: Arc<TransactionConsumer>, config: Con
 
     init_trusted_addresses(config)?;
     init_parsers_and_handlers()?;
-
-    let stream = consumer.stream_transactions(from).await?;
-    let mut fs = futures::stream::StreamExt::fuse(stream);
-
     init_whitelist_addresses(&pool).await;
 
-    log::info!("Start listening to kafka...");
-    while let Some(tx) = fs.next().await {
-        let pool = pool.clone();
-        let consumer = consumer.clone();
+    let (mut stream, offsets) = consumer.stream_until_highest_offsets(from).await?;
 
-        tokio::spawn(async move {
-            for (parser, handler) in PARSERS_AND_HANDLERS.get().unwrap().iter() {
-                if let Ok(extracted) = parser.parse(&tx.transaction) {
-                    let extracted = extracted.into_iter().map(|ex| ex.into_owned()).collect();
-                    handler(extracted, pool.clone(), consumer.clone()).await;
-                }
-            }
+    log::info!("Starting fast streaming");
+    while let Some(tx) = stream.next().await {
+        indexer_routine(tx, pool.clone(), consumer.clone());
+    }
 
-            if let Err(e) = tx.commit() {
-                log::error!("Failed committing transaction: {:#?}", e);
-                std::process::exit(1);
-            }
-        });
+    let mut stream = consumer
+        .stream_transactions(StreamFrom::Offsets(offsets))
+        .await?;
+
+    log::info!("Starting realtime streaming");
+    while let Some(tx) = stream.next().await {
+        indexer_routine(tx, pool.clone(), consumer.clone());
     }
 
     log::warn!("Transactions stream terminated.");
 
     Ok(())
+}
+
+fn indexer_routine(tx: ConsumedTransaction, pool: PgPool, consumer: Arc<TransactionConsumer>) {
+    tokio::spawn(async move {
+        for (parser, handler) in PARSERS_AND_HANDLERS.get().unwrap().iter() {
+            if let Ok(extracted) = parser.parse(&tx.transaction) {
+                let extracted = extracted.into_iter().map(|ex| ex.into_owned()).collect();
+                handler(extracted, pool.clone(), consumer.clone()).await;
+            }
+        }
+
+        if let Err(e) = tx.commit() {
+            log::error!("Failed committing transaction: {:#?}", e);
+        }
+    });
 }
 
 fn init_trusted_addresses(config: Config) -> Result<()> {
