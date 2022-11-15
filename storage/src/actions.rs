@@ -365,7 +365,6 @@ pub async fn insert_auction_bid(
         r#"
         insert into nft_auction_bid (auction, buyer, price, next_bid_value, declined, created_at, tx_lt)
         values ($1, $2, $3, $4, $5, $6, $7)
-        on conflict (auction, buyer, price, declined) do nothing
         "#,
         &bid.auction as &Address,
         &bid.buyer as &Address,

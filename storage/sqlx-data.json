@@ -205,6 +205,38 @@
     },
     "query": "\n        select price as \"price!: BigDecimal\", price_token as \"price_token!: String\" from nft\n        inner join nft_direct_sell as direct_sell\n        on nft.address = direct_sell.nft\n        where nft.collection = $1 and direct_sell.state = 'active'\n        union\n        select price as \"price!: BigDecimal\", price_token as \"price_token!: String\" from nft\n        inner join nft_auction as auction\n        on nft.address = auction.nft\n        inner join nft_auction_bid as bid\n        on auction.address = bid.auction\n        where nft.collection = $1 and auction.status = 'active'\n        "
   },
+  "4547659557f1abe087e9ab1b7a34d2eb4bb477b4ca734619e22f4e75698a6104": {
+    "describe": {
+      "columns": [],
+      "nullable": [],
+      "parameters": {
+        "Left": [
+          {
+            "Custom": {
+              "kind": {
+                "Domain": "Varchar"
+              },
+              "name": "t_address"
+            }
+          },
+          {
+            "Custom": {
+              "kind": {
+                "Domain": "Varchar"
+              },
+              "name": "t_address"
+            }
+          },
+          "Numeric",
+          "Numeric",
+          "Bool",
+          "Timestamp",
+          "Int8"
+        ]
+      }
+    },
+    "query": "\n        insert into nft_auction_bid (auction, buyer, price, next_bid_value, declined, created_at, tx_lt)\n        values ($1, $2, $3, $4, $5, $6, $7)\n        "
+  },
   "46e52f25781e191646124072ec06bce987eeafa5a28a0634cfcba68913a15158": {
     "describe": {
       "columns": [],
@@ -281,7 +313,7 @@
                 "Enum": [
                   "auction_deployed",
                   "auction_created",
-                  "auction_root_ownership_transferred",
+                  "auction_ownership_transferred",
                   "auction_active",
                   "auction_declined",
                   "auction_bid_placed",
@@ -290,17 +322,20 @@
                   "auction_complete",
                   "direct_buy_deployed",
                   "direct_buy_declined",
-                  "factory_direct_buy_ownership_transferred",
+                  "direct_buy_ownership_transferred",
                   "direct_buy_state_changed",
                   "direct_sell_deployed",
                   "direct_sell_declined",
-                  "factory_direct_sell_ownership_transferred",
+                  "direct_sell_ownership_transferred",
                   "direct_sell_state_changed",
                   "nft_owner_changed",
                   "nft_manager_changed",
                   "collection_ownership_transferred",
                   "nft_created",
-                  "nft_burned"
+                  "nft_burned",
+                  "auction_root_ownership_transferred",
+                  "factory_direct_buy_ownership_transferred",
+                  "factory_direct_sell_ownership_transferred"
                 ]
               },
               "name": "event_type"
@@ -337,38 +372,6 @@
       }
     },
     "query": "\n        insert into nft_events (event_cat, event_type, address, nft, collection, created_lt, created_at, args)\n        values ($1, $2, $3, $4, $5, $6, $7, $8)\n        "
-  },
-  "6b8cc5e2934ef2b1e25af5b8991ac9409d107203bf1ec0a67730a0d42d98f988": {
-    "describe": {
-      "columns": [],
-      "nullable": [],
-      "parameters": {
-        "Left": [
-          {
-            "Custom": {
-              "kind": {
-                "Domain": "Varchar"
-              },
-              "name": "t_address"
-            }
-          },
-          {
-            "Custom": {
-              "kind": {
-                "Domain": "Varchar"
-              },
-              "name": "t_address"
-            }
-          },
-          "Numeric",
-          "Numeric",
-          "Bool",
-          "Timestamp",
-          "Int8"
-        ]
-      }
-    },
-    "query": "\n        insert into nft_auction_bid (auction, buyer, price, next_bid_value, declined, created_at, tx_lt)\n        values ($1, $2, $3, $4, $5, $6, $7)\n        on conflict (auction, buyer, price, declined) do nothing\n        "
   },
   "6c10a5a32f49012764b2bd52fd3698dcc9db0266740953ae0fecdcea3c63812a": {
     "describe": {

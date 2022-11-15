@@ -145,9 +145,7 @@ create table nft_auction_bid(
     next_bid_value numeric(40),
     declined boolean default false,
     created_at timestamp not null,
-    tx_lt bigint not null,
-
-    constraint nft_auction_bid_pk primary key (auction, buyer, price, declined)
+    tx_lt bigint not null
 );
 
 create index ix_nft_auction_bid_auction on nft_auction_bid using btree (auction);
