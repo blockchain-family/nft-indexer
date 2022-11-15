@@ -21,14 +21,14 @@ pub async fn save_event<T: EventRecord + Serialize>(
         record.get_created_at(),
         serde_json::to_value(record).unwrap_or_default(),
     )
-    .execute(&mut *tx)
+    .execute(tx)
     .await
 }
 
 pub async fn get_owners_count(
     collection: &Address,
     tx: &mut Transaction<'_, Postgres>,
-) -> Result<Option<i64>, sqlx::Error> {
+) -> Option<i64> {
     sqlx::query_scalar!(
         r#"
         select count(*) from (
@@ -40,6 +40,7 @@ pub async fn get_owners_count(
     )
     .fetch_one(tx)
     .await
+    .unwrap_or_default()
 }
 
 pub async fn get_prices(
@@ -88,9 +89,7 @@ pub async fn upsert_collection(
     collection: &NftCollection,
     tx: &mut Transaction<'_, Postgres>,
 ) -> Result<PgQueryResult, sqlx::Error> {
-    let owners_count = get_owners_count(&collection.address, tx)
-        .await?
-        .unwrap_or_default();
+    let owners_count = get_owners_count(&collection.address, tx).await;
     let (total_price, max_price) = get_prices(&collection.address, tx).await?;
 
     sqlx::query!(
@@ -115,7 +114,7 @@ pub async fn upsert_collection(
         &collection.wallpaper as &Option<Uri>,
         total_price,
         max_price,
-        owners_count as i32,
+        owners_count.unwrap_or_default() as i32,
     )
     .execute(tx)
     .await
@@ -149,9 +148,6 @@ pub async fn upsert_nft_attributes(
             r#"
             insert into nft_attributes (nft, collection, raw, trait_type, value)
             values ($1, $2, $3, $4, $5)
-            on conflict (nft, collection, raw, trait_type, value) do update
-            set collection = coalesce($2, nft_attributes.collection), raw = coalesce($3, nft_attributes.raw),
-                trait_type = coalesce($4, nft_attributes.trait_type), value = coalesce($5, nft_attributes.value)
             "#,
             &nft_attribute.nft as &Address,
             &nft_attribute.collection as &Option<Address>,
@@ -215,10 +211,6 @@ pub async fn upsert_nft(
     .fetch_optional(&mut *tx)
     .await?
     {
-        if saved_nft.collection.is_none() {
-            saved_nft.collection = nft.collection.clone();
-        }
-
         if saved_nft.owner.is_none() || (saved_nft.owner_update_lt <= nft.owner_update_lt && nft.owner.is_some()) {
             saved_nft.owner = nft.owner.clone();
             saved_nft.owner_update_lt = nft.owner_update_lt;
@@ -229,8 +221,18 @@ pub async fn upsert_nft(
             saved_nft.manager_update_lt = nft.manager_update_lt;
         }
 
-        saved_nft.name = nft.name.clone();
-        saved_nft.description = nft.description.clone();
+        if nft.collection.is_some() {
+            saved_nft.collection = nft.collection.clone();
+        }
+
+        if nft.name.is_some() {
+            saved_nft.name = nft.name.clone();
+        }
+
+        if nft.description.is_some() {
+            saved_nft.description = nft.description.clone();
+        }
+
         saved_nft.burned |= nft.burned;
         saved_nft.updated = nft.updated;
 
@@ -259,7 +261,7 @@ pub async fn upsert_nft(
         nft.owner_update_lt,
         nft.manager_update_lt,
     )
-    .execute(&mut *tx)
+    .execute(tx)
     .await
 }
 
@@ -351,7 +353,7 @@ pub async fn upsert_auction(
         auction.finished_at,
         auction.tx_lt,
         )
-        .execute(&mut *tx)
+        .execute(tx)
         .await
 }
 
@@ -363,6 +365,7 @@ pub async fn insert_auction_bid(
         r#"
         insert into nft_auction_bid (auction, buyer, price, next_bid_value, declined, created_at, tx_lt)
         values ($1, $2, $3, $4, $5, $6, $7)
+        on conflict (auction, buyer, price, declined) do nothing
         "#,
         &bid.auction as &Address,
         &bid.buyer as &Address,
@@ -470,7 +473,7 @@ pub async fn upsert_nft_price_history(
         &price_history.nft as &Option<Address>,
         &price_history.collection as &Option<Address>,
     )
-    .execute(&mut *tx)
+    .execute(tx)
     .await
 }
 

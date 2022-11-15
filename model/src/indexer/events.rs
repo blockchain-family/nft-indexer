@@ -2820,9 +2820,7 @@ async fn fetch_metadata(
     consumer: &Arc<TransactionConsumer>,
 ) -> serde_json::Value {
     match rpc::retrier::Retrier::new(|| Box::pin(rpc::get_json(address.clone(), consumer.clone())))
-        .attempts(2)
-        .backoff(5)
-        .factor(2)
+        .attempts(1)
         .trace_id(format!(
             "fetch metadata {}",
             address.address().as_hex_string()
@@ -2844,9 +2842,7 @@ async fn get_collection_owner(
     consumer: &Arc<TransactionConsumer>,
 ) -> storage::types::Address {
     match rpc::retrier::Retrier::new(|| Box::pin(rpc::owner(collection.clone(), consumer.clone())))
-        .attempts(2)
-        .backoff(5)
-        .factor(2)
+        .attempts(1)
         .trace_id(format!(
             "collection owner {}",
             collection.address().as_hex_string()
