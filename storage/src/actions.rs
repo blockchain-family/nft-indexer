@@ -247,8 +247,9 @@ pub async fn upsert_nft(
             manager_update_lt)
         values ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10)
         on conflict (address) do update
-        set collection = $2, owner = $3, manager = $4, name = $5, description = $6, burned = $7, updated = $8, 
-            owner_update_lt = $9, manager_update_lt = $10
+        set collection = coalesce($2, nft.collection), owner = $3, manager = $4, name = coalesce($5, nft.name),
+            description = coalesce($6, nft.description), burned = nft.burned or $7, updated = $8, owner_update_lt = $9,
+            manager_update_lt = $10
         "#,
         nft.address as Address,
         nft.collection as Option<Address>,
@@ -482,15 +483,15 @@ pub async fn get_collection_by_nft(
 ) -> Option<Address> {
     sqlx::query_scalar!(
         r#"
-        select collection from nft
+        select collection as "collection?: Address" from nft
         where nft.address = $1
         "#,
         nft as &Address
     )
     .fetch_one(tx)
     .await
-    .unwrap_or_default()
-    .map(|s| s.into())
+    .unwrap_or(None)
+    .filter(|a| !a.0.is_empty())
 }
 
 pub async fn get_nft_and_collection_by_auction(
@@ -517,7 +518,10 @@ pub async fn get_nft_and_collection_by_auction(
     .await
     .unwrap_or_default();
 
-    (pair.nft, pair.collection)
+    (
+        pair.nft.filter(|a| !a.0.is_empty()),
+        pair.collection.filter(|a| !a.0.is_empty()),
+    )
 }
 
 pub async fn get_auction_price_token(
@@ -526,15 +530,15 @@ pub async fn get_auction_price_token(
 ) -> Option<Address> {
     sqlx::query_scalar!(
         r#"
-        select price_token from nft_auction
+        select price_token as "price_token?: Address" from nft_auction
         where address = $1
         "#,
         auction as &Address
     )
     .fetch_one(tx)
     .await
-    .unwrap_or_default()
-    .map(|s| s.into())
+    .unwrap_or(None)
+    .filter(|a| !a.0.is_empty())
 }
 
 pub async fn add_whitelist_address(
