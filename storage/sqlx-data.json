@@ -1,25 +1,5 @@
 {
   "db": "PostgreSQL",
-  "00a17a33b9267bfed84e8ef1c40f59586286f11adb9fc964354ae3f7538ffb5e": {
-    "describe": {
-      "columns": [
-        {
-          "name": "price_token",
-          "ordinal": 0,
-          "type_info": "Varchar"
-        }
-      ],
-      "nullable": [
-        true
-      ],
-      "parameters": {
-        "Left": [
-          "Text"
-        ]
-      }
-    },
-    "query": "\n        select price_token from nft_auction\n        where address = $1\n        "
-  },
   "0c58155ac3deb1f1bae5ba7a4516d114f8c112d470094b74149fdb8c1c21f7e6": {
     "describe": {
       "columns": [],
@@ -135,6 +115,26 @@
       }
     },
     "query": "\n        insert into nft_direct_sell (address, nft, collection, price_token, price, sell_price_usd, seller, finished_at,\n            expired_at, state, created, updated, tx_lt)\n        values ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13)\n        on conflict (address) where tx_lt <= $13 do update\n        set collection = $3, price = $5, sell_price_usd = coalesce($6, nft_direct_sell.sell_price_usd),\n            finished_at = $8, expired_at = $9, state = $10, created = $11, updated = $12, tx_lt = $13\n        "
+  },
+  "3207a2889c18ed1e8beff310d183eea5de42f6199c27b1e236ec380a4ba064ab": {
+    "describe": {
+      "columns": [
+        {
+          "name": "price_token?: Address",
+          "ordinal": 0,
+          "type_info": "Varchar"
+        }
+      ],
+      "nullable": [
+        true
+      ],
+      "parameters": {
+        "Left": [
+          "Text"
+        ]
+      }
+    },
+    "query": "\n        select price_token as \"price_token?: Address\" from nft_auction\n        where address = $1\n        "
   },
   "3bb05dc18b8bfcdece5658a62266b0e951e647de7b8d5183c0cdaef2992f0881": {
     "describe": {
@@ -313,7 +313,7 @@
                 "Enum": [
                   "auction_deployed",
                   "auction_created",
-                  "auction_ownership_transferred",
+                  "auction_root_ownership_transferred",
                   "auction_active",
                   "auction_declined",
                   "auction_bid_placed",
@@ -322,20 +322,17 @@
                   "auction_complete",
                   "direct_buy_deployed",
                   "direct_buy_declined",
-                  "direct_buy_ownership_transferred",
+                  "factory_direct_buy_ownership_transferred",
                   "direct_buy_state_changed",
                   "direct_sell_deployed",
                   "direct_sell_declined",
-                  "direct_sell_ownership_transferred",
+                  "factory_direct_sell_ownership_transferred",
                   "direct_sell_state_changed",
                   "nft_owner_changed",
                   "nft_manager_changed",
                   "collection_ownership_transferred",
                   "nft_created",
-                  "nft_burned",
-                  "auction_root_ownership_transferred",
-                  "factory_direct_buy_ownership_transferred",
-                  "factory_direct_sell_ownership_transferred"
+                  "nft_burned"
                 ]
               },
               "name": "event_type"
@@ -603,27 +600,7 @@
     },
     "query": "\n        select nft.address as \"nft?: Address\", collection as \"collection?: Address\" from nft\n        inner join nft_auction\n        on nft_auction.nft = nft.address\n        where nft_auction.address = $1\n        "
   },
-  "af570fc549eabc04332364885166e4b07ed6541bd02d029d1f0fa1d3aa63aca2": {
-    "describe": {
-      "columns": [
-        {
-          "name": "collection",
-          "ordinal": 0,
-          "type_info": "Varchar"
-        }
-      ],
-      "nullable": [
-        true
-      ],
-      "parameters": {
-        "Left": [
-          "Text"
-        ]
-      }
-    },
-    "query": "\n        select collection from nft\n        where nft.address = $1\n        "
-  },
-  "cd19b1cdedf24b571e203e17cc9317d2cb2286a8b35d6faf9562212449932814": {
+  "a2d8d0a1ecf451e456031ebe16b13914253a7af85ad73639b848a0e61d46ddeb": {
     "describe": {
       "columns": [],
       "nullable": [],
@@ -651,24 +628,29 @@
         ]
       }
     },
-    "query": "\n            insert into nft_attributes (nft, collection, raw, trait_type, value)\n            values ($1, $2, $3, $4, $5)\n            on conflict (nft, collection, raw, trait_type, value) do update\n            set collection = coalesce($2, nft_attributes.collection), raw = coalesce($3, nft_attributes.raw),\n                trait_type = coalesce($4, nft_attributes.trait_type), value = coalesce($5, nft_attributes.value)\n            "
+    "query": "\n            insert into nft_attributes (nft, collection, raw, trait_type, value)\n            values ($1, $2, $3, $4, $5)\n            "
   },
-  "dd3744fad49c559fff0d921b279127301f6a71b4c332bdd51a148e6b000e8727": {
+  "c63939d84e920c4f6e255d17607d7e20aa7f98550527bf5d98378ded7624d405": {
     "describe": {
-      "columns": [],
-      "nullable": [],
+      "columns": [
+        {
+          "name": "collection?: Address",
+          "ordinal": 0,
+          "type_info": "Varchar"
+        }
+      ],
+      "nullable": [
+        true
+      ],
       "parameters": {
         "Left": [
-          "Text",
-          "Varchar",
-          "Varchar",
-          "Varchar"
+          "Text"
         ]
       }
     },
-    "query": "\n        update nft_price_history as nph\n        set price_token = coalesce(nph.price_token, $2), nft = coalesce(nph.nft, $3), \n            collection = coalesce(nph.collection, $4)\n        where source = $1\n        "
+    "query": "\n        select collection as \"collection?: Address\" from nft\n        where nft.address = $1\n        "
   },
-  "defd72d17663d3a92be832f5ef50c5b76bde8ee2581b84ebb379b92c035c5e76": {
+  "db9147b6e9cbefc50b732ac9e6f16852f9f8e89c774357b158aefd62a0683031": {
     "describe": {
       "columns": [],
       "nullable": [],
@@ -715,7 +697,22 @@
         ]
       }
     },
-    "query": "\n        insert into nft (address, collection, owner, manager, name, description, burned, updated, owner_update_lt,\n            manager_update_lt)\n        values ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10)\n        on conflict (address) do update\n        set collection = $2, owner = $3, manager = $4, name = $5, description = $6, burned = $7, updated = $8, \n            owner_update_lt = $9, manager_update_lt = $10\n        "
+    "query": "\n        insert into nft (address, collection, owner, manager, name, description, burned, updated, owner_update_lt,\n            manager_update_lt)\n        values ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10)\n        on conflict (address) do update\n        set collection = coalesce($2, nft.collection), owner = $3, manager = $4, name = coalesce($5, nft.name),\n            description = coalesce($6, nft.description), burned = nft.burned or $7, updated = $8, owner_update_lt = $9,\n            manager_update_lt = $10\n        "
+  },
+  "dd3744fad49c559fff0d921b279127301f6a71b4c332bdd51a148e6b000e8727": {
+    "describe": {
+      "columns": [],
+      "nullable": [],
+      "parameters": {
+        "Left": [
+          "Text",
+          "Varchar",
+          "Varchar",
+          "Varchar"
+        ]
+      }
+    },
+    "query": "\n        update nft_price_history as nph\n        set price_token = coalesce(nph.price_token, $2), nft = coalesce(nph.nft, $3), \n            collection = coalesce(nph.collection, $4)\n        where source = $1\n        "
   },
   "e2fa951a32b15efd066dae996817eb4a11e27f72629dbef55dd204d3c81acb1f": {
     "describe": {

@@ -10,7 +10,7 @@ use serde::Serialize;
 use sqlx::PgPool;
 use std::{collections::HashMap, sync::Arc};
 use storage::{actions, traits::*};
-use transaction_consumer::{StreamFrom, TransactionConsumer};
+use transaction_consumer::{ConsumedTransaction, StreamFrom, TransactionConsumer};
 
 #[derive(PartialEq, Eq, Hash)]
 enum OfferRootType {
@@ -20,6 +20,54 @@ enum OfferRootType {
 }
 
 static TRUSTED_ADDRESSES: OnceCell<HashMap<OfferRootType, Vec<String>>> = OnceCell::new();
+static PARSERS_AND_HANDLERS: OnceCell<Vec<(TransactionParser, Handler)>> = OnceCell::new();
+
+pub async fn serve(pool: PgPool, consumer: Arc<TransactionConsumer>, config: Config) -> Result<()> {
+    let from = if config.reset {
+        StreamFrom::Beginning
+    } else {
+        StreamFrom::Stored
+    };
+
+    init_trusted_addresses(config)?;
+    init_parsers_and_handlers()?;
+    init_whitelist_addresses(&pool).await;
+
+    let (mut stream, offsets) = consumer.stream_until_highest_offsets(from).await?;
+
+    log::info!("Starting fast streaming");
+    while let Some(tx) = stream.next().await {
+        indexer_routine(tx, pool.clone(), consumer.clone());
+    }
+
+    let mut stream = consumer
+        .stream_transactions(StreamFrom::Offsets(offsets))
+        .await?;
+
+    log::info!("Starting realtime streaming");
+    while let Some(tx) = stream.next().await {
+        indexer_routine(tx, pool.clone(), consumer.clone());
+    }
+
+    log::warn!("Transactions stream terminated.");
+
+    Ok(())
+}
+
+fn indexer_routine(tx: ConsumedTransaction, pool: PgPool, consumer: Arc<TransactionConsumer>) {
+    tokio::spawn(async move {
+        for (parser, handler) in PARSERS_AND_HANDLERS.get().unwrap().iter() {
+            if let Ok(extracted) = parser.parse(&tx.transaction) {
+                let extracted = extracted.into_iter().map(|ex| ex.into_owned()).collect();
+                handler(extracted, pool.clone(), consumer.clone()).await;
+            }
+        }
+
+        if let Err(e) = tx.commit() {
+            log::error!("Failed committing transaction: {:#?}", e);
+        }
+    });
+}
 
 fn init_trusted_addresses(config: Config) -> Result<()> {
     let mut m = HashMap::new();
@@ -38,38 +86,12 @@ fn init_trusted_addresses(config: Config) -> Result<()> {
         .map_err(|_| anyhow!("Unable to inititalize trusted addresses"))
 }
 
-pub async fn serve(pool: PgPool, consumer: Arc<TransactionConsumer>, config: Config) -> Result<()> {
-    let from = if config.reset {
-        StreamFrom::Beginning
-    } else {
-        StreamFrom::Stored
-    };
+fn init_parsers_and_handlers() -> Result<()> {
+    let v = get_parsers_and_handlers()?;
 
-    init_trusted_addresses(config)?;
-
-    let stream = consumer.stream_transactions(from).await?;
-    let mut fs = futures::stream::StreamExt::fuse(stream);
-
-    let parsers_and_handlers = initialize_parsers_and_handlers()?;
-    initialize_whitelist_addresses(&pool).await;
-
-    log::info!("Start listening to kafka...");
-    while let Some(tx) = fs.next().await {
-        for (parser, handler) in parsers_and_handlers.iter() {
-            if let Ok(extracted) = parser.parse(&tx.transaction) {
-                let extracted = extracted.into_iter().map(|ex| ex.into_owned()).collect();
-                handler(extracted, pool.clone(), consumer.clone()).await;
-            }
-        }
-
-        if let Err(e) = tx.commit() {
-            return Err(e.context("Failed committing transacton"));
-        }
-    }
-
-    log::warn!("Transactions stream terminated.");
-
-    Ok(())
+    PARSERS_AND_HANDLERS
+        .set(v)
+        .map_err(|_| anyhow!("Unable to inititalize parsers and handlers"))
 }
 
 fn get_contract_parser(abi_path: &str) -> Result<TransactionParser> {
@@ -84,59 +106,59 @@ fn get_contract_parser(abi_path: &str) -> Result<TransactionParser> {
         .build_with_external_in()
 }
 
-type Handler = Arc<
+type Handler = Box<
     dyn Fn(Vec<ExtractedOwned>, PgPool, Arc<TransactionConsumer>) -> BoxFuture<'static, ()>
         + Send
         + Sync,
 >;
 
-fn initialize_parsers_and_handlers() -> Result<Vec<(TransactionParser, Handler)>> {
+fn get_parsers_and_handlers() -> Result<Vec<(TransactionParser, Handler)>> {
     Ok(vec![
         (
             get_contract_parser("./abi/AuctionTip3.abi.json")?,
-            Arc::new(move |extracted, pool, consumer| {
+            Box::new(move |extracted, pool, consumer| {
                 Box::pin(handle_auction_tip3(extracted, pool, consumer))
             }),
         ),
         (
             get_contract_parser("./abi/AuctionRootTip3.abi.json")?,
-            Arc::new(move |extracted, pool, consumer| {
+            Box::new(move |extracted, pool, consumer| {
                 Box::pin(handle_auction_root_tip3(extracted, pool, consumer))
             }),
         ),
         (
             get_contract_parser("./abi/DirectBuy.abi.json")?,
-            Arc::new(move |extracted, pool, consumer| {
+            Box::new(move |extracted, pool, consumer| {
                 Box::pin(handle_direct_buy(extracted, pool, consumer))
             }),
         ),
         (
             get_contract_parser("./abi/DirectSell.abi.json")?,
-            Arc::new(move |extracted, pool, consumer| {
+            Box::new(move |extracted, pool, consumer| {
                 Box::pin(handle_direct_sell(extracted, pool, consumer))
             }),
         ),
         (
             get_contract_parser("./abi/FactoryDirectBuy.abi.json")?,
-            Arc::new(move |extracted, pool, consumer| {
+            Box::new(move |extracted, pool, consumer| {
                 Box::pin(handle_factory_direct_buy(extracted, pool, consumer))
             }),
         ),
         (
             get_contract_parser("./abi/FactoryDirectSell.abi.json")?,
-            Arc::new(move |extracted, pool, consumer| {
+            Box::new(move |extracted, pool, consumer| {
                 Box::pin(handle_factory_direct_sell(extracted, pool, consumer))
             }),
         ),
         (
             get_contract_parser("./abi/Nft.abi.json")?,
-            Arc::new(move |extracted, pool, consumer| {
+            Box::new(move |extracted, pool, consumer| {
                 Box::pin(handle_nft(extracted, pool, consumer))
             }),
         ),
         (
             get_contract_parser("./abi/Collection.abi.json")?,
-            Arc::new(move |extracted, pool, consumer| {
+            Box::new(move |extracted, pool, consumer| {
                 Box::pin(handle_collection(extracted, pool, consumer))
             }),
         ),
@@ -323,7 +345,7 @@ async fn handle_collection(
     handle_event::<NftBurned>("NftBurned", &extracted, &pool, &consumer).await;
 }
 
-async fn initialize_whitelist_addresses(pool: &PgPool) {
+async fn init_whitelist_addresses(pool: &PgPool) {
     for addr in TRUSTED_ADDRESSES.get().unwrap()[&OfferRootType::AuctionRoot].iter() {
         if let Err(e) = actions::add_whitelist_address(&(*addr.clone()).into(), pool).await {
             log::error!("Failed adding AuctionTip3 address in whitelist: {:#?}", e);

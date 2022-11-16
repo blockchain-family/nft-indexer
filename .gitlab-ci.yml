@@ -1,0 +1,63 @@
+include:
+  - project: "infrastructure/gitlab-ci"
+    ref: main
+    file: "/templates/cloudbuild-common.gitlab-ci.yaml"
+  - project: "infrastructure/gitlab-ci"
+    ref: main
+    file: "templates/deploy.gitlab-ci.yaml"
+
+stages:
+  - cloudbuild
+  - deploy
+
+cloudbuild:image:stage:
+  only:
+    - stage
+  except:
+    - tags
+  extends: .cloudbuild:common
+
+deploy:stage:
+  only:
+    - stage
+  except:
+    - tags
+  extends: .deploy
+  environment:
+    name: stage
+    on_stop: stop:stage
+
+stop:stage:
+  only:
+    - stage
+  except:
+    - tags
+  extends: .stop
+  environment:
+    name: stage
+
+cloudbuild:image:prod:
+  only:
+    - prod
+  except:
+    - tags
+  extends: .cloudbuild:common
+
+deploy:prod:
+  only:
+    - prod
+  except:
+    - tags
+  extends: .deploy
+  environment:
+    name: prod
+    on_stop: stop:prod
+
+stop:prod:
+  only:
+    - prod
+  except:
+    - tags
+  extends: .stop
+  environment:
+    name: prod
