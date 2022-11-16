@@ -1,11 +1,11 @@
 use crate::{traits::EventRecord, types::*};
 use chrono::NaiveDateTime;
 use serde::Serialize;
-use sqlx::{postgres::PgQueryResult, types::BigDecimal, PgPool};
+use sqlx::{postgres::PgQueryResult, types::BigDecimal, PgPool, Postgres, Transaction};
 
 pub async fn save_event<T: EventRecord + Serialize>(
     record: &T,
-    pool: &PgPool,
+    tx: &mut Transaction<'_, Postgres>,
 ) -> Result<PgQueryResult, sqlx::Error> {
     sqlx::query!(
         r#"
@@ -21,14 +21,14 @@ pub async fn save_event<T: EventRecord + Serialize>(
         record.get_created_at(),
         serde_json::to_value(record).unwrap_or_default(),
     )
-    .execute(pool)
+    .execute(tx)
     .await
 }
 
 pub async fn get_owners_count(
     collection: &Address,
-    pool: &PgPool,
-) -> Result<Option<i64>, sqlx::Error> {
+    tx: &mut Transaction<'_, Postgres>,
+) -> Option<i64> {
     sqlx::query_scalar!(
         r#"
         select count(*) from (
@@ -38,13 +38,14 @@ pub async fn get_owners_count(
         "#,
         collection as &Address,
     )
-    .fetch_one(pool)
+    .fetch_one(tx)
     .await
+    .unwrap_or_default()
 }
 
 pub async fn get_prices(
     collection: &Address,
-    pool: &PgPool,
+    tx: &mut Transaction<'_, Postgres>,
 ) -> Result<(BigDecimal, BigDecimal), sqlx::Error> {
     struct PricePair {
         price: BigDecimal,
@@ -68,7 +69,7 @@ pub async fn get_prices(
         "#,
         collection as &Address,
     )
-    .fetch_all(pool)
+    .fetch_all(tx)
     .await?;
 
     let mut total_price = BigDecimal::default();
@@ -86,12 +87,10 @@ pub async fn get_prices(
 
 pub async fn upsert_collection(
     collection: &NftCollection,
-    pool: &PgPool,
+    tx: &mut Transaction<'_, Postgres>,
 ) -> Result<PgQueryResult, sqlx::Error> {
-    let owners_count = get_owners_count(&collection.address, pool)
-        .await?
-        .unwrap_or_default();
-    let (total_price, max_price) = get_prices(&collection.address, pool).await?;
+    let owners_count = get_owners_count(&collection.address, tx).await;
+    let (total_price, max_price) = get_prices(&collection.address, tx).await?;
 
     sqlx::query!(
         r#"
@@ -115,15 +114,15 @@ pub async fn upsert_collection(
         &collection.wallpaper as &Option<Uri>,
         total_price,
         max_price,
-        owners_count as i32,
+        owners_count.unwrap_or_default() as i32,
     )
-    .execute(pool)
+    .execute(tx)
     .await
 }
 
 pub async fn upsert_nft_meta(
     nft_meta: &NftMeta,
-    pool: &PgPool,
+    tx: &mut Transaction<'_, Postgres>,
 ) -> Result<PgQueryResult, sqlx::Error> {
     sqlx::query!(
         r#"
@@ -136,24 +135,19 @@ pub async fn upsert_nft_meta(
         nft_meta.meta,
         nft_meta.updated
     )
-    .execute(pool)
+    .execute(tx)
     .await
 }
 
 pub async fn upsert_nft_attributes(
     nft_attributes: &[NftAttribute],
-    pool: &PgPool,
+    tx: &mut Transaction<'_, Postgres>,
 ) -> Result<(), sqlx::Error> {
-    let mut tx = pool.begin().await?;
-
     for nft_attribute in nft_attributes.iter() {
         sqlx::query!(
             r#"
             insert into nft_attributes (nft, collection, raw, trait_type, value)
             values ($1, $2, $3, $4, $5)
-            on conflict (nft, collection, raw, trait_type, value) do update
-            set collection = coalesce($2, nft_attributes.collection), raw = coalesce($3, nft_attributes.raw),
-                trait_type = coalesce($4, nft_attributes.trait_type), value = coalesce($5, nft_attributes.value)
             "#,
             &nft_attribute.nft as &Address,
             &nft_attribute.collection as &Option<Address>,
@@ -161,18 +155,18 @@ pub async fn upsert_nft_attributes(
             nft_attribute.trait_type,
             nft_attribute.value,
         )
-        .execute(&mut tx)
+        .execute(&mut *tx)
         .await?;
     }
 
-    tx.commit().await
+    Ok(())
 }
 
 pub async fn update_collection_by_nft(
     table_name: &str,
     nft: &Address,
     collection: &Address,
-    pool: &PgPool,
+    tx: &mut Transaction<'_, Postgres>,
 ) -> Result<PgQueryResult, sqlx::Error> {
     let query = format!(
         r#"
@@ -181,14 +175,14 @@ pub async fn update_collection_by_nft(
         collection.0, nft.0,
     );
 
-    sqlx::query(&query).execute(pool).await
+    sqlx::query(&query).execute(tx).await
 }
 
 pub async fn update_nft_by_auction(
     table_name: &str,
     auction: &Address,
     nft: &Address,
-    pool: &PgPool,
+    tx: &mut Transaction<'_, Postgres>,
 ) -> Result<PgQueryResult, sqlx::Error> {
     let query = format!(
         r#"
@@ -197,12 +191,13 @@ pub async fn update_nft_by_auction(
         nft.0, auction.0,
     );
 
-    sqlx::query(&query).execute(pool).await
+    sqlx::query(&query).execute(tx).await
 }
 
-pub async fn upsert_nft(nft: &Nft, pool: &PgPool) -> Result<(), sqlx::Error> {
-    let mut tx = pool.begin().await?;
-
+pub async fn upsert_nft(
+    nft: &Nft,
+    tx: &mut Transaction<'_, Postgres>,
+) -> Result<PgQueryResult, sqlx::Error> {
     let nft = if let Some(mut saved_nft) = sqlx::query_as!(
         Nft,
         r#"
@@ -213,25 +208,31 @@ pub async fn upsert_nft(nft: &Nft, pool: &PgPool) -> Result<(), sqlx::Error> {
         "#,
         &nft.address as &Address
     )
-    .fetch_optional(&mut tx)
+    .fetch_optional(&mut *tx)
     .await?
     {
-        if saved_nft.collection.is_none() {
-            saved_nft.collection = nft.collection.clone();
-        }
-
-        if saved_nft.owner.is_none() || saved_nft.owner_update_lt <= nft.owner_update_lt {
+        if saved_nft.owner.is_none() || (saved_nft.owner_update_lt <= nft.owner_update_lt && nft.owner.is_some()) {
             saved_nft.owner = nft.owner.clone();
             saved_nft.owner_update_lt = nft.owner_update_lt;
         }
 
-        if saved_nft.manager.is_none() || saved_nft.manager_update_lt <= nft.manager_update_lt {
+        if saved_nft.manager.is_none() || (saved_nft.manager_update_lt <= nft.manager_update_lt && nft.manager.is_some()) {
             saved_nft.manager = nft.manager.clone();
             saved_nft.manager_update_lt = nft.manager_update_lt;
         }
 
-        saved_nft.name = nft.name.clone();
-        saved_nft.description = nft.description.clone();
+        if nft.collection.is_some() {
+            saved_nft.collection = nft.collection.clone();
+        }
+
+        if nft.name.is_some() {
+            saved_nft.name = nft.name.clone();
+        }
+
+        if nft.description.is_some() {
+            saved_nft.description = nft.description.clone();
+        }
+
         saved_nft.burned |= nft.burned;
         saved_nft.updated = nft.updated;
 
@@ -246,8 +247,9 @@ pub async fn upsert_nft(nft: &Nft, pool: &PgPool) -> Result<(), sqlx::Error> {
             manager_update_lt)
         values ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10)
         on conflict (address) do update
-        set collection = $2, owner = $3, manager = $4, name = $5, description = $6, burned = $7, updated = $8, 
-            owner_update_lt = $9, manager_update_lt = $10
+        set collection = coalesce($2, nft.collection), owner = $3, manager = $4, name = coalesce($5, nft.name),
+            description = coalesce($6, nft.description), burned = nft.burned or $7, updated = $8, owner_update_lt = $9,
+            manager_update_lt = $10
         "#,
         nft.address as Address,
         nft.collection as Option<Address>,
@@ -260,15 +262,14 @@ pub async fn upsert_nft(nft: &Nft, pool: &PgPool) -> Result<(), sqlx::Error> {
         nft.owner_update_lt,
         nft.manager_update_lt,
     )
-    .execute(&mut tx)
-    .await?;
-
-    tx.commit().await
+    .execute(tx)
+    .await
 }
 
-pub async fn upsert_auction(auction: &NftAuction, pool: &PgPool) -> Result<(), sqlx::Error> {
-    let mut tx = pool.begin().await?;
-
+pub async fn upsert_auction(
+    auction: &NftAuction,
+    tx: &mut Transaction<'_, Postgres>,
+) -> Result<PgQueryResult, sqlx::Error> {
     let auction = if let Some(mut saved_auction) = sqlx::query_as!(
         NftAuction,
         r#"
@@ -281,7 +282,7 @@ pub async fn upsert_auction(auction: &NftAuction, pool: &PgPool) -> Result<(), s
         "#,
         &auction.address as &Address
         )
-        .fetch_optional(&mut tx)
+        .fetch_optional(&mut *tx)
         .await?
         {
             if saved_auction.nft.is_none() {
@@ -304,15 +305,15 @@ pub async fn upsert_auction(auction: &NftAuction, pool: &PgPool) -> Result<(), s
                 saved_auction.closing_price_usd = auction.closing_price_usd.clone();
             }
 
-            if saved_auction.min_bid.is_none() || saved_auction.tx_lt <= auction.tx_lt {
+            if saved_auction.min_bid.is_none() || (saved_auction.tx_lt <= auction.tx_lt && auction.min_bid.is_some()) {
                 saved_auction.min_bid = auction.min_bid.clone();
             }
 
-            if saved_auction.max_bid.is_none() || saved_auction.tx_lt <= auction.tx_lt {
+            if saved_auction.max_bid.is_none() || (saved_auction.tx_lt <= auction.tx_lt && auction.max_bid.is_some()) {
                 saved_auction.max_bid = auction.max_bid.clone();
             }
 
-            if saved_auction.status.is_none() || saved_auction.tx_lt <= auction.tx_lt {
+            if saved_auction.status.is_none() || (saved_auction.tx_lt <= auction.tx_lt && auction.status.is_some()) {
                 saved_auction.status = auction.status.clone();
             }
 
@@ -353,15 +354,13 @@ pub async fn upsert_auction(auction: &NftAuction, pool: &PgPool) -> Result<(), s
         auction.finished_at,
         auction.tx_lt,
         )
-        .execute(&mut tx)
-        .await?;
-
-    tx.commit().await
+        .execute(tx)
+        .await
 }
 
 pub async fn insert_auction_bid(
     bid: &NftAuctionBid,
-    pool: &PgPool,
+    tx: &mut Transaction<'_, Postgres>,
 ) -> Result<PgQueryResult, sqlx::Error> {
     sqlx::query!(
         r#"
@@ -376,13 +375,13 @@ pub async fn insert_auction_bid(
         bid.created_at,
         bid.tx_lt,
     )
-    .execute(pool)
+    .execute(tx)
     .await
 }
 
 pub async fn upsert_direct_sell(
     direct_sell: &NftDirectSell,
-    pool: &PgPool,
+    tx: &mut Transaction<'_, Postgres>,
 ) -> Result<PgQueryResult, sqlx::Error> {
     sqlx::query!(
         r#"
@@ -407,13 +406,13 @@ pub async fn upsert_direct_sell(
         direct_sell.updated,
         direct_sell.tx_lt,
     )
-    .execute(pool)
+    .execute(tx)
     .await
 }
 
 pub async fn upsert_direct_buy(
     direct_buy: &NftDirectBuy,
-    pool: &PgPool,
+    tx: &mut Transaction<'_, Postgres>,
 ) -> Result<PgQueryResult, sqlx::Error> {
     sqlx::query!(
         r#"
@@ -438,13 +437,13 @@ pub async fn upsert_direct_buy(
         direct_buy.updated,
         direct_buy.tx_lt,
     )
-    .execute(pool)
+    .execute(tx)
     .await
 }
 
 pub async fn upsert_nft_price_history(
     price_history: &NftPriceHistory,
-    pool: &PgPool,
+    tx: &mut Transaction<'_, Postgres>,
 ) -> Result<PgQueryResult, sqlx::Error> {
     sqlx::query!(
         r#"
@@ -459,7 +458,7 @@ pub async fn upsert_nft_price_history(
         &price_history.nft as &Option<Address>,
         &price_history.collection as &Option<Address>,
     )
-    .execute(pool)
+    .execute(&mut *tx)
     .await?;
 
     sqlx::query!(
@@ -474,27 +473,30 @@ pub async fn upsert_nft_price_history(
         &price_history.nft as &Option<Address>,
         &price_history.collection as &Option<Address>,
     )
-    .execute(pool)
+    .execute(tx)
     .await
 }
 
-pub async fn get_collection_by_nft(nft: &Address, pool: &PgPool) -> Option<Address> {
+pub async fn get_collection_by_nft(
+    nft: &Address,
+    tx: &mut Transaction<'_, Postgres>,
+) -> Option<Address> {
     sqlx::query_scalar!(
         r#"
-        select collection from nft
+        select collection as "collection?: Address" from nft
         where nft.address = $1
         "#,
         nft as &Address
     )
-    .fetch_one(pool)
+    .fetch_one(tx)
     .await
-    .unwrap_or_default()
-    .map(|s| s.into())
+    .unwrap_or(None)
+    .filter(|a| !a.0.is_empty())
 }
 
 pub async fn get_nft_and_collection_by_auction(
     auction: &Address,
-    pool: &PgPool,
+    tx: &mut Transaction<'_, Postgres>,
 ) -> (Option<Address>, Option<Address>) {
     #[derive(Default)]
     struct NftCollectionPair {
@@ -512,25 +514,31 @@ pub async fn get_nft_and_collection_by_auction(
         "#,
         auction as &Address
     )
-    .fetch_one(pool)
+    .fetch_one(tx)
     .await
     .unwrap_or_default();
 
-    (pair.nft, pair.collection)
+    (
+        pair.nft.filter(|a| !a.0.is_empty()),
+        pair.collection.filter(|a| !a.0.is_empty()),
+    )
 }
 
-pub async fn get_auction_price_token(auction: &Address, pool: &PgPool) -> Option<Address> {
+pub async fn get_auction_price_token(
+    auction: &Address,
+    tx: &mut Transaction<'_, Postgres>,
+) -> Option<Address> {
     sqlx::query_scalar!(
         r#"
-        select price_token from nft_auction
+        select price_token as "price_token?: Address" from nft_auction
         where address = $1
         "#,
         auction as &Address
     )
-    .fetch_one(pool)
+    .fetch_one(tx)
     .await
-    .unwrap_or_default()
-    .map(|s| s.into())
+    .unwrap_or(None)
+    .filter(|a| !a.0.is_empty())
 }
 
 pub async fn add_whitelist_address(
@@ -548,7 +556,9 @@ pub async fn add_whitelist_address(
     .await
 }
 
-pub async fn update_offers_status(pool: &PgPool) -> Result<PgQueryResult, sqlx::Error> {
+pub async fn update_offers_status(pool: &PgPool) -> Result<(), sqlx::Error> {
+    let mut tx = pool.begin().await?;
+
     let now = chrono::Utc::now().naive_utc();
     let begin_of_epoch = NaiveDateTime::default();
 
@@ -562,7 +572,7 @@ pub async fn update_offers_status(pool: &PgPool) -> Result<PgQueryResult, sqlx::
         now,
         AuctionStatus::Active as AuctionStatus,
     )
-    .execute(pool)
+    .execute(&mut tx)
     .await?;
 
     sqlx::query!(
@@ -575,7 +585,7 @@ pub async fn update_offers_status(pool: &PgPool) -> Result<PgQueryResult, sqlx::
         now,
         DirectSellState::Active as DirectSellState,
     )
-    .execute(pool)
+    .execute(&mut tx)
     .await?;
 
     sqlx::query!(
@@ -588,6 +598,8 @@ pub async fn update_offers_status(pool: &PgPool) -> Result<PgQueryResult, sqlx::
         now,
         DirectBuyState::Active as DirectBuyState,
     )
-    .execute(pool)
-    .await
+    .execute(&mut tx)
+    .await?;
+
+    tx.commit().await
 }

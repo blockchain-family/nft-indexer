@@ -54,8 +54,7 @@ create table nft_events(
     created_at bigint not null,
 	args jsonb,
   
-	constraint nft_events_pk primary key (id),
-	constraint nft_events_unique unique (address, event_type, created_lt, created_at)
+	constraint nft_events_pk primary key (id)
 );
 
 create index ix_nft_events_address on nft_events using btree (address);
@@ -146,9 +145,7 @@ create table nft_auction_bid(
     next_bid_value numeric(40),
     declined boolean default false,
     created_at timestamp not null,
-    tx_lt bigint not null,
-
-    constraint nft_auction_bid_pk primary key (auction, buyer, price)
+    tx_lt bigint not null
 );
 
 create index ix_nft_auction_bid_auction on nft_auction_bid using btree (auction);

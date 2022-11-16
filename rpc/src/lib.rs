@@ -104,8 +104,8 @@ pub async fn token_to_usd(token: &str) -> Result<BigDecimal> {
         let request = client.post(format!("https://api.flatqube.io/v1/currencies/{token}"));
         Box::pin(request.send())
     })
-    .attempts(5)
-    .backoff(50)
+    .attempts(3)
+    .backoff(10)
     .factor(2)
     .trace_id(format!("usd price for {}", token))
     .run()
