@@ -1,4 +1,4 @@
-create table profile(
+create table if not exists profile(
 	address t_address primary key,
     name varchar(100) not null,
     bio text null,
