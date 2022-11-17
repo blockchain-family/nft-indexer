@@ -38,14 +38,14 @@ stop:stage:
 
 cloudbuild:image:prod:
   only:
-    - prod
+    - main
   except:
     - tags
   extends: .cloudbuild:common
 
 deploy:prod:
   only:
-    - prod
+    - main
   except:
     - tags
   extends: .deploy
@@ -55,7 +55,7 @@ deploy:prod:
 
 stop:prod:
   only:
-    - prod
+    - main
   except:
     - tags
   extends: .stop
