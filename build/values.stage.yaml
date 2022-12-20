@@ -2,7 +2,7 @@ env:
   RUST_LOG: debug
   RUST_BACKTRACE: 1
 
-  DATABASE_URL: postgresql://$(BACKEND_API_USER):$(BACKEND_API_PASSWORD)@cloudsqlproxy.default:5432/indexator
+  DATABASE_URL: postgresql://$(BACKEND_API_USER):$(BACKEND_API_PASSWORD)@cloudsqlproxy.default:5432/indexator_debug
   DATABASE_MAX_CONNECTIONS: 5
   KAFKA_CONSUMER_GROUP: nft
   KAFKA_TOPIC: everscale-transactions
