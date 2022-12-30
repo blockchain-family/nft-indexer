@@ -1,19 +1,16 @@
-create table search_index
-(
-	address t_address not null
-		constraint search_index_pkey
-			primary key,
-	typ event_category not null,
-	ts timestamp not null,
-	name varchar(400),
-	nft t_address,
-	collection t_address,
-	search tsvector default to_tsvector('english'::regconfig, (COALESCE(name, ''::character varying))::text)
+drop table if exists search_index;
+create table search_index(
+    address t_address not null primary key,
+    typ event_category not null,
+    ts timestamp not null,
+    name varchar(400) null,
+    nft t_address null,
+    collection t_address null,
+    search tsvector generated ALWAYS as (to_tsvector('english', coalesce(name, ''))) stored
 );
 
+create index search_index_idx on search_index using GIN (search);
 
-create index search_index_idx
-	on search_index using gin (search);
 
 create table nft_deal_history
 (
