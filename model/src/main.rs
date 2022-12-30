@@ -16,6 +16,7 @@ async fn main() -> Result<()> {
     // builder.filter_level(LevelFilter::Info).init();
     dotenv::dotenv().ok();
     stackdriver_logger::init_with_cargo!();
+    info!("Indexer is preparing to start");
 
     let config = Config::new();
 
