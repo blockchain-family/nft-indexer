@@ -503,6 +503,12 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "0688c2a7f92e427f44895cd63841bff7b29f8d7a1648b9e7e07a4a365b2e1257"
 
 [[package]]
+name = "dotenv"
+version = "0.15.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "77c90badedccf4105eca100756a0b1289e191f6fcbdadd3cee1d2f614f97da8f"
+
+[[package]]
 name = "dotenvy"
 version = "0.15.6"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -1260,6 +1266,7 @@ dependencies = [
  "bigdecimal",
  "chrono",
  "config",
+ "dotenv",
  "env_logger",
  "futures",
  "log",
@@ -1271,6 +1278,7 @@ dependencies = [
  "serde",
  "serde_json",
  "sqlx",
+ "stackdriver_logger",
  "storage",
  "tokio",
  "ton_abi",
@@ -2341,6 +2349,19 @@ dependencies = [
  "once_cell",
  "tokio",
  "tokio-native-tls",
+]
+
+[[package]]
+name = "stackdriver_logger"
+version = "0.8.2"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "f7935e3a17a0164bf9b908908b07514326119a677aab39370e957a4cd76d8dd7"
+dependencies = [
+ "chrono",
+ "env_logger",
+ "log",
+ "serde_json",
+ "toml",
 ]
 
 [[package]]

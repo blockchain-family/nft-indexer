@@ -2820,7 +2820,7 @@ async fn fetch_metadata(
     consumer: &Arc<TransactionConsumer>,
 ) -> serde_json::Value {
     match rpc::retrier::Retrier::new(|| Box::pin(rpc::get_json(address.clone(), consumer.clone())))
-        .attempts(1)
+        .attempts(3)
         .trace_id(format!(
             "fetch metadata {}",
             address.address().as_hex_string()
