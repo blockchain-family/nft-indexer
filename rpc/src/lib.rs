@@ -4,7 +4,6 @@ use nekoton_contracts::tip4_1::nft_contract::GetInfoOutputs;
 use nekoton_utils::SimpleClock;
 use sqlx::types::BigDecimal;
 use std::{str::FromStr, sync::Arc};
-use log::log;
 use ton_block::{MsgAddrStd, MsgAddressInt};
 use transaction_consumer::TransactionConsumer;
 

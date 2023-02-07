@@ -88,6 +88,7 @@ pub async fn get_prices(
 pub async fn upsert_collection(
     collection: &NftCollection,
     tx: &mut Transaction<'_, Postgres>,
+    nft_created_at: Option<NaiveDateTime>,
 ) -> Result<PgQueryResult, sqlx::Error> {
     let owners_count = get_owners_count(&collection.address, tx).await;
     let (total_price, max_price) = get_prices(&collection.address, tx).await?;
@@ -95,14 +96,14 @@ pub async fn upsert_collection(
     sqlx::query!(
         r#"
         insert into nft_collection (address, owner, name, description, created, updated, logo, wallpaper,
-            total_price, max_price, owners_count)
-        values ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11)
+            total_price, max_price, owners_count, first_mint)
+        values ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12)
         on conflict (address) do update
         set owner = $2, name = coalesce($3, nft_collection.name), 
             description = coalesce($4, nft_collection.description), 
             created = case when nft_collection.created < $5 then nft_collection.created else $5 end, updated = $6,
             logo = coalesce($7, nft_collection.logo), wallpaper = coalesce($8, nft_collection.wallpaper), total_price = $9,
-            max_price = $10, owners_count = $11
+            max_price = $10, owners_count = $11, first_mint = least($12, nft_collection.first_mint)
         "#,
         &collection.address as &Address,
         &collection.owner as &Address,
@@ -115,6 +116,7 @@ pub async fn upsert_collection(
         total_price,
         max_price,
         owners_count.unwrap_or_default() as i32,
+        nft_created_at
     )
     .execute(tx)
     .await

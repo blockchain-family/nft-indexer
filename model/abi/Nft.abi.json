@@ -18,13 +18,19 @@
 			]
 		},
 		{
-			"name": "burn",
+			"name": "getLicenseURI",
 			"inputs": [
-				{"name":"sendGasTo","type":"address"},
-				{"name":"callbackTo","type":"address"},
-				{"name":"callbackPayload","type":"cell"}
 			],
 			"outputs": [
+				{"name":"value0","type":"string"}
+			]
+		},
+		{
+			"name": "getLicenseName",
+			"inputs": [
+			],
+			"outputs": [
+				{"name":"value0","type":"string"}
 			]
 		},
 		{
@@ -116,6 +122,14 @@
 			"outputs": [
 				{"name":"value0","type":"bool"}
 			]
+		},
+		{
+			"name": "licenseVersion",
+			"inputs": [
+			],
+			"outputs": [
+				{"name":"licenseVersion","type":"uint8"}
+			]
 		}
 	],
 	"data": [
@@ -175,6 +189,7 @@
 		{"name":"_json","type":"string"},
 		{"name":"_indexDeployValue","type":"uint128"},
 		{"name":"_indexDestroyValue","type":"uint128"},
-		{"name":"_codeIndex","type":"cell"}
+		{"name":"_codeIndex","type":"cell"},
+		{"name":"licenseVersion","type":"uint8"}
 	]
 }
