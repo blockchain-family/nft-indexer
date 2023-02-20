@@ -62,7 +62,3 @@ FROM nft_collection c
                                                           n.collection::text = c.address::text
                                             JOIN token_usd_prices tup ON tup.token::text = na.price_token::text
                                    WHERE na.status = 'completed'::auction_status) ag) total_volume ON true;
-
-alter table nft_collection_details
-    owner to indexator;
-
