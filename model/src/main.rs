@@ -1,8 +1,8 @@
 use crate::{settings::config::Config, state_updater::run_updater};
 use anyhow::Result;
-use env_logger::Builder;
+// use env_logger::Builder;
 use indexer::consumer;
-use log::LevelFilter;
+// use log::LevelFilter;
 use std::{collections::HashMap, sync::Arc};
 use transaction_consumer::{ConsumerOptions, TransactionConsumer};
 
@@ -12,8 +12,11 @@ mod state_updater;
 
 #[tokio::main]
 async fn main() -> Result<()> {
-    let mut builder = Builder::new();
-    builder.filter_level(LevelFilter::Info).init();
+    // let mut builder = Builder::new();
+    // builder.filter_level(LevelFilter::Info).init();
+    dotenv::dotenv().ok();
+    stackdriver_logger::init_with_cargo!();
+    log::info!("Indexer is preparing to start");
 
     let config = Config::new();
 
@@ -50,7 +53,7 @@ pub async fn init_transactions_consumer(config: Config) -> Result<Arc<Transactio
         skip_0_partition: false,
     };
 
-    transaction_consumer::TransactionConsumer::new(
+    TransactionConsumer::new(
         &config.kafka_consumer_group,
         &config.kafka_topic,
         config.states_rpc_endpoints,

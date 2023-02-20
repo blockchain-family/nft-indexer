@@ -956,7 +956,7 @@ impl ContractEvent for AuctionActive {
             )
             .await;
             await_handling_error(
-                actions::upsert_collection(&collection, &mut tx),
+                actions::upsert_collection(&collection, &mut tx, None),
                 "Inserting collection",
             )
             .await;
@@ -1101,7 +1101,7 @@ impl ContractEvent for AuctionBidPlaced {
             )
             .await;
             await_handling_error(
-                actions::upsert_collection(&collection, &mut tx),
+                actions::upsert_collection(&collection, &mut tx,None),
                 "Inserting collection",
             )
             .await;
@@ -1283,7 +1283,7 @@ impl ContractEvent for AuctionComplete {
             )
             .await;
             await_handling_error(
-                actions::upsert_collection(&collection, &mut tx),
+                actions::upsert_collection(&collection, &mut tx, None),
                 "Inserting collection",
             )
             .await;
@@ -1351,7 +1351,7 @@ impl ContractEvent for AuctionCancelled {
             )
             .await;
             await_handling_error(
-                actions::upsert_collection(&collection, &mut tx),
+                actions::upsert_collection(&collection, &mut tx, None),
                 "Inserting collection",
             )
             .await;
@@ -2076,7 +2076,7 @@ impl ContractEvent for DirectSellStateChanged {
             )
             .await;
             await_handling_error(
-                actions::upsert_collection(&collection, &mut tx),
+                actions::upsert_collection(&collection, &mut tx, None),
                 "Inserting collection",
             )
             .await;
@@ -2386,7 +2386,7 @@ impl ContractEvent for CollectionOwnershipTransferred {
         let mut tx = self.pool.begin().await?;
 
         await_handling_error(
-            actions::upsert_collection(&collection, &mut tx),
+            actions::upsert_collection(&collection, &mut tx, None),
             "Updating collection",
         )
         .await;
@@ -2548,8 +2548,10 @@ impl ContractEvent for NftCreated {
         )
         .await;
 
+        let nft_created_at_timestamp = NaiveDateTime::from_timestamp_opt(self.created_at, 0);
+
         await_handling_error(
-            actions::upsert_collection(&collection, &mut tx),
+            actions::upsert_collection(&collection, &mut tx, nft_created_at_timestamp),
             "Updating collection",
         )
         .await;
@@ -2725,7 +2727,7 @@ impl ContractEvent for NftBurned {
         .await;
 
         await_handling_error(
-            actions::upsert_collection(&collection, &mut tx),
+            actions::upsert_collection(&collection, &mut tx, None),
             "Updating collection",
         )
         .await;
@@ -2820,7 +2822,7 @@ async fn fetch_metadata(
     consumer: &Arc<TransactionConsumer>,
 ) -> serde_json::Value {
     match rpc::retrier::Retrier::new(|| Box::pin(rpc::get_json(address.clone(), consumer.clone())))
-        .attempts(1)
+        .attempts(3)
         .trace_id(format!(
             "fetch metadata {}",
             address.address().as_hex_string()

@@ -3,3 +3,5 @@
 /kafka-creds
 /model/.env
 /.vscode
+.idea
+DS_Store

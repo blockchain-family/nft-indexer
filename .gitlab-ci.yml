@@ -38,14 +38,14 @@ stop:stage:
 
 cloudbuild:image:prod:
   only:
-    - prod
+    - main
   except:
     - tags
   extends: .cloudbuild:common
 
 deploy:prod:
   only:
-    - prod
+    - main
   except:
     - tags
   extends: .deploy
@@ -55,9 +55,48 @@ deploy:prod:
 
 stop:prod:
   only:
-    - prod
+    - main
   except:
     - tags
   extends: .stop
   environment:
     name: prod
+
+deploy:venom-stage:
+  only:
+    - stage
+  extends: .deploy
+  variables:
+    APP_CONFIG: venom
+  environment:
+    name: stage
+    on_stop: stop:venom-stage
+
+stop:venom-stage:
+  only:
+    - stage
+  extends: .stop
+  variables:
+    APP_CONFIG: venom
+  environment:
+    name: stage
+
+deploy:v1-prod:
+  only:
+    - main
+  extends: .deploy
+  variables:
+    APP_CONFIG: v1
+  environment:
+    name: prod
+    on_stop: stop:v1-prod
+
+stop:v1-prod:
+  only:
+    - main
+  extends: .stop
+  variables:
+    APP_CONFIG: v1
+  environment:
+    name: prod
+

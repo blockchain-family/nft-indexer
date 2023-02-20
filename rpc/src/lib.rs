@@ -13,14 +13,18 @@ pub async fn get_json(
     address: MsgAddressInt,
     consumer: Arc<TransactionConsumer>,
 ) -> Result<serde_json::Value> {
+    log::debug!("metadata 1");
     let contract = consumer
         .get_contract_state(&address)
         .await?
         .ok_or_else(|| anyhow!("Contract state is none!"))?;
 
+    log::debug!("metadata 2");
     let metadata = nekoton_contracts::tip4_2::MetadataContract(
         contract.as_context(&nekoton_utils::SimpleClock),
     );
+
+    log::debug!("metadata 2 json {:?}", &metadata.get_json());
 
     Ok(serde_json::from_str::<serde_json::Value>(
         &metadata.get_json()?,
