@@ -62,6 +62,32 @@ stop:prod:
   environment:
     name: prod
 
+cloudbuild:image:v1:
+  only:
+    - main
+  except:
+    - tags
+  extends: .cloudbuild:common
+
+deploy:v1:
+  only:
+    - main
+  except:
+    - tags
+  extends: .deploy
+  environment:
+    name: prod
+    on_stop: stop:prod
+
+stop:v1:
+  only:
+    - main
+  except:
+    - tags
+  extends: .stop
+  environment:
+    name: prod
+
 deploy:venom-stage:
   only:
     - stage
