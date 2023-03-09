@@ -7,7 +7,11 @@ pub async fn save_event<T: EventRecord + Serialize>(
     record: &T,
     tx: &mut Transaction<'_, Postgres>,
 ) -> Result<PgQueryResult, sqlx::Error> {
-    sqlx::query!(
+    log::trace!(
+        "Trying to save event with message {:?}",
+        record.get_message_hash()
+    );
+    let response = sqlx::query!(
         r#"
         insert into nft_events (event_cat, event_type, address, nft, collection, created_lt, created_at, args, message_hash)
         values ($1, $2, $3, $4, $5, $6, $7, $8, $9)
@@ -24,7 +28,16 @@ pub async fn save_event<T: EventRecord + Serialize>(
         record.get_message_hash()
     )
     .execute(tx)
-    .await
+    .await?;
+
+    if response.rows_affected() == 0 {
+        log::trace!(
+            "Event already present with message_hash {}",
+            record.get_message_hash()
+        );
+    }
+
+    Ok(response)
 }
 
 pub async fn get_owners_count(

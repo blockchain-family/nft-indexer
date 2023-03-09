@@ -29,9 +29,8 @@ pub fn get_created_lt(event: &ExtractedOwned) -> Result<i64> {
     .ok_or_else(|| anyhow!("Couldn't get created_lt of event"))
 }
 
-pub fn get_message_hash(event: &ExtractedOwned) -> Result<BigDecimal> {
-    let decimal = BigDecimal::from_str(&event.message_hash.to_string())?;
-    Ok(decimal)
+pub fn get_message_hash(event: &ExtractedOwned) -> String {
+    event.message_hash.as_hex_string()
 }
 
 pub fn get_token_processor<'a, T>(

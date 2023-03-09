@@ -38,7 +38,7 @@ pub fn event_record(input: TokenStream) -> TokenStream {
                 self.created_lt
             }
 
-            fn get_message_hash(&self) -> BigDecimal {
+            fn get_message_hash(&self) -> String {
                 self.message_hash.clone()
             }
 

@@ -33,7 +33,7 @@ pub struct AuctionDeployed {
     #[serde(skip_serializing)]
     pub created_at: i64,
     #[serde(skip_serializing)]
-    pub message_hash: BigDecimal,
+    pub message_hash: String,
 
     #[serde(skip_serializing)]
     pub event_nft: Option<Address>,
@@ -64,7 +64,7 @@ pub struct AuctionDeclined {
     #[serde(skip_serializing)]
     pub created_at: i64,
     #[serde(skip_serializing)]
-    pub message_hash: BigDecimal,
+    pub message_hash: String,
     #[serde(skip_serializing)]
     pub event_nft: Option<Address>,
     #[serde(skip_serializing)]
@@ -88,7 +88,7 @@ pub struct AuctionRootOwnershipTransferred {
     #[serde(skip_serializing)]
     pub created_at: i64,
     #[serde(skip_serializing)]
-    pub message_hash: BigDecimal,
+    pub message_hash: String,
     #[serde(skip_serializing)]
     pub event_nft: Option<Address>,
     #[serde(skip_serializing)]
@@ -114,7 +114,7 @@ pub struct AuctionCreated {
     #[serde(skip_serializing)]
     pub created_at: i64,
     #[serde(skip_serializing)]
-    pub message_hash: BigDecimal,
+    pub message_hash: String,
     #[serde(skip_serializing)]
     pub event_nft: Option<Address>,
     #[serde(skip_serializing)]
@@ -146,7 +146,7 @@ pub struct AuctionActive {
     #[serde(skip_serializing)]
     pub created_at: i64,
     #[serde(skip_serializing)]
-    pub message_hash: BigDecimal,
+    pub message_hash: String,
     #[serde(skip_serializing)]
     pub event_nft: Option<Address>,
     #[serde(skip_serializing)]
@@ -178,7 +178,7 @@ pub struct AuctionBidPlaced {
     #[serde(skip_serializing)]
     pub created_at: i64,
     #[serde(skip_serializing)]
-    pub message_hash: BigDecimal,
+    pub message_hash: String,
     #[serde(skip_serializing)]
     pub event_nft: Option<Address>,
     #[serde(skip_serializing)]
@@ -203,7 +203,7 @@ pub struct AuctionBidDeclined {
     #[serde(skip_serializing)]
     pub created_at: i64,
     #[serde(skip_serializing)]
-    pub message_hash: BigDecimal,
+    pub message_hash: String,
     #[serde(skip_serializing)]
     pub event_nft: Option<Address>,
     #[serde(skip_serializing)]
@@ -227,7 +227,7 @@ pub struct AuctionComplete {
     #[serde(skip_serializing)]
     pub created_at: i64,
     #[serde(skip_serializing)]
-    pub message_hash: BigDecimal,
+    pub message_hash: String,
     #[serde(skip_serializing)]
     pub event_nft: Option<Address>,
     #[serde(skip_serializing)]
@@ -252,7 +252,7 @@ pub struct AuctionCancelled {
     #[serde(skip_serializing)]
     pub created_at: i64,
     #[serde(skip_serializing)]
-    pub message_hash: BigDecimal,
+    pub message_hash: String,
     #[serde(skip_serializing)]
     pub event_nft: Option<Address>,
     #[serde(skip_serializing)]
@@ -275,7 +275,7 @@ pub struct DirectBuyDeployed {
     #[serde(skip_serializing)]
     pub created_at: i64,
     #[serde(skip_serializing)]
-    pub message_hash: BigDecimal,
+    pub message_hash: String,
     #[serde(skip_serializing)]
     pub event_nft: Option<Address>,
     #[serde(skip_serializing)]
@@ -303,7 +303,7 @@ pub struct DirectBuyDeclined {
     #[serde(skip_serializing)]
     pub created_at: i64,
     #[serde(skip_serializing)]
-    pub message_hash: BigDecimal,
+    pub message_hash: String,
     #[serde(skip_serializing)]
     pub event_nft: Option<Address>,
     #[serde(skip_serializing)]
@@ -329,7 +329,7 @@ pub struct FactoryDirectBuyOwnershipTransferred {
     #[serde(skip_serializing)]
     pub created_at: i64,
     #[serde(skip_serializing)]
-    pub message_hash: BigDecimal,
+    pub message_hash: String,
     #[serde(skip_serializing)]
     pub event_nft: Option<Address>,
     #[serde(skip_serializing)]
@@ -355,7 +355,7 @@ pub struct DirectSellDeployed {
     #[serde(skip_serializing)]
     pub created_at: i64,
     #[serde(skip_serializing)]
-    pub message_hash: BigDecimal,
+    pub message_hash: String,
     #[serde(skip_serializing)]
     pub event_nft: Option<Address>,
     #[serde(skip_serializing)]
@@ -383,7 +383,7 @@ pub struct DirectSellDeclined {
     #[serde(skip_serializing)]
     pub created_at: i64,
     #[serde(skip_serializing)]
-    pub message_hash: BigDecimal,
+    pub message_hash: String,
     #[serde(skip_serializing)]
     pub event_nft: Option<Address>,
     #[serde(skip_serializing)]
@@ -407,7 +407,7 @@ pub struct FactoryDirectSellOwnershipTransferred {
     #[serde(skip_serializing)]
     pub created_at: i64,
     #[serde(skip_serializing)]
-    pub message_hash: BigDecimal,
+    pub message_hash: String,
     #[serde(skip_serializing)]
     pub event_nft: Option<Address>,
     #[serde(skip_serializing)]
@@ -433,7 +433,7 @@ pub struct DirectBuyStateChanged {
     #[serde(skip_serializing)]
     pub created_at: i64,
     #[serde(skip_serializing)]
-    pub message_hash: BigDecimal,
+    pub message_hash: String,
     #[serde(skip_serializing)]
     pub event_nft: Option<Address>,
     #[serde(skip_serializing)]
@@ -471,7 +471,7 @@ pub struct DirectSellStateChanged {
     #[serde(skip_serializing)]
     pub created_at: i64,
     #[serde(skip_serializing)]
-    pub message_hash: BigDecimal,
+    pub message_hash: String,
     #[serde(skip_serializing)]
     pub event_nft: Option<Address>,
     #[serde(skip_serializing)]
@@ -508,7 +508,7 @@ pub struct NftOwnerChanged {
     #[serde(skip_serializing)]
     pub created_at: i64,
     #[serde(skip_serializing)]
-    pub message_hash: BigDecimal,
+    pub message_hash: String,
     #[serde(skip_serializing)]
     pub event_nft: Option<Address>,
     #[serde(skip_serializing)]
@@ -532,7 +532,7 @@ pub struct NftManagerChanged {
     #[serde(skip_serializing)]
     pub created_at: i64,
     #[serde(skip_serializing)]
-    pub message_hash: BigDecimal,
+    pub message_hash: String,
     #[serde(skip_serializing)]
     pub event_nft: Option<Address>,
     #[serde(skip_serializing)]
@@ -558,7 +558,7 @@ pub struct CollectionOwnershipTransferred {
     #[serde(skip_serializing)]
     pub created_at: i64,
     #[serde(skip_serializing)]
-    pub message_hash: BigDecimal,
+    pub message_hash: String,
     #[serde(skip_serializing)]
     pub event_nft: Option<Address>,
     #[serde(skip_serializing)]
@@ -582,7 +582,7 @@ pub struct NftCreated {
     #[serde(skip_serializing)]
     pub created_at: i64,
     #[serde(skip_serializing)]
-    pub message_hash: BigDecimal,
+    pub message_hash: String,
     #[serde(skip_serializing)]
     pub event_nft: Option<Address>,
     #[serde(skip_serializing)]
@@ -609,7 +609,7 @@ pub struct NftBurned {
     #[serde(skip_serializing)]
     pub created_at: i64,
     #[serde(skip_serializing)]
-    pub message_hash: BigDecimal,
+    pub message_hash: String,
     #[serde(skip_serializing)]
     pub event_nft: Option<Address>,
     #[serde(skip_serializing)]
@@ -680,7 +680,7 @@ impl ContractEvent for AuctionDeployed {
             address: get_address(event),
             created_lt: get_created_lt(event)?,
             created_at: get_created_at(event)?,
-            message_hash: get_message_hash(event)?,
+            message_hash: get_message_hash(event),
 
             event_collection: Some(to_address("collection")?),
             event_nft: Some(to_address("nft")?),
@@ -746,7 +746,7 @@ impl ContractEvent for AuctionDeclined {
             address: get_address(event),
             created_lt: get_created_lt(event)?,
             created_at: get_created_at(event)?,
-            message_hash: get_message_hash(event)?,
+            message_hash: get_message_hash(event),
 
             event_collection: None,
             event_nft: Some(to_address("nft")?),
@@ -806,7 +806,7 @@ impl ContractEvent for AuctionRootOwnershipTransferred {
             address: get_address(event),
             created_lt: get_created_lt(event)?,
             created_at: get_created_at(event)?,
-            message_hash: get_message_hash(event)?,
+            message_hash: get_message_hash(event),
 
             event_collection: None,
             event_nft: None,
@@ -864,7 +864,7 @@ impl ContractEvent for AuctionCreated {
             address: get_address(event),
             created_lt: get_created_lt(event)?,
             created_at: get_created_at(event)?,
-            message_hash: get_message_hash(event)?,
+            message_hash: get_message_hash(event),
 
             event_collection: None,
             event_nft: Some(to_address("auctionSubject")?),
@@ -942,7 +942,7 @@ impl ContractEvent for AuctionActive {
             address: get_address(event),
             created_lt: get_created_lt(event)?,
             created_at: get_created_at(event)?,
-            message_hash: get_message_hash(event)?,
+            message_hash: get_message_hash(event),
 
             event_collection: None,
             event_nft: Some(to_address("auctionSubject")?),
@@ -1079,7 +1079,7 @@ impl ContractEvent for AuctionBidPlaced {
             address: get_address(event),
             created_lt: get_created_lt(event)?,
             created_at: get_created_at(event)?,
-            message_hash: get_message_hash(event)?,
+            message_hash: get_message_hash(event),
 
             event_collection: None,
             event_nft: None,
@@ -1209,7 +1209,7 @@ impl ContractEvent for AuctionBidDeclined {
             address: get_address(event),
             created_lt: get_created_lt(event)?,
             created_at: get_created_at(event)?,
-            message_hash: get_message_hash(event)?,
+            message_hash: get_message_hash(event),
 
             event_collection: None,
             event_nft: None,
@@ -1293,7 +1293,7 @@ impl ContractEvent for AuctionComplete {
             address: get_address(event),
             created_lt: get_created_lt(event)?,
             created_at: get_created_at(event)?,
-            message_hash: get_message_hash(event)?,
+            message_hash: get_message_hash(event),
 
             event_collection: None,
             event_nft: None,
@@ -1382,7 +1382,7 @@ impl ContractEvent for AuctionCancelled {
             address: get_address(event),
             created_lt: get_created_lt(event)?,
             created_at: get_created_at(event)?,
-            message_hash: get_message_hash(event)?,
+            message_hash: get_message_hash(event),
 
             event_collection: None,
             event_nft: None,
@@ -1511,7 +1511,7 @@ impl ContractEvent for DirectBuyDeployed {
             address: get_address(event),
             created_lt: get_created_lt(event)?,
             created_at: get_created_at(event)?,
-            message_hash: get_message_hash(event)?,
+            message_hash: get_message_hash(event),
 
             event_collection: None,
             event_nft: Some(to_address("nft")?),
@@ -1592,7 +1592,7 @@ impl ContractEvent for DirectBuyDeclined {
             address: get_address(event),
             created_lt: get_created_lt(event)?,
             created_at: get_created_at(event)?,
-            message_hash: get_message_hash(event)?,
+            message_hash: get_message_hash(event),
 
             event_collection: None,
             event_nft: Some(to_address("nft")?),
@@ -1654,7 +1654,7 @@ impl ContractEvent for FactoryDirectBuyOwnershipTransferred {
             address: get_address(event),
             created_lt: get_created_lt(event)?,
             created_at: get_created_at(event)?,
-            message_hash: get_message_hash(event)?,
+            message_hash: get_message_hash(event),
 
             event_collection: None,
             event_nft: None,
@@ -1750,7 +1750,7 @@ impl ContractEvent for DirectSellDeployed {
             address: get_address(event),
             created_lt: get_created_lt(event)?,
             created_at: get_created_at(event)?,
-            message_hash: get_message_hash(event)?,
+            message_hash: get_message_hash(event),
 
             event_collection: None,
             event_nft: Some(to_address("nft")?),
@@ -1816,7 +1816,7 @@ impl ContractEvent for DirectSellDeclined {
             address: get_address(event),
             created_lt: get_created_lt(event)?,
             created_at: get_created_at(event)?,
-            message_hash: get_message_hash(event)?,
+            message_hash: get_message_hash(event),
 
             event_collection: None,
             event_nft: Some(to_address("nft")?),
@@ -1876,7 +1876,7 @@ impl ContractEvent for FactoryDirectSellOwnershipTransferred {
             address: get_address(event),
             created_lt: get_created_lt(event)?,
             created_at: get_created_at(event)?,
-            message_hash: get_message_hash(event)?,
+            message_hash: get_message_hash(event),
 
             event_collection: None,
             event_nft: None,
@@ -1950,7 +1950,7 @@ impl ContractEvent for DirectBuyStateChanged {
             address: get_address(event),
             created_lt: get_created_lt(event)?,
             created_at: get_created_at(event)?,
-            message_hash: get_message_hash(event)?,
+            message_hash: get_message_hash(event),
 
             event_collection: None,
             event_nft: Some(to_address("nft")?),
@@ -2089,7 +2089,7 @@ impl ContractEvent for DirectSellStateChanged {
             address: get_address(event),
             created_lt: get_created_lt(event)?,
             created_at: get_created_at(event)?,
-            message_hash: get_message_hash(event)?,
+            message_hash: get_message_hash(event),
 
             event_collection: None,
             event_nft: Some(to_address("nft")?),
@@ -2224,7 +2224,7 @@ impl ContractEvent for NftOwnerChanged {
             address: get_address(event),
             created_lt: get_created_lt(event)?,
             created_at: get_created_at(event)?,
-            message_hash: get_message_hash(event)?,
+            message_hash: get_message_hash(event),
 
             event_collection: None,
             event_nft: Some(get_address(event)),
@@ -2349,7 +2349,7 @@ impl ContractEvent for NftManagerChanged {
             address: get_address(event),
             created_lt: get_created_lt(event)?,
             created_at: get_created_at(event)?,
-            message_hash: get_message_hash(event)?,
+            message_hash: get_message_hash(event),
 
             event_collection: None,
             event_nft: Some(get_address(event)),
@@ -2474,7 +2474,7 @@ impl ContractEvent for CollectionOwnershipTransferred {
             address: get_address(event),
             created_lt: get_created_lt(event)?,
             created_at: get_created_at(event)?,
-            message_hash: get_message_hash(event)?,
+            message_hash: get_message_hash(event),
 
             event_collection: Some(get_address(event)),
             event_nft: None,
@@ -2574,7 +2574,7 @@ impl ContractEvent for NftCreated {
             address: get_address(event),
             created_lt: get_created_lt(event)?,
             created_at: get_created_at(event)?,
-            message_hash: get_message_hash(event)?,
+            message_hash: get_message_hash(event),
 
             event_collection: Some(get_address(event)),
             event_nft: Some(to_address("nft")?),
@@ -2760,7 +2760,7 @@ impl ContractEvent for NftBurned {
             address: get_address(event),
             created_lt: get_created_lt(event)?,
             created_at: get_created_at(event)?,
-            message_hash: get_message_hash(event)?,
+            message_hash: get_message_hash(event),
 
             event_collection: Some(get_address(event)),
             event_nft: Some(to_address("nft")?),

@@ -575,7 +575,7 @@
           "Int8",
           "Int8",
           "Jsonb",
-          "Numeric"
+          "Text"
         ]
       }
     },

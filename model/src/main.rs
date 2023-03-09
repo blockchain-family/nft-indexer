@@ -1,8 +1,6 @@
 use crate::{settings::config::Config, state_updater::run_updater};
 use anyhow::Result;
-// use env_logger::Builder;
 use indexer::consumer;
-// use log::LevelFilter;
 use std::{collections::HashMap, sync::Arc};
 use transaction_consumer::{ConsumerOptions, TransactionConsumer};
 
@@ -12,8 +10,6 @@ mod state_updater;
 
 #[tokio::main]
 async fn main() -> Result<()> {
-    // let mut builder = Builder::new();
-    // builder.filter_level(LevelFilter::Info).init();
     dotenv::dotenv().ok();
     stackdriver_logger::init_with_cargo!();
     log::info!("Indexer is preparing to start");
