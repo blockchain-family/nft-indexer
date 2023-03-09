@@ -9,8 +9,9 @@ pub async fn save_event<T: EventRecord + Serialize>(
 ) -> Result<PgQueryResult, sqlx::Error> {
     sqlx::query!(
         r#"
-        insert into nft_events (event_cat, event_type, address, nft, collection, created_lt, created_at, args)
-        values ($1, $2, $3, $4, $5, $6, $7, $8)
+        insert into nft_events (event_cat, event_type, address, nft, collection, created_lt, created_at, args, message_hash)
+        values ($1, $2, $3, $4, $5, $6, $7, $8, $9)
+        on conflict (message_hash) do nothing
         "#,
         record.get_event_category() as EventCategory,
         record.get_event_type() as EventType,
@@ -20,6 +21,7 @@ pub async fn save_event<T: EventRecord + Serialize>(
         record.get_created_lt(),
         record.get_created_at(),
         serde_json::to_value(record).unwrap_or_default(),
+        record.get_message_hash()
     )
     .execute(tx)
     .await

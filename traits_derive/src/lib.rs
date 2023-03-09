@@ -38,6 +38,10 @@ pub fn event_record(input: TokenStream) -> TokenStream {
                 self.created_lt
             }
 
+            fn get_message_hash(&self) -> BigDecimal {
+                self.message_hash.clone()
+            }
+
             fn get_event_category(&self) -> EventCategory {
                 EventCategory::#event_cat
             }

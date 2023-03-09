@@ -32,6 +32,8 @@ pub struct AuctionDeployed {
     pub created_lt: i64,
     #[serde(skip_serializing)]
     pub created_at: i64,
+    #[serde(skip_serializing)]
+    pub message_hash: BigDecimal,
 
     #[serde(skip_serializing)]
     pub event_nft: Option<Address>,
@@ -61,7 +63,8 @@ pub struct AuctionDeclined {
     pub created_lt: i64,
     #[serde(skip_serializing)]
     pub created_at: i64,
-
+    #[serde(skip_serializing)]
+    pub message_hash: BigDecimal,
     #[serde(skip_serializing)]
     pub event_nft: Option<Address>,
     #[serde(skip_serializing)]
@@ -84,7 +87,8 @@ pub struct AuctionRootOwnershipTransferred {
     pub created_lt: i64,
     #[serde(skip_serializing)]
     pub created_at: i64,
-
+    #[serde(skip_serializing)]
+    pub message_hash: BigDecimal,
     #[serde(skip_serializing)]
     pub event_nft: Option<Address>,
     #[serde(skip_serializing)]
@@ -109,7 +113,8 @@ pub struct AuctionCreated {
     pub created_lt: i64,
     #[serde(skip_serializing)]
     pub created_at: i64,
-
+    #[serde(skip_serializing)]
+    pub message_hash: BigDecimal,
     #[serde(skip_serializing)]
     pub event_nft: Option<Address>,
     #[serde(skip_serializing)]
@@ -140,7 +145,8 @@ pub struct AuctionActive {
     pub created_lt: i64,
     #[serde(skip_serializing)]
     pub created_at: i64,
-
+    #[serde(skip_serializing)]
+    pub message_hash: BigDecimal,
     #[serde(skip_serializing)]
     pub event_nft: Option<Address>,
     #[serde(skip_serializing)]
@@ -171,7 +177,8 @@ pub struct AuctionBidPlaced {
     pub created_lt: i64,
     #[serde(skip_serializing)]
     pub created_at: i64,
-
+    #[serde(skip_serializing)]
+    pub message_hash: BigDecimal,
     #[serde(skip_serializing)]
     pub event_nft: Option<Address>,
     #[serde(skip_serializing)]
@@ -195,7 +202,8 @@ pub struct AuctionBidDeclined {
     pub created_lt: i64,
     #[serde(skip_serializing)]
     pub created_at: i64,
-
+    #[serde(skip_serializing)]
+    pub message_hash: BigDecimal,
     #[serde(skip_serializing)]
     pub event_nft: Option<Address>,
     #[serde(skip_serializing)]
@@ -218,7 +226,8 @@ pub struct AuctionComplete {
     pub created_lt: i64,
     #[serde(skip_serializing)]
     pub created_at: i64,
-
+    #[serde(skip_serializing)]
+    pub message_hash: BigDecimal,
     #[serde(skip_serializing)]
     pub event_nft: Option<Address>,
     #[serde(skip_serializing)]
@@ -242,7 +251,8 @@ pub struct AuctionCancelled {
     pub created_lt: i64,
     #[serde(skip_serializing)]
     pub created_at: i64,
-
+    #[serde(skip_serializing)]
+    pub message_hash: BigDecimal,
     #[serde(skip_serializing)]
     pub event_nft: Option<Address>,
     #[serde(skip_serializing)]
@@ -264,7 +274,8 @@ pub struct DirectBuyDeployed {
     pub created_lt: i64,
     #[serde(skip_serializing)]
     pub created_at: i64,
-
+    #[serde(skip_serializing)]
+    pub message_hash: BigDecimal,
     #[serde(skip_serializing)]
     pub event_nft: Option<Address>,
     #[serde(skip_serializing)]
@@ -291,7 +302,8 @@ pub struct DirectBuyDeclined {
     pub created_lt: i64,
     #[serde(skip_serializing)]
     pub created_at: i64,
-
+    #[serde(skip_serializing)]
+    pub message_hash: BigDecimal,
     #[serde(skip_serializing)]
     pub event_nft: Option<Address>,
     #[serde(skip_serializing)]
@@ -316,7 +328,8 @@ pub struct FactoryDirectBuyOwnershipTransferred {
     pub created_lt: i64,
     #[serde(skip_serializing)]
     pub created_at: i64,
-
+    #[serde(skip_serializing)]
+    pub message_hash: BigDecimal,
     #[serde(skip_serializing)]
     pub event_nft: Option<Address>,
     #[serde(skip_serializing)]
@@ -341,7 +354,8 @@ pub struct DirectSellDeployed {
     pub created_lt: i64,
     #[serde(skip_serializing)]
     pub created_at: i64,
-
+    #[serde(skip_serializing)]
+    pub message_hash: BigDecimal,
     #[serde(skip_serializing)]
     pub event_nft: Option<Address>,
     #[serde(skip_serializing)]
@@ -368,7 +382,8 @@ pub struct DirectSellDeclined {
     pub created_lt: i64,
     #[serde(skip_serializing)]
     pub created_at: i64,
-
+    #[serde(skip_serializing)]
+    pub message_hash: BigDecimal,
     #[serde(skip_serializing)]
     pub event_nft: Option<Address>,
     #[serde(skip_serializing)]
@@ -391,7 +406,8 @@ pub struct FactoryDirectSellOwnershipTransferred {
     pub created_lt: i64,
     #[serde(skip_serializing)]
     pub created_at: i64,
-
+    #[serde(skip_serializing)]
+    pub message_hash: BigDecimal,
     #[serde(skip_serializing)]
     pub event_nft: Option<Address>,
     #[serde(skip_serializing)]
@@ -416,7 +432,8 @@ pub struct DirectBuyStateChanged {
     pub created_lt: i64,
     #[serde(skip_serializing)]
     pub created_at: i64,
-
+    #[serde(skip_serializing)]
+    pub message_hash: BigDecimal,
     #[serde(skip_serializing)]
     pub event_nft: Option<Address>,
     #[serde(skip_serializing)]
@@ -453,7 +470,8 @@ pub struct DirectSellStateChanged {
     pub created_lt: i64,
     #[serde(skip_serializing)]
     pub created_at: i64,
-
+    #[serde(skip_serializing)]
+    pub message_hash: BigDecimal,
     #[serde(skip_serializing)]
     pub event_nft: Option<Address>,
     #[serde(skip_serializing)]
@@ -489,7 +507,8 @@ pub struct NftOwnerChanged {
     pub created_lt: i64,
     #[serde(skip_serializing)]
     pub created_at: i64,
-
+    #[serde(skip_serializing)]
+    pub message_hash: BigDecimal,
     #[serde(skip_serializing)]
     pub event_nft: Option<Address>,
     #[serde(skip_serializing)]
@@ -512,7 +531,8 @@ pub struct NftManagerChanged {
     pub created_lt: i64,
     #[serde(skip_serializing)]
     pub created_at: i64,
-
+    #[serde(skip_serializing)]
+    pub message_hash: BigDecimal,
     #[serde(skip_serializing)]
     pub event_nft: Option<Address>,
     #[serde(skip_serializing)]
@@ -537,7 +557,8 @@ pub struct CollectionOwnershipTransferred {
     pub created_lt: i64,
     #[serde(skip_serializing)]
     pub created_at: i64,
-
+    #[serde(skip_serializing)]
+    pub message_hash: BigDecimal,
     #[serde(skip_serializing)]
     pub event_nft: Option<Address>,
     #[serde(skip_serializing)]
@@ -560,7 +581,8 @@ pub struct NftCreated {
     pub created_lt: i64,
     #[serde(skip_serializing)]
     pub created_at: i64,
-
+    #[serde(skip_serializing)]
+    pub message_hash: BigDecimal,
     #[serde(skip_serializing)]
     pub event_nft: Option<Address>,
     #[serde(skip_serializing)]
@@ -586,7 +608,8 @@ pub struct NftBurned {
     pub created_lt: i64,
     #[serde(skip_serializing)]
     pub created_at: i64,
-
+    #[serde(skip_serializing)]
+    pub message_hash: BigDecimal,
     #[serde(skip_serializing)]
     pub event_nft: Option<Address>,
     #[serde(skip_serializing)]
@@ -657,6 +680,7 @@ impl ContractEvent for AuctionDeployed {
             address: get_address(event),
             created_lt: get_created_lt(event)?,
             created_at: get_created_at(event)?,
+            message_hash: get_message_hash(event)?,
 
             event_collection: Some(to_address("collection")?),
             event_nft: Some(to_address("nft")?),
@@ -675,7 +699,13 @@ impl ContractEvent for AuctionDeployed {
     async fn update_dependent_tables(&mut self) -> Result<()> {
         let mut tx = self.pool.begin().await?;
 
-        await_handling_error(actions::save_event(self, &mut tx), "Saving AuctionDeployed").await;
+        let save_result = actions::save_event(self, &mut tx)
+            .await
+            .expect("Failed to save AuctionDeployed event");
+        if save_result.rows_affected() == 0 {
+            tx.rollback().await?;
+            return Ok(());
+        }
 
         tx.commit().await.map_err(|e| anyhow!(e))
     }
@@ -716,6 +746,7 @@ impl ContractEvent for AuctionDeclined {
             address: get_address(event),
             created_lt: get_created_lt(event)?,
             created_at: get_created_at(event)?,
+            message_hash: get_message_hash(event)?,
 
             event_collection: None,
             event_nft: Some(to_address("nft")?),
@@ -728,7 +759,13 @@ impl ContractEvent for AuctionDeclined {
     async fn update_dependent_tables(&mut self) -> Result<()> {
         let mut tx = self.pool.begin().await?;
 
-        await_handling_error(actions::save_event(self, &mut tx), "Saving AuctionDeclined").await;
+        let save_result = actions::save_event(self, &mut tx)
+            .await
+            .expect("Failed to save AuctionDeclined event");
+        if save_result.rows_affected() == 0 {
+            tx.rollback().await?;
+            return Ok(());
+        }
 
         tx.commit().await.map_err(|e| anyhow!(e))
     }
@@ -769,6 +806,7 @@ impl ContractEvent for AuctionRootOwnershipTransferred {
             address: get_address(event),
             created_lt: get_created_lt(event)?,
             created_at: get_created_at(event)?,
+            message_hash: get_message_hash(event)?,
 
             event_collection: None,
             event_nft: None,
@@ -781,11 +819,13 @@ impl ContractEvent for AuctionRootOwnershipTransferred {
     async fn update_dependent_tables(&mut self) -> Result<()> {
         let mut tx = self.pool.begin().await?;
 
-        await_handling_error(
-            actions::save_event(self, &mut tx),
-            "Saving AuctionRootOwnershipTransferred",
-        )
-        .await;
+        let save_result = actions::save_event(self, &mut tx)
+            .await
+            .expect("Failed to save AuctionRootOwnershipTransferred event");
+        if save_result.rows_affected() == 0 {
+            tx.rollback().await?;
+            return Ok(());
+        }
 
         tx.commit().await.map_err(|e| anyhow!(e))
     }
@@ -824,6 +864,7 @@ impl ContractEvent for AuctionCreated {
             address: get_address(event),
             created_lt: get_created_lt(event)?,
             created_at: get_created_at(event)?,
+            message_hash: get_message_hash(event)?,
 
             event_collection: None,
             event_nft: Some(to_address("auctionSubject")?),
@@ -856,8 +897,13 @@ impl ContractEvent for AuctionCreated {
             "Updating nft of auctions",
         )
         .await;
-
-        await_handling_error(actions::save_event(self, &mut tx), "Saving AuctionCreated").await;
+        let save_result = actions::save_event(self, &mut tx)
+            .await
+            .expect("Failed to save AuctionCreated event");
+        if save_result.rows_affected() == 0 {
+            tx.rollback().await?;
+            return Ok(());
+        }
 
         tx.commit().await.map_err(|e| anyhow!(e))
     }
@@ -896,6 +942,7 @@ impl ContractEvent for AuctionActive {
             address: get_address(event),
             created_lt: get_created_lt(event)?,
             created_at: get_created_at(event)?,
+            message_hash: get_message_hash(event)?,
 
             event_collection: None,
             event_nft: Some(to_address("auctionSubject")?),
@@ -977,7 +1024,13 @@ impl ContractEvent for AuctionActive {
         )
         .await;
 
-        await_handling_error(actions::save_event(self, &mut tx), "Saving AuctionActive").await;
+        let save_result = actions::save_event(self, &mut tx)
+            .await
+            .expect("Failed to save AuctionActive event");
+        if save_result.rows_affected() == 0 {
+            tx.rollback().await?;
+            return Ok(());
+        }
 
         tx.commit().await.map_err(|e| anyhow!(e))
     }
@@ -1026,6 +1079,7 @@ impl ContractEvent for AuctionBidPlaced {
             address: get_address(event),
             created_lt: get_created_lt(event)?,
             created_at: get_created_at(event)?,
+            message_hash: get_message_hash(event)?,
 
             event_collection: None,
             event_nft: None,
@@ -1101,13 +1155,19 @@ impl ContractEvent for AuctionBidPlaced {
             )
             .await;
             await_handling_error(
-                actions::upsert_collection(&collection, &mut tx,None),
+                actions::upsert_collection(&collection, &mut tx, None),
                 "Inserting collection",
             )
             .await;
         }
 
-        await_handling_error(actions::save_event(self, &mut tx), "Saving AuctionBid").await;
+        let save_result = actions::save_event(self, &mut tx)
+            .await
+            .expect("Failed to save AuctionBid event");
+        if save_result.rows_affected() == 0 {
+            tx.rollback().await?;
+            return Ok(());
+        }
 
         tx.commit().await.map_err(|e| anyhow!(e))
     }
@@ -1149,6 +1209,7 @@ impl ContractEvent for AuctionBidDeclined {
             address: get_address(event),
             created_lt: get_created_lt(event)?,
             created_at: get_created_at(event)?,
+            message_hash: get_message_hash(event)?,
 
             event_collection: None,
             event_nft: None,
@@ -1177,11 +1238,13 @@ impl ContractEvent for AuctionBidDeclined {
         )
         .await;
 
-        await_handling_error(
-            actions::save_event(self, &mut tx),
-            "Saving AuctionBidDeclined",
-        )
-        .await;
+        let save_result = actions::save_event(self, &mut tx)
+            .await
+            .expect("Failed to save AuctionBidDeclined event");
+        if save_result.rows_affected() == 0 {
+            tx.rollback().await?;
+            return Ok(());
+        }
 
         tx.commit().await.map_err(|e| anyhow!(e))
     }
@@ -1230,6 +1293,7 @@ impl ContractEvent for AuctionComplete {
             address: get_address(event),
             created_lt: get_created_lt(event)?,
             created_at: get_created_at(event)?,
+            message_hash: get_message_hash(event)?,
 
             event_collection: None,
             event_nft: None,
@@ -1289,7 +1353,13 @@ impl ContractEvent for AuctionComplete {
             .await;
         }
 
-        await_handling_error(actions::save_event(self, &mut tx), "Saving AuctionComplete").await;
+        let save_result = actions::save_event(self, &mut tx)
+            .await
+            .expect("Failed to save AuctionComplete event");
+        if save_result.rows_affected() == 0 {
+            tx.rollback().await?;
+            return Ok(());
+        }
 
         tx.commit().await.map_err(|e| anyhow!(e))
     }
@@ -1312,6 +1382,7 @@ impl ContractEvent for AuctionCancelled {
             address: get_address(event),
             created_lt: get_created_lt(event)?,
             created_at: get_created_at(event)?,
+            message_hash: get_message_hash(event)?,
 
             event_collection: None,
             event_nft: None,
@@ -1357,11 +1428,13 @@ impl ContractEvent for AuctionCancelled {
             .await;
         }
 
-        await_handling_error(
-            actions::save_event(self, &mut tx),
-            "Saving AuctionCancelled",
-        )
-        .await;
+        let save_result = actions::save_event(self, &mut tx)
+            .await
+            .expect("Failed to save AuctionCancelled event");
+        if save_result.rows_affected() == 0 {
+            tx.rollback().await?;
+            return Ok(());
+        }
 
         tx.commit().await.map_err(|e| anyhow!(e))
     }
@@ -1438,6 +1511,7 @@ impl ContractEvent for DirectBuyDeployed {
             address: get_address(event),
             created_lt: get_created_lt(event)?,
             created_at: get_created_at(event)?,
+            message_hash: get_message_hash(event)?,
 
             event_collection: None,
             event_nft: Some(to_address("nft")?),
@@ -1456,11 +1530,13 @@ impl ContractEvent for DirectBuyDeployed {
 
         self.event_collection = actions::get_collection_by_nft(&self.nft, &mut tx).await;
 
-        await_handling_error(
-            actions::save_event(self, &mut tx),
-            "Saving DirectBuyDeployed",
-        )
-        .await;
+        let save_result = actions::save_event(self, &mut tx)
+            .await
+            .expect("Failed to save DirectBuyDeployed event");
+        if save_result.rows_affected() == 0 {
+            tx.rollback().await?;
+            return Ok(());
+        }
 
         tx.commit().await.map_err(|e| anyhow!(e))
     }
@@ -1516,6 +1592,7 @@ impl ContractEvent for DirectBuyDeclined {
             address: get_address(event),
             created_lt: get_created_lt(event)?,
             created_at: get_created_at(event)?,
+            message_hash: get_message_hash(event)?,
 
             event_collection: None,
             event_nft: Some(to_address("nft")?),
@@ -1530,11 +1607,13 @@ impl ContractEvent for DirectBuyDeclined {
     async fn update_dependent_tables(&mut self) -> Result<()> {
         let mut tx = self.pool.begin().await?;
 
-        await_handling_error(
-            actions::save_event(self, &mut tx),
-            "Saving DirectBuyDeclined",
-        )
-        .await;
+        let save_result = actions::save_event(self, &mut tx)
+            .await
+            .expect("Failed to save DirectBuyDeclined event");
+        if save_result.rows_affected() == 0 {
+            tx.rollback().await?;
+            return Ok(());
+        }
 
         tx.commit().await.map_err(|e| anyhow!(e))
     }
@@ -1575,6 +1654,7 @@ impl ContractEvent for FactoryDirectBuyOwnershipTransferred {
             address: get_address(event),
             created_lt: get_created_lt(event)?,
             created_at: get_created_at(event)?,
+            message_hash: get_message_hash(event)?,
 
             event_collection: None,
             event_nft: None,
@@ -1587,11 +1667,13 @@ impl ContractEvent for FactoryDirectBuyOwnershipTransferred {
     async fn update_dependent_tables(&mut self) -> Result<()> {
         let mut tx = self.pool.begin().await?;
 
-        await_handling_error(
-            actions::save_event(self, &mut tx),
-            "Saving FactoryDirectBuyOwnershipTransferred",
-        )
-        .await;
+        let save_result = actions::save_event(self, &mut tx)
+            .await
+            .expect("Failed to save FactoryDirectBuyOwnershipTransferred event");
+        if save_result.rows_affected() == 0 {
+            tx.rollback().await?;
+            return Ok(());
+        }
 
         tx.commit().await.map_err(|e| anyhow!(e))
     }
@@ -1668,6 +1750,7 @@ impl ContractEvent for DirectSellDeployed {
             address: get_address(event),
             created_lt: get_created_lt(event)?,
             created_at: get_created_at(event)?,
+            message_hash: get_message_hash(event)?,
 
             event_collection: None,
             event_nft: Some(to_address("nft")?),
@@ -1686,11 +1769,13 @@ impl ContractEvent for DirectSellDeployed {
 
         self.event_collection = actions::get_collection_by_nft(&self.nft, &mut tx).await;
 
-        await_handling_error(
-            actions::save_event(self, &mut tx),
-            "Saving DirectSellDeployed",
-        )
-        .await;
+        let save_result = actions::save_event(self, &mut tx)
+            .await
+            .expect("Failed to save DirectSellDeployed event");
+        if save_result.rows_affected() == 0 {
+            tx.rollback().await?;
+            return Ok(());
+        }
 
         tx.commit().await.map_err(|e| anyhow!(e))
     }
@@ -1731,6 +1816,7 @@ impl ContractEvent for DirectSellDeclined {
             address: get_address(event),
             created_lt: get_created_lt(event)?,
             created_at: get_created_at(event)?,
+            message_hash: get_message_hash(event)?,
 
             event_collection: None,
             event_nft: Some(to_address("nft")?),
@@ -1743,11 +1829,13 @@ impl ContractEvent for DirectSellDeclined {
     async fn update_dependent_tables(&mut self) -> Result<()> {
         let mut tx = self.pool.begin().await?;
 
-        await_handling_error(
-            actions::save_event(self, &mut tx),
-            "Saving DirectSellDeclined",
-        )
-        .await;
+        let save_result = actions::save_event(self, &mut tx)
+            .await
+            .expect("Failed to save DirectSellDeclined event");
+        if save_result.rows_affected() == 0 {
+            tx.rollback().await?;
+            return Ok(());
+        }
 
         tx.commit().await.map_err(|e| anyhow!(e))
     }
@@ -1788,6 +1876,7 @@ impl ContractEvent for FactoryDirectSellOwnershipTransferred {
             address: get_address(event),
             created_lt: get_created_lt(event)?,
             created_at: get_created_at(event)?,
+            message_hash: get_message_hash(event)?,
 
             event_collection: None,
             event_nft: None,
@@ -1800,11 +1889,13 @@ impl ContractEvent for FactoryDirectSellOwnershipTransferred {
     async fn update_dependent_tables(&mut self) -> Result<()> {
         let mut tx = self.pool.begin().await?;
 
-        await_handling_error(
-            actions::save_event(self, &mut tx),
-            "Saving FactoryDirectSellOwnershipTransferred",
-        )
-        .await;
+        let save_result = actions::save_event(self, &mut tx)
+            .await
+            .expect("Failed to save FactoryDirectSellOwnershipTransferred event");
+        if save_result.rows_affected() == 0 {
+            tx.rollback().await?;
+            return Ok(());
+        }
 
         tx.commit().await.map_err(|e| anyhow!(e))
     }
@@ -1859,6 +1950,7 @@ impl ContractEvent for DirectBuyStateChanged {
             address: get_address(event),
             created_lt: get_created_lt(event)?,
             created_at: get_created_at(event)?,
+            message_hash: get_message_hash(event)?,
 
             event_collection: None,
             event_nft: Some(to_address("nft")?),
@@ -1936,11 +2028,13 @@ impl ContractEvent for DirectBuyStateChanged {
         )
         .await;
 
-        await_handling_error(
-            actions::save_event(self, &mut tx),
-            "Saving DirectBuyStateChanged",
-        )
-        .await;
+        let save_result = actions::save_event(self, &mut tx)
+            .await
+            .expect("Failed to save DirectBuyStateChanged event");
+        if save_result.rows_affected() == 0 {
+            tx.rollback().await?;
+            return Ok(());
+        }
 
         tx.commit().await.map_err(|e| anyhow!(e))
     }
@@ -1995,6 +2089,7 @@ impl ContractEvent for DirectSellStateChanged {
             address: get_address(event),
             created_lt: get_created_lt(event)?,
             created_at: get_created_at(event)?,
+            message_hash: get_message_hash(event)?,
 
             event_collection: None,
             event_nft: Some(to_address("nft")?),
@@ -2082,11 +2177,13 @@ impl ContractEvent for DirectSellStateChanged {
             .await;
         }
 
-        await_handling_error(
-            actions::save_event(self, &mut tx),
-            "Saving DirectSellStateChanged",
-        )
-        .await;
+        let save_result = actions::save_event(self, &mut tx)
+            .await
+            .expect("Failed to save DirectSellStateChanged event");
+        if save_result.rows_affected() == 0 {
+            tx.rollback().await?;
+            return Ok(());
+        }
 
         tx.commit().await.map_err(|e| anyhow!(e))
     }
@@ -2127,6 +2224,7 @@ impl ContractEvent for NftOwnerChanged {
             address: get_address(event),
             created_lt: get_created_lt(event)?,
             created_at: get_created_at(event)?,
+            message_hash: get_message_hash(event)?,
 
             event_collection: None,
             event_nft: Some(get_address(event)),
@@ -2204,7 +2302,13 @@ impl ContractEvent for NftOwnerChanged {
         )
         .await;
 
-        await_handling_error(actions::save_event(self, &mut tx), "Saving NftOwnerChanged").await;
+        let save_result = actions::save_event(self, &mut tx)
+            .await
+            .expect("Failed to save NftOwnerChanged event");
+        if save_result.rows_affected() == 0 {
+            tx.rollback().await?;
+            return Ok(());
+        }
 
         tx.commit().await.map_err(|e| anyhow!(e))
     }
@@ -2245,6 +2349,7 @@ impl ContractEvent for NftManagerChanged {
             address: get_address(event),
             created_lt: get_created_lt(event)?,
             created_at: get_created_at(event)?,
+            message_hash: get_message_hash(event)?,
 
             event_collection: None,
             event_nft: Some(get_address(event)),
@@ -2322,11 +2427,13 @@ impl ContractEvent for NftManagerChanged {
         )
         .await;
 
-        await_handling_error(
-            actions::save_event(self, &mut tx),
-            "Saving NftManagerChanged",
-        )
-        .await;
+        let save_result = actions::save_event(self, &mut tx)
+            .await
+            .expect("Failed to save NftManagerChanged event");
+        if save_result.rows_affected() == 0 {
+            tx.rollback().await?;
+            return Ok(());
+        }
 
         tx.commit().await.map_err(|e| anyhow!(e))
     }
@@ -2367,6 +2474,7 @@ impl ContractEvent for CollectionOwnershipTransferred {
             address: get_address(event),
             created_lt: get_created_lt(event)?,
             created_at: get_created_at(event)?,
+            message_hash: get_message_hash(event)?,
 
             event_collection: Some(get_address(event)),
             event_nft: None,
@@ -2391,11 +2499,13 @@ impl ContractEvent for CollectionOwnershipTransferred {
         )
         .await;
 
-        await_handling_error(
-            actions::save_event(self, &mut tx),
-            "Saving CollectionOwnershipTransferred",
-        )
-        .await;
+        let save_result = actions::save_event(self, &mut tx)
+            .await
+            .expect("Failed to save CollectionOwnershipTransferred event");
+        if save_result.rows_affected() == 0 {
+            tx.rollback().await?;
+            return Ok(());
+        }
 
         tx.commit().await.map_err(|e| anyhow!(e))
     }
@@ -2464,6 +2574,7 @@ impl ContractEvent for NftCreated {
             address: get_address(event),
             created_lt: get_created_lt(event)?,
             created_at: get_created_at(event)?,
+            message_hash: get_message_hash(event)?,
 
             event_collection: Some(get_address(event)),
             event_nft: Some(to_address("nft")?),
@@ -2556,7 +2667,13 @@ impl ContractEvent for NftCreated {
         )
         .await;
 
-        await_handling_error(actions::save_event(self, &mut tx), "Saving NftCreated").await;
+        let save_result = actions::save_event(self, &mut tx)
+            .await
+            .expect("Failed to save NftCreated event");
+        if save_result.rows_affected() == 0 {
+            tx.rollback().await?;
+            return Ok(());
+        }
 
         await_handling_error(
             actions::update_collection_by_nft("nft_events", &self.nft, &self.address, &mut tx),
@@ -2643,6 +2760,7 @@ impl ContractEvent for NftBurned {
             address: get_address(event),
             created_lt: get_created_lt(event)?,
             created_at: get_created_at(event)?,
+            message_hash: get_message_hash(event)?,
 
             event_collection: Some(get_address(event)),
             event_nft: Some(to_address("nft")?),
@@ -2732,7 +2850,13 @@ impl ContractEvent for NftBurned {
         )
         .await;
 
-        await_handling_error(actions::save_event(self, &mut tx), "Saving NftBurned").await;
+        let save_result = actions::save_event(self, &mut tx)
+            .await
+            .expect("Failed to save NftBurned event");
+        if save_result.rows_affected() == 0 {
+            tx.rollback().await?;
+            return Ok(());
+        }
 
         await_handling_error(
             actions::update_collection_by_nft("nft_events", &self.nft, &self.address, &mut tx),
