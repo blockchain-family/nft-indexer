@@ -1,5 +1,5 @@
 env:
-  RUST_LOG: info
+  RUST_LOG: trace
   RUST_BACKTRACE: 1
 
   DATABASE_URL: postgresql://$(BACKEND_API_USER):$(BACKEND_API_PASSWORD)@cloudsqlproxy.default:5432/indexator
