@@ -2941,7 +2941,7 @@ async fn get_collection_data(
     }
 }
 
-async fn fetch_metadata(
+pub async fn fetch_metadata(
     address: MsgAddressInt,
     consumer: &Arc<TransactionConsumer>,
 ) -> serde_json::Value {
@@ -2957,7 +2957,7 @@ async fn fetch_metadata(
         Ok(meta) => meta,
 
         Err(e) => {
-            log::error!("Error fetching metadata for {}: {:#?}", address, e);
+            log::error!("Error fetching metadata for {address}: {e:#?}");
             serde_json::Value::default()
         }
     }

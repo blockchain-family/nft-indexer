@@ -821,6 +821,21 @@
     },
     "query": "\n        insert into nft_auction (address, nft, wallet_for_bids, price_token, start_price, closing_price_usd, min_bid,\n            max_bid, status, created_at, finished_at, tx_lt)\n        values ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12)\n        on conflict (address) do update\n        set nft = $2, wallet_for_bids = $3, price_token = $4, start_price = $5, closing_price_usd = $6, min_bid = $7,\n            max_bid = $8, status = $9, created_at = $10, finished_at = $11, tx_lt = $12\n        "
   },
+  "ebb8c967f2dbf4dda6b8de9f3bf0e74600fc50fa77c423cf1b47fb4fc9ca00b8": {
+    "describe": {
+      "columns": [],
+      "nullable": [],
+      "parameters": {
+        "Left": [
+          "Varchar",
+          "Text",
+          "Timestamp",
+          "Text"
+        ]
+      }
+    },
+    "query": "\n            update nft\n            set name = $1, description = $2, updated = $3\n            where address = $4\n        "
+  },
   "ed5271faa0edea5031ec0f7204eabc4cad00034df488e6fec8fbc04a5d94081e": {
     "describe": {
       "columns": [],

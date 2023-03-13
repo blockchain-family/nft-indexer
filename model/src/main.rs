@@ -2,11 +2,16 @@ use crate::{settings::config::Config, state_updater::run_updater};
 use anyhow::Result;
 use indexer::consumer;
 use std::{collections::HashMap, sync::Arc};
+use std::net::SocketAddr;
+use std::str::FromStr;
 use transaction_consumer::{ConsumerOptions, TransactionConsumer};
+use crate::server::run_api;
 
+mod api;
 mod indexer;
 mod settings;
 mod state_updater;
+mod server;
 
 #[tokio::main]
 async fn main() -> Result<()> {
@@ -31,7 +36,18 @@ async fn main() -> Result<()> {
         });
     }
 
-    consumer::serve(pg_pool, consumer, config).await
+    let socket_addr: SocketAddr = SocketAddr::from_str(&config.server_api_url).expect("Invalid socket addr");
+
+    {
+        let pool = pg_pool.clone();
+        let consumer = consumer.clone();
+        tokio::spawn(async move {
+            consumer::serve(pool, consumer, config).await
+        });
+    }
+
+    run_api(&socket_addr, pg_pool, consumer).await.expect("Failed to run server");
+    Ok(())
 }
 
 pub async fn init_transactions_consumer(config: Config) -> Result<Arc<TransactionConsumer>> {

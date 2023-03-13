@@ -156,6 +156,28 @@ pub async fn upsert_nft_meta(
     .await
 }
 
+pub async fn upsert_nft_meta_columns(
+    address: &str,
+    name: &str,
+    description: &str,
+    updated: NaiveDateTime,
+    tx: &mut Transaction<'_, Postgres>,
+) -> Result<PgQueryResult, sqlx::Error> {
+    sqlx::query!(
+        r#"
+            update nft
+            set name = $1, description = $2, updated = $3
+            where address = $4
+        "#,
+        name,
+        description,
+        updated,
+        address
+    )
+    .execute(tx)
+    .await
+}
+
 pub async fn upsert_nft_attributes(
     nft_attributes: &[NftAttribute],
     tx: &mut Transaction<'_, Postgres>,

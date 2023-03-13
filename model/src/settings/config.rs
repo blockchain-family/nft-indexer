@@ -14,6 +14,7 @@ pub struct Config {
     pub trusted_auction_roots: Vec<String>,
     pub trusted_direct_buy_factories: Vec<String>,
     pub trusted_direct_sell_factories: Vec<String>,
+    pub server_api_url: String
 }
 
 impl Default for Config {
