@@ -7,7 +7,7 @@ pub async fn save_event<T: EventRecord + Serialize>(
     record: &T,
     tx: &mut Transaction<'_, Postgres>,
 ) -> Result<PgQueryResult, sqlx::Error> {
-    log::trace!(
+    log::debug!(
         "Trying to save event with message {:?}",
         record.get_message_hash()
     );
@@ -31,9 +31,10 @@ pub async fn save_event<T: EventRecord + Serialize>(
     .await?;
 
     if response.rows_affected() == 0 {
-        log::trace!(
-            "Event already present with message_hash {}",
-            record.get_message_hash()
+        log::warn!(
+            "Event already present with message_hash {} {:?}",
+            record.get_message_hash(),
+            serde_json::to_value(record).unwrap_or_default()
         );
     }
 

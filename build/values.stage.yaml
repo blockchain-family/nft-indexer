@@ -1,5 +1,5 @@
 env:
-  RUST_LOG: trace
+  RUST_LOG: debug
   RUST_BACKTRACE: 1
 
   DATABASE_URL: postgresql://$(BACKEND_API_USER):$(BACKEND_API_PASSWORD)@cloudsqlproxy.default:5432/indexator
@@ -20,7 +20,7 @@ env:
   TRUSTED_DIRECT_SELL_FACTORIES: 0:18a5f9570fa8039e5442a63a1e8314b6d8ce8e7510bd049df1a4861c2fb703be
   SERVER_API_URL: 127.0.0.1:3001
 
-  RESET: true
+  RESET: false
 
 ingress:
   enabled: true
