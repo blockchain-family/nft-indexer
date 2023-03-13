@@ -20,5 +20,17 @@ env:
   TRUSTED_DIRECT_SELL_FACTORIES: 0:881ef2068e68f5e456977e18ba647a71cab5e77cbddb1624375ca3733919508a
   SERVER_API_URL: 127.0.0.1:3001
   RESET: false
+
+ingress:
+  enabled: true
+  hosts:
+    - host: indexer-venom.bf.works
+      paths:
+        - path: /
+          pathType: ImplementationSpecific
+  tls:
+    - secretName: indexer-venom-tls
+      hosts:
+        - indexer-venom.bf.works
   
-controller: deployment
+controller: statefulset

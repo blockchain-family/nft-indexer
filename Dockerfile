@@ -12,6 +12,6 @@ COPY --from=builder /build/storage/migrations /app/migrations
 COPY --from=builder /build/model/abi /app/abi
 COPY --from=builder /build/entrypoint.sh /app/entrypoint.sh
 USER runuser
-EXPOSE 9000
+EXPOSE 3001
 ENTRYPOINT ["/app/entrypoint.sh"]
 

@@ -21,5 +21,17 @@ env:
   SERVER_API_URL: 127.0.0.1:3001
 
   RESET: false
+
+ingress:
+  enabled: true
+  hosts:
+    - host: indexer.bf.works
+      paths:
+        - path: /
+          pathType: ImplementationSpecific
+  tls:
+    - secretName: indexer-tokstock-tls
+      hosts:
+        - indexer.bf.works
   
-controller: deployment
+controller: statefulset
