@@ -21,6 +21,9 @@ env:
   SERVER_API_URL: 127.0.0.1:3001
   RESET: false
 
+service:
+  port: 3001
+
 ingress:
   enabled: true
   hosts:
