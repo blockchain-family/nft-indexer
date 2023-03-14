@@ -643,3 +643,26 @@ pub async fn update_offers_status(pool: &PgPool) -> Result<(), sqlx::Error> {
 
     tx.commit().await
 }
+
+pub async fn get_nfts_by_collection(
+    collection: &str,
+    tx: &mut Transaction<'_, Postgres>,
+) -> anyhow::Result<Vec<String>> {
+    #[derive(Default)]
+    struct NftRecord {
+        pub address: String,
+    }
+
+    let nfts: Vec<NftRecord> = sqlx::query_as!(
+        NftRecord,
+        r#"
+        select address from nft where collection = $1
+        "#,
+        collection
+    )
+    .fetch_all(tx)
+    .await?;
+
+    Ok(nfts.into_iter().map(|it| it.address).collect())
+
+}

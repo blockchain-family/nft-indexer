@@ -1,8 +1,8 @@
 pub mod consumer;
 pub mod events;
+pub mod metadata_service;
 pub mod record_build_utils;
 pub mod traits;
-pub mod metadata_service;
 
 #[cfg(test)]
 mod tests {
