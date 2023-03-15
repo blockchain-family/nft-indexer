@@ -6,6 +6,7 @@ use actix_web::{get, App, HttpResponse, HttpServer};
 use sqlx::PgPool;
 use std::net::SocketAddr;
 use std::sync::Arc;
+use actix_web::web::Data;
 use transaction_consumer::TransactionConsumer;
 
 pub async fn run_api(
@@ -24,7 +25,7 @@ pub async fn run_api(
             .wrap(cors)
             .service(api::metadata::refresh_metadata_by_nft)
             .service(health)
-            .app_data(metadata_service)
+            .app_data(Data::new(metadata_service))
     })
     .bind(address)?
     .run()
