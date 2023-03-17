@@ -1,5 +1,5 @@
 env:
-  RUST_LOG: info
+  RUST_LOG: debug
   RUST_BACKTRACE: 1
 
   DATABASE_URL: postgresql://$(BACKEND_API_USER):$(BACKEND_API_PASSWORD)@cloudsqlproxy.default:5432/indexator
@@ -18,7 +18,23 @@ env:
   TRUSTED_AUCTION_ROOTS: 0:51e170fc8fba883225c4775ba6a871183a9b266781c10af8dbeeb70f34da8336
   TRUSTED_DIRECT_BUY_FACTORIES: 0:b51c0918239d8ea4796427321ea3a2288355eb802f95cbb1b924e9e1eddb4fad
   TRUSTED_DIRECT_SELL_FACTORIES: 0:18a5f9570fa8039e5442a63a1e8314b6d8ce8e7510bd049df1a4861c2fb703be
+  SERVER_API_URL: 0.0.0.0:3001
 
   RESET: false
+
+service:
+  port: 3001
+
+ingress:
+  enabled: true
+  hosts:
+    - host: indexer.bf.works
+      paths:
+        - path: /
+          pathType: ImplementationSpecific
+  tls:
+    - secretName: indexer-tokstock-tls
+      hosts:
+        - indexer.bf.works
   
-controller: deployment
+controller: statefulset

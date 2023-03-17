@@ -7,10 +7,15 @@ pub async fn save_event<T: EventRecord + Serialize>(
     record: &T,
     tx: &mut Transaction<'_, Postgres>,
 ) -> Result<PgQueryResult, sqlx::Error> {
-    sqlx::query!(
+    log::debug!(
+        "Trying to save event with message {:?}",
+        record.get_message_hash()
+    );
+    let response = sqlx::query!(
         r#"
-        insert into nft_events (event_cat, event_type, address, nft, collection, created_lt, created_at, args)
-        values ($1, $2, $3, $4, $5, $6, $7, $8)
+        insert into nft_events (event_cat, event_type, address, nft, collection, created_lt, created_at, args, message_hash)
+        values ($1, $2, $3, $4, $5, $6, $7, $8, $9)
+        on conflict (message_hash) do nothing
         "#,
         record.get_event_category() as EventCategory,
         record.get_event_type() as EventType,
@@ -20,9 +25,20 @@ pub async fn save_event<T: EventRecord + Serialize>(
         record.get_created_lt(),
         record.get_created_at(),
         serde_json::to_value(record).unwrap_or_default(),
+        record.get_message_hash()
     )
     .execute(tx)
-    .await
+    .await?;
+
+    if response.rows_affected() == 0 {
+        log::warn!(
+            "Event already present with message_hash {} {:?}",
+            record.get_message_hash(),
+            serde_json::to_value(record).unwrap_or_default()
+        );
+    }
+
+    Ok(response)
 }
 
 pub async fn get_owners_count(
@@ -136,6 +152,28 @@ pub async fn upsert_nft_meta(
         &nft_meta.nft as &Address,
         nft_meta.meta,
         nft_meta.updated
+    )
+    .execute(tx)
+    .await
+}
+
+pub async fn upsert_nft_meta_columns(
+    address: &str,
+    name: &str,
+    description: &str,
+    updated: NaiveDateTime,
+    tx: &mut Transaction<'_, Postgres>,
+) -> Result<PgQueryResult, sqlx::Error> {
+    sqlx::query!(
+        r#"
+            update nft
+            set name = $1, description = $2, updated = $3
+            where address = $4
+        "#,
+        name,
+        description,
+        updated,
+        address
     )
     .execute(tx)
     .await
@@ -604,4 +642,27 @@ pub async fn update_offers_status(pool: &PgPool) -> Result<(), sqlx::Error> {
     .await?;
 
     tx.commit().await
+}
+
+pub async fn get_nfts_by_collection(
+    collection: &str,
+    tx: &mut Transaction<'_, Postgres>,
+) -> anyhow::Result<Vec<String>> {
+    #[derive(Default)]
+    struct NftRecord {
+        pub address: String,
+    }
+
+    let nfts: Vec<NftRecord> = sqlx::query_as!(
+        NftRecord,
+        r#"
+        select address from nft where collection = $1
+        "#,
+        collection
+    )
+    .fetch_all(tx)
+    .await?;
+
+    Ok(nfts.into_iter().map(|it| it.address).collect())
+
 }

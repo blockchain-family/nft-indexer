@@ -29,6 +29,10 @@ pub fn get_created_lt(event: &ExtractedOwned) -> Result<i64> {
     .ok_or_else(|| anyhow!("Couldn't get created_lt of event"))
 }
 
+pub fn get_message_hash(event: &ExtractedOwned) -> String {
+    event.message_hash.as_hex_string()
+}
+
 pub fn get_token_processor<'a, T>(
     tokens: &'a [Token],
     mapper_fn: impl Fn(&'a TokenValue) -> Option<T> + Clone + 'static,

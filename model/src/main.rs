@@ -1,19 +1,20 @@
+use crate::server::run_api;
 use crate::{settings::config::Config, state_updater::run_updater};
 use anyhow::Result;
-// use env_logger::Builder;
 use indexer::consumer;
-// use log::LevelFilter;
+use std::net::SocketAddr;
+use std::str::FromStr;
 use std::{collections::HashMap, sync::Arc};
 use transaction_consumer::{ConsumerOptions, TransactionConsumer};
 
+mod api;
 mod indexer;
+mod server;
 mod settings;
 mod state_updater;
 
 #[tokio::main]
 async fn main() -> Result<()> {
-    // let mut builder = Builder::new();
-    // builder.filter_level(LevelFilter::Info).init();
     dotenv::dotenv().ok();
     stackdriver_logger::init_with_cargo!();
     log::info!("Indexer is preparing to start");
@@ -35,7 +36,19 @@ async fn main() -> Result<()> {
         });
     }
 
-    consumer::serve(pg_pool, consumer, config).await
+    let socket_addr: SocketAddr =
+        SocketAddr::from_str(&config.server_api_url).expect("Invalid socket addr");
+
+    {
+        let pool = pg_pool.clone();
+        let consumer = consumer.clone();
+        tokio::spawn(async move { consumer::serve(pool, consumer, config).await });
+    }
+
+    run_api(&socket_addr, pg_pool, consumer)
+        .await
+        .expect("Failed to run server");
+    Ok(())
 }
 
 pub async fn init_transactions_consumer(config: Config) -> Result<Arc<TransactionConsumer>> {

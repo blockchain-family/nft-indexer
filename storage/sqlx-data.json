@@ -237,89 +237,6 @@
     },
     "query": "\n        insert into nft_auction_bid (auction, buyer, price, next_bid_value, declined, created_at, tx_lt)\n        values ($1, $2, $3, $4, $5, $6, $7)\n        "
   },
-  "58dad5adfd8bd05588eb0da4667fda1a158f8c0ba252c7f0bf4d23b22ff29b5b": {
-    "describe": {
-      "columns": [],
-      "nullable": [],
-      "parameters": {
-        "Left": [
-          {
-            "Custom": {
-              "kind": {
-                "Enum": [
-                  "auction",
-                  "direct_buy",
-                  "direct_sell",
-                  "nft",
-                  "collection"
-                ]
-              },
-              "name": "event_category"
-            }
-          },
-          {
-            "Custom": {
-              "kind": {
-                "Enum": [
-                  "auction_deployed",
-                  "auction_created",
-                  "auction_root_ownership_transferred",
-                  "auction_active",
-                  "auction_declined",
-                  "auction_bid_placed",
-                  "auction_bid_declined",
-                  "auction_cancelled",
-                  "auction_complete",
-                  "direct_buy_deployed",
-                  "direct_buy_declined",
-                  "factory_direct_buy_ownership_transferred",
-                  "direct_buy_state_changed",
-                  "direct_sell_deployed",
-                  "direct_sell_declined",
-                  "factory_direct_sell_ownership_transferred",
-                  "direct_sell_state_changed",
-                  "nft_owner_changed",
-                  "nft_manager_changed",
-                  "collection_ownership_transferred",
-                  "nft_created",
-                  "nft_burned"
-                ]
-              },
-              "name": "event_type"
-            }
-          },
-          {
-            "Custom": {
-              "kind": {
-                "Domain": "Varchar"
-              },
-              "name": "t_address"
-            }
-          },
-          {
-            "Custom": {
-              "kind": {
-                "Domain": "Varchar"
-              },
-              "name": "t_address"
-            }
-          },
-          {
-            "Custom": {
-              "kind": {
-                "Domain": "Varchar"
-              },
-              "name": "t_address"
-            }
-          },
-          "Int8",
-          "Int8",
-          "Jsonb"
-        ]
-      }
-    },
-    "query": "\n        insert into nft_events (event_cat, event_type, address, nft, collection, created_lt, created_at, args)\n        values ($1, $2, $3, $4, $5, $6, $7, $8)\n        "
-  },
   "6c10a5a32f49012764b2bd52fd3698dcc9db0266740953ae0fecdcea3c63812a": {
     "describe": {
       "columns": [
@@ -346,7 +263,7 @@
         {
           "name": "name?",
           "ordinal": 4,
-          "type_info": "Text"
+          "type_info": "Varchar"
         },
         {
           "name": "description?",
@@ -393,6 +310,26 @@
       }
     },
     "query": "\n        select address as \"address!: Address\", collection as \"collection?: Address\", owner as \"owner?: Address\", \n            manager as \"manager?: Address\", name as \"name?\", description as \"description?\", burned as \"burned!\", \n            updated as \"updated!\", owner_update_lt as \"owner_update_lt!\", manager_update_lt as \"manager_update_lt!\"\n        from nft where address = $1\n        "
+  },
+  "6fe319264ecda6c8d2f2dfb2c9c545e44feacdd06d9c966a25681ea62c4cbbb3": {
+    "describe": {
+      "columns": [
+        {
+          "name": "address",
+          "ordinal": 0,
+          "type_info": "Varchar"
+        }
+      ],
+      "nullable": [
+        false
+      ],
+      "parameters": {
+        "Left": [
+          "Text"
+        ]
+      }
+    },
+    "query": "\n        select address from nft where collection = $1\n        "
   },
   "74cde259acad5d78d6ec5e83afcabc1080bc7e418cfe47f92f4ec4402857ce66": {
     "describe": {
@@ -580,6 +517,90 @@
     },
     "query": "\n            insert into nft_attributes (nft, collection, raw, trait_type, value)\n            values ($1, $2, $3, $4, $5)\n            "
   },
+  "b8b13f963528d468d88805d4a9a259453d2718690be834c989fffc3f07bf9ff4": {
+    "describe": {
+      "columns": [],
+      "nullable": [],
+      "parameters": {
+        "Left": [
+          {
+            "Custom": {
+              "kind": {
+                "Enum": [
+                  "auction",
+                  "direct_buy",
+                  "direct_sell",
+                  "nft",
+                  "collection"
+                ]
+              },
+              "name": "event_category"
+            }
+          },
+          {
+            "Custom": {
+              "kind": {
+                "Enum": [
+                  "auction_deployed",
+                  "auction_created",
+                  "auction_root_ownership_transferred",
+                  "auction_active",
+                  "auction_declined",
+                  "auction_bid_placed",
+                  "auction_bid_declined",
+                  "auction_cancelled",
+                  "auction_complete",
+                  "direct_buy_deployed",
+                  "direct_buy_declined",
+                  "factory_direct_buy_ownership_transferred",
+                  "direct_buy_state_changed",
+                  "direct_sell_deployed",
+                  "direct_sell_declined",
+                  "factory_direct_sell_ownership_transferred",
+                  "direct_sell_state_changed",
+                  "nft_owner_changed",
+                  "nft_manager_changed",
+                  "collection_ownership_transferred",
+                  "nft_created",
+                  "nft_burned"
+                ]
+              },
+              "name": "event_type"
+            }
+          },
+          {
+            "Custom": {
+              "kind": {
+                "Domain": "Varchar"
+              },
+              "name": "t_address"
+            }
+          },
+          {
+            "Custom": {
+              "kind": {
+                "Domain": "Varchar"
+              },
+              "name": "t_address"
+            }
+          },
+          {
+            "Custom": {
+              "kind": {
+                "Domain": "Varchar"
+              },
+              "name": "t_address"
+            }
+          },
+          "Int8",
+          "Int8",
+          "Jsonb",
+          "Text"
+        ]
+      }
+    },
+    "query": "\n        insert into nft_events (event_cat, event_type, address, nft, collection, created_lt, created_at, args, message_hash)\n        values ($1, $2, $3, $4, $5, $6, $7, $8, $9)\n        on conflict (message_hash) do nothing\n        "
+  },
   "c4639ac3418e39fd745be34929ffdb79e266d90ed2ccafc1d7e3c8a5071efd43": {
     "describe": {
       "columns": [],
@@ -689,7 +710,7 @@
               "name": "t_address"
             }
           },
-          "Text",
+          "Varchar",
           "Text",
           "Bool",
           "Timestamp",
@@ -819,6 +840,21 @@
       }
     },
     "query": "\n        insert into nft_auction (address, nft, wallet_for_bids, price_token, start_price, closing_price_usd, min_bid,\n            max_bid, status, created_at, finished_at, tx_lt)\n        values ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12)\n        on conflict (address) do update\n        set nft = $2, wallet_for_bids = $3, price_token = $4, start_price = $5, closing_price_usd = $6, min_bid = $7,\n            max_bid = $8, status = $9, created_at = $10, finished_at = $11, tx_lt = $12\n        "
+  },
+  "ebb8c967f2dbf4dda6b8de9f3bf0e74600fc50fa77c423cf1b47fb4fc9ca00b8": {
+    "describe": {
+      "columns": [],
+      "nullable": [],
+      "parameters": {
+        "Left": [
+          "Varchar",
+          "Text",
+          "Timestamp",
+          "Text"
+        ]
+      }
+    },
+    "query": "\n            update nft\n            set name = $1, description = $2, updated = $3\n            where address = $4\n        "
   },
   "ed5271faa0edea5031ec0f7204eabc4cad00034df488e6fec8fbc04a5d94081e": {
     "describe": {
