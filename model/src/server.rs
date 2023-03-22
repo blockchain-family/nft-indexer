@@ -2,11 +2,11 @@ use crate::api;
 use crate::indexer::metadata_service::MetadataService;
 use actix_cors::Cors;
 use actix_web::middleware::Logger;
+use actix_web::web::Data;
 use actix_web::{get, App, HttpResponse, HttpServer};
 use sqlx::PgPool;
 use std::net::SocketAddr;
 use std::sync::Arc;
-use actix_web::web::Data;
 use transaction_consumer::TransactionConsumer;
 
 pub async fn run_api(

@@ -55,6 +55,13 @@ pub async fn serve(pool: PgPool, consumer: Arc<TransactionConsumer>, config: Con
 }
 
 fn indexer_routine(tx: ConsumedTransaction, pool: PgPool, consumer: Arc<TransactionConsumer>) {
+    log::debug!(
+        "Received transaction. ID: {:?} offset: {} partition: {} detail{:?}",
+        tx.id,
+        tx.offset,
+        tx.partition,
+        tx.transaction
+    );
     tokio::spawn(async move {
         for (parser, handler) in PARSERS_AND_HANDLERS.get().unwrap().iter() {
             if let Ok(extracted) = parser.parse(&tx.transaction) {
