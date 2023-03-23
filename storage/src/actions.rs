@@ -664,5 +664,4 @@ pub async fn get_nfts_by_collection(
     .await?;
 
     Ok(nfts.into_iter().map(|it| it.address).collect())
-
 }
