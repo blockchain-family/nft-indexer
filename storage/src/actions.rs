@@ -202,6 +202,28 @@ pub async fn upsert_nft_attributes(
     Ok(())
 }
 
+pub async fn upsert_nft_info(
+    owner: &Address,
+    manager: &Address,
+    nft: &Address,
+    tx: &mut Transaction<'_, Postgres>,
+) -> Result<(), sqlx::Error> {
+    sqlx::query!(
+        r#"
+            update nft
+            set owner = $1, manager = $2
+            where address = $3
+        "#,
+        owner as &Address,
+        manager as &Address,
+        nft as &Address,
+    )
+    .execute(&mut *tx)
+    .await?;
+
+    Ok(())
+}
+
 pub async fn update_collection_by_nft(
     table_name: &str,
     nft: &Address,
