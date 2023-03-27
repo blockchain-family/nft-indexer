@@ -62,6 +62,25 @@ stop:prod:
   environment:
     name: prod
 
+deploy:venom-prod:
+  only:
+    - prod
+  extends: .deploy
+  variables:
+    APP_CONFIG: venom
+  environment:
+    name: prod
+    on_stop: stop:venom-prod
+
+stop:venom-prod:
+  only:
+    - prod
+  extends: .stop
+  variables:
+    APP_CONFIG: venom
+  environment:
+    name: prod
+
 deploy:venom-stage:
   only:
     - stage
