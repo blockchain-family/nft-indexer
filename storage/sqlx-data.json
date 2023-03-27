@@ -875,6 +875,34 @@
     },
     "query": "\n        insert into events_whitelist (address)\n        values ($1)\n        "
   },
+  "f699134fe7d894bf64369bd3daacda950cfd08b328af8c3bc482dff074ddb74a": {
+    "describe": {
+      "columns": [],
+      "nullable": [],
+      "parameters": {
+        "Left": [
+          {
+            "Custom": {
+              "kind": {
+                "Domain": "Varchar"
+              },
+              "name": "t_address"
+            }
+          },
+          {
+            "Custom": {
+              "kind": {
+                "Domain": "Varchar"
+              },
+              "name": "t_address"
+            }
+          },
+          "Text"
+        ]
+      }
+    },
+    "query": "\n            update nft\n            set owner = $1, manager = $2\n            where address = $3\n        "
+  },
   "f7601e9547dc43977c81e035376905c5bd63236ed32350098a274ee93f513c49": {
     "describe": {
       "columns": [],
