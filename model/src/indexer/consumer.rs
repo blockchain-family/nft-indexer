@@ -226,6 +226,14 @@ async fn handle_auction_root_tip3(
     }
 
     handle_event::<AuctionDeclined>("AuctionDeclined", &extracted, &pool, &consumer).await;
+    handle_event::<MarketFeeDefaultChanged>(
+        "MarketFeeDefaultChanged",
+        &extracted,
+        &pool,
+        &consumer,
+    )
+    .await;
+    handle_event::<MarketFeeChanged>("MarketFeeChanged", &extracted, &pool, &consumer).await;
 
     handle_event::<AuctionRootOwnershipTransferred>(
         "OwnershipTransferred",
@@ -295,6 +303,14 @@ async fn handle_factory_direct_buy(
         &consumer,
     )
     .await;
+    handle_event::<MarketFeeDefaultChanged>(
+        "MarketFeeDefaultChanged",
+        &extracted,
+        &pool,
+        &consumer,
+    )
+    .await;
+    handle_event::<MarketFeeChanged>("MarketFeeChanged", &extracted, &pool, &consumer).await;
 }
 
 async fn handle_factory_direct_sell(
@@ -325,6 +341,15 @@ async fn handle_factory_direct_sell(
         &consumer,
     )
     .await;
+
+    handle_event::<MarketFeeDefaultChanged>(
+        "MarketFeeDefaultChanged",
+        &extracted,
+        &pool,
+        &consumer,
+    )
+    .await;
+    handle_event::<MarketFeeChanged>("MarketFeeChanged", &extracted, &pool, &consumer).await;
 }
 
 async fn handle_nft(

@@ -111,7 +111,13 @@ fn get_event_cat_type(name: &Ident) -> (Ident, Ident) {
         }
         type_name @ "NftCreated" => (collection_cat, syn::parse_str::<Ident>(type_name).unwrap()),
         type_name @ "NftBurned" => (collection_cat, syn::parse_str::<Ident>(type_name).unwrap()),
+        type_name @ "MarketFeeDefaultChanged" => {
+            (collection_cat, syn::parse_str::<Ident>(type_name).unwrap())
+        }
+        type_name @ "MarketFeeChanged" => {
+            (collection_cat, syn::parse_str::<Ident>(type_name).unwrap())
+        }
 
-        _ => panic!("Unknow struct!"),
+        _ => panic!("Unknown struct!"),
     }
 }

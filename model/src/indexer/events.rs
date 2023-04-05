@@ -621,6 +621,55 @@ pub struct NftBurned {
     pub manager: Address,
 }
 
+#[derive(Clone, Serialize, EventRecord)]
+pub struct MarketFeeDefaultChanged {
+    #[serde(skip_serializing)]
+    pub pool: PgPool,
+    #[serde(skip_serializing)]
+    pub consumer: Arc<TransactionConsumer>,
+
+    #[serde(skip_serializing)]
+    pub address: Address,
+    #[serde(skip_serializing)]
+    pub created_lt: i64,
+    #[serde(skip_serializing)]
+    pub created_at: i64,
+    #[serde(skip_serializing)]
+    pub message_hash: String,
+    #[serde(skip_serializing)]
+    pub event_nft: Option<Address>,
+    #[serde(skip_serializing)]
+    pub event_collection: Option<Address>,
+
+    pub fee_numerator: u32,
+    pub fee_denominator: u32,
+}
+
+#[derive(Clone, Serialize, EventRecord)]
+pub struct MarketFeeChanged {
+    #[serde(skip_serializing)]
+    pub pool: PgPool,
+    #[serde(skip_serializing)]
+    pub consumer: Arc<TransactionConsumer>,
+
+    #[serde(skip_serializing)]
+    pub address: Address,
+    #[serde(skip_serializing)]
+    pub created_lt: i64,
+    #[serde(skip_serializing)]
+    pub created_at: i64,
+    #[serde(skip_serializing)]
+    pub message_hash: String,
+    #[serde(skip_serializing)]
+    pub event_nft: Option<Address>,
+    #[serde(skip_serializing)]
+    pub event_collection: Option<Address>,
+
+    pub fee_numerator: u32,
+    pub fee_denominator: u32,
+    pub auction: Address,
+}
+
 async fn await_handling_error<F, T>(f: F, trace_id: &str)
 where
     F: Future<Output = Result<T, sqlx::Error>> + Send,
@@ -822,6 +871,114 @@ impl ContractEvent for AuctionRootOwnershipTransferred {
         let save_result = actions::save_event(self, &mut tx)
             .await
             .expect("Failed to save AuctionRootOwnershipTransferred event");
+        if save_result.rows_affected() == 0 {
+            tx.rollback().await?;
+            return Ok(());
+        }
+
+        tx.commit().await.map_err(|e| anyhow!(e))
+    }
+}
+
+#[async_trait]
+impl ContractEvent for MarketFeeDefaultChanged {
+    fn build_from(
+        event: &ExtractedOwned,
+        pool: &PgPool,
+        consumer: &Arc<TransactionConsumer>,
+    ) -> Result<Self>
+    where
+        Self: Sized,
+    {
+        let fee_token = event
+            .tokens
+            .iter()
+            .find(|t| t.name == "fee")
+            .ok_or_else(|| anyhow!("Couldn't find fee_token"))?;
+
+        let tokens = match &fee_token.value {
+            Tuple(v) => Some(v),
+            _ => None,
+        }
+        .ok_or_else(|| anyhow!("fee_token token value is not tuple"))?;
+
+        let to_u32 = get_token_processor(tokens, token_to_u32);
+
+        Ok(MarketFeeDefaultChanged {
+            pool: pool.clone(),
+            consumer: consumer.clone(),
+            address: get_address(event),
+            created_lt: get_created_lt(event)?,
+            created_at: get_created_at(event)?,
+            message_hash: get_message_hash(event),
+            event_collection: None,
+            event_nft: None,
+            fee_numerator: to_u32("numerator")?,
+            fee_denominator: to_u32("denominator")?,
+        })
+    }
+
+    async fn update_dependent_tables(&mut self) -> Result<()> {
+        let mut tx = self.pool.begin().await?;
+
+        let save_result = actions::save_event(self, &mut tx)
+            .await
+            .expect("Failed to save MarketFeeDefaultChanged event");
+        if save_result.rows_affected() == 0 {
+            tx.rollback().await?;
+            return Ok(());
+        }
+
+        tx.commit().await.map_err(|e| anyhow!(e))
+    }
+}
+
+#[async_trait]
+impl ContractEvent for MarketFeeChanged {
+    fn build_from(
+        event: &ExtractedOwned,
+        pool: &PgPool,
+        consumer: &Arc<TransactionConsumer>,
+    ) -> Result<Self>
+    where
+        Self: Sized,
+    {
+        let fee_token = event
+            .tokens
+            .iter()
+            .find(|t| t.name == "fee")
+            .ok_or_else(|| anyhow!("Couldn't find fee_token"))?;
+
+        let tokens = match &fee_token.value {
+            Tuple(v) => Some(v),
+            _ => None,
+        }
+        .ok_or_else(|| anyhow!("fee_token token value is not tuple"))?;
+
+        let to_u32 = get_token_processor(tokens, token_to_u32);
+        let to_address = get_token_processor(tokens, token_to_addr);
+
+        Ok(MarketFeeChanged {
+            pool: pool.clone(),
+            consumer: consumer.clone(),
+            address: get_address(event),
+            created_lt: get_created_lt(event)?,
+            created_at: get_created_at(event)?,
+            message_hash: get_message_hash(event),
+            event_collection: None,
+            event_nft: None,
+            auction: to_address("auction")?,
+            fee_numerator: to_u32("numerator")?,
+            fee_denominator: to_u32("denominator")?,
+        })
+    }
+
+    async fn update_dependent_tables(&mut self) -> Result<()> {
+        let mut tx = self.pool.begin().await?;
+
+        let save_result = actions::save_event(self, &mut tx)
+            .await
+            .expect("Failed to save MarketFeeChanged event");
         if save_result.rows_affected() == 0 {
             tx.rollback().await?;
             return Ok(());

@@ -70,6 +70,13 @@ pub fn token_to_i64(token: &TokenValue) -> Option<i64> {
     }
 }
 
+pub fn token_to_u32(token: &TokenValue) -> Option<u32> {
+    match token.token_value() {
+        UintEnum(v) => v.number.to_u32(),
+        _ => None,
+    }
+}
+
 pub fn get_token_value<'a, T>(
     tokens: &'a [Token],
     token_name: &'a str,
