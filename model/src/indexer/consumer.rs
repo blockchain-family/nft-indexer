@@ -233,7 +233,6 @@ async fn handle_auction_root_tip3(
         &consumer,
     )
     .await;
-    handle_event::<MarketFeeChanged>("MarketFeeChanged", &extracted, &pool, &consumer).await;
 
     handle_event::<AuctionRootOwnershipTransferred>(
         "OwnershipTransferred",
@@ -242,6 +241,10 @@ async fn handle_auction_root_tip3(
         &consumer,
     )
     .await;
+
+    handle_event::<AddCollectionRules>("AddCollectionRules", &extracted, &pool, &consumer).await;
+    handle_event::<RemoveCollectionRules>("RemoveCollectionRules", &extracted, &pool, &consumer)
+        .await;
 }
 
 async fn handle_auction_tip3(
@@ -255,6 +258,7 @@ async fn handle_auction_tip3(
     handle_event::<AuctionBidDeclined>("BidDeclined", &extracted, &pool, &consumer).await;
     handle_event::<AuctionComplete>("AuctionComplete", &extracted, &pool, &consumer).await;
     handle_event::<AuctionCancelled>("AuctionCancelled", &extracted, &pool, &consumer).await;
+    handle_event::<MarketFeeChanged>("MarketFeeChanged", &extracted, &pool, &consumer).await;
 }
 
 async fn handle_direct_buy(
@@ -264,6 +268,8 @@ async fn handle_direct_buy(
 ) {
     handle_event::<DirectBuyStateChanged>("DirectBuyStateChanged", &extracted, &pool, &consumer)
         .await;
+
+    handle_event::<MarketFeeChanged>("MarketFeeChanged", &extracted, &pool, &consumer).await;
 }
 
 async fn handle_direct_sell(
@@ -273,6 +279,8 @@ async fn handle_direct_sell(
 ) {
     handle_event::<DirectSellStateChanged>("DirectSellStateChanged", &extracted, &pool, &consumer)
         .await;
+
+    handle_event::<MarketFeeChanged>("MarketFeeChanged", &extracted, &pool, &consumer).await;
 }
 
 async fn handle_factory_direct_buy(
@@ -310,7 +318,10 @@ async fn handle_factory_direct_buy(
         &consumer,
     )
     .await;
-    handle_event::<MarketFeeChanged>("MarketFeeChanged", &extracted, &pool, &consumer).await;
+
+    handle_event::<AddCollectionRules>("AddCollectionRules", &extracted, &pool, &consumer).await;
+    handle_event::<RemoveCollectionRules>("RemoveCollectionRules", &extracted, &pool, &consumer)
+        .await;
 }
 
 async fn handle_factory_direct_sell(
@@ -349,7 +360,10 @@ async fn handle_factory_direct_sell(
         &consumer,
     )
     .await;
-    handle_event::<MarketFeeChanged>("MarketFeeChanged", &extracted, &pool, &consumer).await;
+
+    handle_event::<AddCollectionRules>("AddCollectionRules", &extracted, &pool, &consumer).await;
+    handle_event::<RemoveCollectionRules>("RemoveCollectionRules", &extracted, &pool, &consumer)
+        .await;
 }
 
 async fn handle_nft(

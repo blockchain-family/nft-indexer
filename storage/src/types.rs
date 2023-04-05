@@ -44,6 +44,8 @@ pub enum EventType {
 
     MarketFeeDefaultChanged,
     MarketFeeChanged,
+    AddCollectionRules,
+    RemoveCollectionRules,
 }
 
 #[derive(Clone, Debug, Serialize, sqlx::Type)]

@@ -63,6 +63,13 @@ pub fn token_to_i16(token: &TokenValue) -> Option<i16> {
     }
 }
 
+pub fn token_to_u16(token: &TokenValue) -> Option<u16> {
+    match token.token_value() {
+        UintEnum(v) => v.number.to_u16(),
+        _ => None,
+    }
+}
+
 pub fn token_to_i64(token: &TokenValue) -> Option<i64> {
     match token.token_value() {
         UintEnum(v) => v.number.to_i64(),

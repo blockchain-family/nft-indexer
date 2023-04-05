@@ -117,6 +117,12 @@ fn get_event_cat_type(name: &Ident) -> (Ident, Ident) {
         type_name @ "MarketFeeChanged" => {
             (collection_cat, syn::parse_str::<Ident>(type_name).unwrap())
         }
+        type_name @ "AddCollectionRules" => {
+            (collection_cat, syn::parse_str::<Ident>(type_name).unwrap())
+        }
+        type_name @ "RemoveCollectionRules" => {
+            (collection_cat, syn::parse_str::<Ident>(type_name).unwrap())
+        }
 
         _ => panic!("Unknown struct!"),
     }
