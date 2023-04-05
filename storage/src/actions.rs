@@ -441,6 +441,26 @@ pub async fn insert_auction_bid(
     .await
 }
 
+pub async fn update_collection_fee(
+    numerator: Option<i32>,
+    denominator: Option<i32>,
+    collection_address: &Address,
+    tx: &mut Transaction<'_, Postgres>,
+) -> Result<PgQueryResult, sqlx::Error> {
+    sqlx::query!(
+        r#"
+        update nft_collection
+        set fee_numerator = $1, fee_denominator = $2
+        where address = $3
+        "#,
+        numerator,
+        denominator,
+        collection_address as &Address
+    )
+    .execute(tx)
+    .await
+}
+
 pub async fn upsert_direct_sell(
     direct_sell: &NftDirectSell,
     tx: &mut Transaction<'_, Postgres>,

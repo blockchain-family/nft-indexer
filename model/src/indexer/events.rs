@@ -641,8 +641,8 @@ pub struct MarketFeeDefaultChanged {
     #[serde(skip_serializing)]
     pub event_collection: Option<Address>,
 
-    pub fee_numerator: u32,
-    pub fee_denominator: u32,
+    pub fee_numerator: i32,
+    pub fee_denominator: i32,
 }
 
 #[derive(Clone, Serialize, EventRecord)]
@@ -665,8 +665,8 @@ pub struct MarketFeeChanged {
     #[serde(skip_serializing)]
     pub event_collection: Option<Address>,
 
-    pub fee_numerator: u32,
-    pub fee_denominator: u32,
+    pub fee_numerator: i32,
+    pub fee_denominator: i32,
     pub auction: Address,
 }
 
@@ -693,8 +693,8 @@ pub struct AddCollectionRules {
     pub collection: Address,
     pub code_hash: BigDecimal,
     pub code_depth: u16,
-    pub numerator: u32,
-    pub denominator: u32,
+    pub numerator: i32,
+    pub denominator: i32,
 }
 
 #[derive(Clone, Serialize, EventRecord)]
@@ -891,7 +891,7 @@ impl ContractEvent for AddCollectionRules {
         tokens.push(collection);
 
         let to_address = get_token_processor(&tokens, token_to_addr);
-        let to_u32 = get_token_processor(&tokens, token_to_u32);
+        let to_i32 = get_token_processor(&tokens, token_to_i32);
         let to_u16 = get_token_processor(&tokens, token_to_u16);
         let to_bigdecimal = get_token_processor(&tokens, token_to_big_decimal);
 
@@ -909,13 +909,26 @@ impl ContractEvent for AddCollectionRules {
             collection: to_address("collection")?,
             code_hash: to_bigdecimal("codeHash")?,
             code_depth: to_u16("codeDepth")?,
-            numerator: to_u32("numerator")?,
-            denominator: to_u32("denominator")?,
+            numerator: to_i32("numerator")?,
+            denominator: to_i32("denominator")?,
         })
     }
 
     async fn update_dependent_tables(&mut self) -> Result<()> {
         let mut tx = self.pool.begin().await?;
+
+        let collection = &self.event_collection.clone().unwrap();
+
+        await_handling_error(
+            actions::update_collection_fee(
+                Some(self.numerator),
+                Some(self.denominator),
+                collection,
+                &mut tx,
+            ),
+            "Updating collection fee",
+        )
+        .await;
 
         let save_result = actions::save_event(self, &mut tx)
             .await
@@ -967,6 +980,17 @@ impl ContractEvent for RemoveCollectionRules {
 
     async fn update_dependent_tables(&mut self) -> Result<()> {
         let mut tx = self.pool.begin().await?;
+
+        await_handling_error(
+            actions::update_collection_fee(
+                None,
+                None,
+                &self.event_collection.clone().unwrap(),
+                &mut tx,
+            ),
+            "Updating collection fee",
+        )
+        .await;
 
         let save_result = actions::save_event(self, &mut tx)
             .await
@@ -1062,7 +1086,7 @@ impl ContractEvent for MarketFeeDefaultChanged {
         }
         .ok_or_else(|| anyhow!("fee_token token value is not tuple"))?;
 
-        let to_u32 = get_token_processor(tokens, token_to_u32);
+        let to_i32 = get_token_processor(tokens, token_to_i32);
 
         Ok(MarketFeeDefaultChanged {
             pool: pool.clone(),
@@ -1073,8 +1097,8 @@ impl ContractEvent for MarketFeeDefaultChanged {
             message_hash: get_message_hash(event),
             event_collection: None,
             event_nft: None,
-            fee_numerator: to_u32("numerator")?,
-            fee_denominator: to_u32("denominator")?,
+            fee_numerator: to_i32("numerator")?,
+            fee_denominator: to_i32("denominator")?,
         })
     }
 
@@ -1107,16 +1131,26 @@ impl ContractEvent for MarketFeeChanged {
             .tokens
             .iter()
             .find(|t| t.name == "fee")
-            .ok_or_else(|| anyhow!("Couldn't find fee_token"))?;
+            .ok_or_else(|| anyhow!("Couldn't find fee_token"))?
+            .clone();
 
-        let tokens = match &fee_token.value {
+        let mut tokens = match fee_token.value {
             Tuple(v) => Some(v),
             _ => None,
         }
         .ok_or_else(|| anyhow!("fee_token token value is not tuple"))?;
 
-        let to_u32 = get_token_processor(tokens, token_to_u32);
-        let to_address = get_token_processor(tokens, token_to_addr);
+        let auction = event
+            .tokens
+            .iter()
+            .find(|t| t.name == "auction")
+            .ok_or_else(|| anyhow!("Couldn't find auction token"))?
+            .clone();
+
+        tokens.push(auction);
+
+        let to_i32 = get_token_processor(&tokens, token_to_i32);
+        let to_address = get_token_processor(&tokens, token_to_addr);
 
         Ok(MarketFeeChanged {
             pool: pool.clone(),
@@ -1128,14 +1162,13 @@ impl ContractEvent for MarketFeeChanged {
             event_collection: None,
             event_nft: None,
             auction: to_address("auction")?,
-            fee_numerator: to_u32("numerator")?,
-            fee_denominator: to_u32("denominator")?,
+            fee_numerator: to_i32("numerator")?,
+            fee_denominator: to_i32("denominator")?,
         })
     }
 
     async fn update_dependent_tables(&mut self) -> Result<()> {
         let mut tx = self.pool.begin().await?;
-
         let save_result = actions::save_event(self, &mut tx)
             .await
             .expect("Failed to save MarketFeeChanged event");
