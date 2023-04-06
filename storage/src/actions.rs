@@ -461,66 +461,6 @@ pub async fn update_collection_fee(
     .await
 }
 
-pub async fn update_auction_fee(
-    numerator: i32,
-    denominator: i32,
-    address: &Address,
-    tx: &mut Transaction<'_, Postgres>,
-) -> Result<PgQueryResult, sqlx::Error> {
-    sqlx::query!(
-        r#"
-        update nft_auction
-        set fee_numerator = $1, fee_denominator = $2
-        where address = $3
-        "#,
-        numerator,
-        denominator,
-        address as &Address
-    )
-    .execute(tx)
-    .await
-}
-
-pub async fn update_direct_sell_fee(
-    numerator: i32,
-    denominator: i32,
-    address: &Address,
-    tx: &mut Transaction<'_, Postgres>,
-) -> Result<PgQueryResult, sqlx::Error> {
-    sqlx::query!(
-        r#"
-        update nft_direct_sell
-        set fee_numerator = $1, fee_denominator = $2
-        where address = $3
-        "#,
-        numerator,
-        denominator,
-        address as &Address
-    )
-    .execute(tx)
-    .await
-}
-
-pub async fn update_direct_buy_fee(
-    numerator: i32,
-    denominator: i32,
-    address: &Address,
-    tx: &mut Transaction<'_, Postgres>,
-) -> Result<PgQueryResult, sqlx::Error> {
-    sqlx::query!(
-        r#"
-        update nft_direct_buy
-        set fee_numerator = $1, fee_denominator = $2
-        where address = $3
-        "#,
-        numerator,
-        denominator,
-        address as &Address
-    )
-    .execute(tx)
-    .await
-}
-
 pub async fn upsert_direct_sell(
     direct_sell: &NftDirectSell,
     tx: &mut Transaction<'_, Postgres>,

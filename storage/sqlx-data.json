@@ -179,20 +179,6 @@
     },
     "query": "\n        update nft_direct_buy set state = $1\n        where expired_at != $2 and expired_at < $3 and nft_direct_buy.state = $4\n        "
   },
-  "3feaa29ab8aae48a456b72bb874e47cc3eecbac5ef766cfd86b4a253bb9d39e4": {
-    "describe": {
-      "columns": [],
-      "nullable": [],
-      "parameters": {
-        "Left": [
-          "Int4",
-          "Int4",
-          "Text"
-        ]
-      }
-    },
-    "query": "\n        update nft_auction\n        set fee_numerator = $1, fee_denominator = $2\n        where address = $3\n        "
-  },
   "4323e0dd2ce961e5ec8f648d08895b1bd0b1d5d0d31d1871dd04e611dfd674a9": {
     "describe": {
       "columns": [
@@ -545,20 +531,6 @@
     },
     "query": "\n            insert into nft_attributes (nft, collection, raw, trait_type, value)\n            values ($1, $2, $3, $4, $5)\n            "
   },
-  "b192248b093291ba722e46470dfa2e9870f9ffe1d6dd153a5a33262227719ce9": {
-    "describe": {
-      "columns": [],
-      "nullable": [],
-      "parameters": {
-        "Left": [
-          "Int4",
-          "Int4",
-          "Text"
-        ]
-      }
-    },
-    "query": "\n        update nft_direct_buy\n        set fee_numerator = $1, fee_denominator = $2\n        where address = $3\n        "
-  },
   "b8b13f963528d468d88805d4a9a259453d2718690be834c989fffc3f07bf9ff4": {
     "describe": {
       "columns": [],
@@ -697,20 +669,6 @@
       }
     },
     "query": "\n        insert into nft_collection (address, owner, name, description, created, updated, logo, wallpaper,\n            total_price, max_price, owners_count, first_mint)\n        values ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12)\n        on conflict (address) do update\n        set owner = $2, name = coalesce($3, nft_collection.name), \n            description = coalesce($4, nft_collection.description), \n            created = case when nft_collection.created < $5 then nft_collection.created else $5 end, updated = $6,\n            logo = coalesce($7, nft_collection.logo), wallpaper = coalesce($8, nft_collection.wallpaper), total_price = $9,\n            max_price = $10, owners_count = $11, first_mint = least($12, nft_collection.first_mint)\n        "
-  },
-  "c617646d046de5f602138100b73d6958a2c54424fcadd03ec2ebcc2bc3e359d2": {
-    "describe": {
-      "columns": [],
-      "nullable": [],
-      "parameters": {
-        "Left": [
-          "Int4",
-          "Int4",
-          "Text"
-        ]
-      }
-    },
-    "query": "\n        update nft_direct_sell\n        set fee_numerator = $1, fee_denominator = $2\n        where address = $3\n        "
   },
   "c63939d84e920c4f6e255d17607d7e20aa7f98550527bf5d98378ded7624d405": {
     "describe": {

@@ -1170,39 +1170,6 @@ impl ContractEvent for MarketFeeChanged {
     async fn update_dependent_tables(&mut self) -> Result<()> {
         let mut tx = self.pool.begin().await?;
 
-        await_handling_error(
-            actions::update_auction_fee(
-                self.fee_numerator,
-                self.fee_denominator,
-                &self.auction,
-                &mut tx,
-            ),
-            "Updating auction fee",
-        )
-        .await;
-
-        await_handling_error(
-            actions::update_direct_sell_fee(
-                self.fee_numerator,
-                self.fee_denominator,
-                &self.auction,
-                &mut tx,
-            ),
-            "Updating direct sell fee",
-        )
-        .await;
-
-        await_handling_error(
-            actions::update_direct_buy_fee(
-                self.fee_numerator,
-                self.fee_denominator,
-                &self.auction,
-                &mut tx,
-            ),
-            "Updating direct sell fee",
-        )
-        .await;
-
         let save_result = actions::save_event(self, &mut tx)
             .await
             .expect("Failed to save MarketFeeChanged event");
