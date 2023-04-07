@@ -19,5 +19,8 @@ env:
   TRUSTED_DIRECT_SELL_FACTORIES: 0:4fbbd468285acae98452d87e593633bd20ff8b4e50552182dd866cc54c621f2e
   SERVER_API_URL: 0.0.0.0:3001
   RESET: false
-  
-controller: deployment
+
+controller: statefulset
+
+service:
+  port: 3001
