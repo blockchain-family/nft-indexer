@@ -2786,6 +2786,14 @@ impl ContractEvent for NftManagerChanged {
         )
         .await;
 
+        if let Some(event_collection) = &self.event_collection {
+            await_handling_error(
+                actions::refresh_collection_owners_count(event_collection, &mut tx),
+                "Updating collection owners",
+            )
+                .await;
+        }
+
         let save_result = actions::save_event(self, &mut tx)
             .await
             .expect("Failed to save NftManagerChanged event");
