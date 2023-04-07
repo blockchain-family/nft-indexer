@@ -20,4 +20,7 @@ env:
   SERVER_API_URL: 0.0.0.0:3001
   RESET: false
   
-controller: deployment
+controller: statefulset
+
+service:
+  port: 3001
