@@ -47,10 +47,9 @@ pub async fn get_owners_count(
 ) -> Option<i64> {
     sqlx::query_scalar!(
         r#"
-        select count(*) from (
-            select distinct owner from nft
-            where collection = $1
-        ) as owners
+        select count(distinct owner) as owners
+        from nft
+        where collection = $1
         "#,
         collection as &Address,
     )
@@ -133,6 +132,24 @@ pub async fn upsert_collection(
         max_price,
         owners_count.unwrap_or_default() as i32,
         nft_created_at
+    )
+    .execute(tx)
+    .await
+}
+pub async fn refresh_collection_owners_count(
+    address: &Address,
+    tx: &mut Transaction<'_, Postgres>,
+) -> Result<PgQueryResult, sqlx::Error> {
+    let owners_count = get_owners_count(address, tx).await;
+
+    sqlx::query!(
+        r#"
+        update nft_collection
+        set owners_count = $2
+        where address = $1
+        "#,
+        address as &Address,
+        owners_count.unwrap_or_default() as i32,
     )
     .execute(tx)
     .await

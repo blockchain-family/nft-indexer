@@ -531,6 +531,39 @@
     },
     "query": "\n            insert into nft_attributes (nft, collection, raw, trait_type, value)\n            values ($1, $2, $3, $4, $5)\n            "
   },
+  "b4684896963b00890592ed4979819d2b4a367ab59a679ea3bc8bfc7b697a0cc3": {
+    "describe": {
+      "columns": [
+        {
+          "name": "owners",
+          "ordinal": 0,
+          "type_info": "Int8"
+        }
+      ],
+      "nullable": [
+        null
+      ],
+      "parameters": {
+        "Left": [
+          "Text"
+        ]
+      }
+    },
+    "query": "\n        select count(distinct owner) as owners\n        from nft\n        where collection = $1\n        "
+  },
+  "b808a83b7b32970f4a83cf042616ecefb4db0522b0e9d568444996918ae92943": {
+    "describe": {
+      "columns": [],
+      "nullable": [],
+      "parameters": {
+        "Left": [
+          "Text",
+          "Int4"
+        ]
+      }
+    },
+    "query": "\n        update nft_collection\n        set owners_count = $2\n        where address = $1\n        "
+  },
   "b8b13f963528d468d88805d4a9a259453d2718690be834c989fffc3f07bf9ff4": {
     "describe": {
       "columns": [],
@@ -941,26 +974,6 @@
       }
     },
     "query": "\n        insert into nft_metadata (nft, meta, updated)\n        values ($1, $2, $3)\n        on conflict (nft) where updated < $3 do update\n        set meta = coalesce($2, nft_metadata.meta), updated = $3\n        "
-  },
-  "fe52b8cd41a93cbab36eb5466e1422c28d74bb62ad25a187a13baca47e5d5a80": {
-    "describe": {
-      "columns": [
-        {
-          "name": "count",
-          "ordinal": 0,
-          "type_info": "Int8"
-        }
-      ],
-      "nullable": [
-        null
-      ],
-      "parameters": {
-        "Left": [
-          "Text"
-        ]
-      }
-    },
-    "query": "\n        select count(*) from (\n            select distinct owner from nft\n            where collection = $1\n        ) as owners\n        "
   },
   "ff8c08cffde20cb62f7bccf368e9bbdd7dda5f400b04d7948814622364ee9321": {
     "describe": {
