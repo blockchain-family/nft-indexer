@@ -137,3 +137,22 @@ stop:v2reindex:
     APP_CONFIG: v2reindex
   environment:
     name: prod
+
+deploy:prod-reindex:
+  only:
+    - main
+  extends: .deploy
+  variables:
+    APP_CONFIG: reindex
+  environment:
+    name: prod
+    on_stop: stop:prod-reindex
+
+stop:prod-reindex:
+  only:
+    - main
+  extends: .stop
+  variables:
+    APP_CONFIG: reindex
+  environment:
+    name: prod
