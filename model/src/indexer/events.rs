@@ -2791,7 +2791,7 @@ impl ContractEvent for NftManagerChanged {
                 actions::refresh_collection_owners_count(event_collection, &mut tx),
                 "Updating collection owners",
             )
-                .await;
+            .await;
         }
 
         let save_result = actions::save_event(self, &mut tx)
