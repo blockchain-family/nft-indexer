@@ -10,7 +10,6 @@
 				{"name":"codeIndex","type":"cell"},
 				{"name":"codeIndexBasis","type":"cell"},
 				{"name":"owner","type":"address"},
-				{"name":"managers","type":"address[]"},
 				{"name":"remainOnNft","type":"uint128"},
 				{"name":"json","type":"string"}
 			],
@@ -18,11 +17,18 @@
 			]
 		},
 		{
+			"name": "codeDepth",
+			"inputs": [
+			],
+			"outputs": [
+				{"name":"value0","type":"uint16"}
+			]
+		},
+		{
 			"name": "mintNft",
 			"inputs": [
-				{"components":[{"name":"name","type":"string"},{"name":"description","type":"string"},{"name":"previewUrl","type":"string"},{"name":"ipfsUrl","type":"string"},{"components":[{"name":"trait_type","type":"string"},{"name":"value","type":"string"}],"name":"attributes","type":"tuple[]"},{"name":"externalUrl","type":"string"}],"name":"_nftInfo","type":"tuple"},
 				{"name":"_owner","type":"address"},
-				{"name":"_nftId","type":"uint32"}
+				{"name":"_json","type":"string"}
 			],
 			"outputs": [
 			]
@@ -34,6 +40,15 @@
 			],
 			"outputs": [
 				{"name":"count","type":"uint256"}
+			]
+		},
+		{
+			"name": "batchMintNft",
+			"inputs": [
+				{"name":"_owner","type":"address"},
+				{"name":"_jsons","type":"string[]"}
+			],
+			"outputs": [
 			]
 		},
 		{
@@ -55,26 +70,16 @@
 			]
 		},
 		{
-			"name": "addManager",
+			"name": "acceptNftBurn",
 			"inputs": [
-				{"name":"newManager","type":"address"}
+				{"name":"_id","type":"uint256"},
+				{"name":"_owner","type":"address"},
+				{"name":"_manager","type":"address"},
+				{"name":"_sendGasTo","type":"address"},
+				{"name":"_callbackTo","type":"address"},
+				{"name":"_callbackPayload","type":"cell"}
 			],
 			"outputs": [
-			]
-		},
-		{
-			"name": "resetManagers",
-			"inputs": [
-			],
-			"outputs": [
-			]
-		},
-		{
-			"name": "managers",
-			"inputs": [
-			],
-			"outputs": [
-				{"name":"value0","type":"address[]"}
 			]
 		},
 		{
@@ -91,15 +96,6 @@
 				{"name":"newOwner","type":"address"}
 			],
 			"outputs": [
-			]
-		},
-		{
-			"name": "getJson",
-			"inputs": [
-				{"name":"answerId","type":"uint32"}
-			],
-			"outputs": [
-				{"name":"json","type":"string"}
 			]
 		},
 		{
@@ -145,6 +141,15 @@
 			],
 			"outputs": [
 				{"name":"hash","type":"uint256"}
+			]
+		},
+		{
+			"name": "getJson",
+			"inputs": [
+				{"name":"answerId","type":"uint32"}
+			],
+			"outputs": [
+				{"name":"json","type":"string"}
 			]
 		},
 		{
@@ -200,21 +205,6 @@
 	],
 	"events": [
 		{
-			"name": "ManagerAdded",
-			"inputs": [
-				{"name":"newManager","type":"address"}
-			],
-			"outputs": [
-			]
-		},
-		{
-			"name": "ManagersReset",
-			"inputs": [
-			],
-			"outputs": [
-			]
-		},
-		{
 			"name": "OwnershipTransferred",
 			"inputs": [
 				{"name":"oldOwner","type":"address"},
@@ -254,14 +244,13 @@
 		{"name":"_supportedInterfaces","type":"optional(cell)"},
 		{"name":"_codeNft","type":"cell"},
 		{"name":"_totalSupply","type":"uint128"},
+		{"name":"_json","type":"string"},
 		{"name":"_codeIndex","type":"cell"},
 		{"name":"_codeIndexBasis","type":"cell"},
 		{"name":"_indexDeployValue","type":"uint128"},
 		{"name":"_indexDestroyValue","type":"uint128"},
 		{"name":"_deployIndexBasisValue","type":"uint128"},
-		{"name":"_json","type":"string"},
 		{"name":"owner_","type":"address"},
-		{"name":"managers_","type":"address[]"},
 		{"name":"nonce_","type":"uint64"},
 		{"name":"_remainOnNft","type":"uint128"},
 		{"name":"_totalMinted","type":"uint256"}

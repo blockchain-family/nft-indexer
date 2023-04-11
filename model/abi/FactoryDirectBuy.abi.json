@@ -7,9 +7,20 @@
 			"name": "constructor",
 			"inputs": [
 				{"name":"_owner","type":"address"},
-				{"name":"sendGasTo","type":"address"}
+				{"name":"sendGasTo","type":"address"},
+				{"components":[{"name":"numerator","type":"uint32"},{"name":"denominator","type":"uint32"}],"name":"_fee","type":"tuple"},
+				{"name":"_weverVault","type":"address"},
+				{"name":"_weverRoot","type":"address"}
 			],
 			"outputs": [
+			]
+		},
+		{
+			"name": "getGasValue",
+			"inputs": [
+			],
+			"outputs": [
+				{"components":[{"name":"gasK","type":"uint128"},{"components":[{"name":"fixedValue","type":"uint128"},{"name":"dynamicGas","type":"uint128"}],"name":"deployWallet","type":"tuple"},{"components":[{"name":"fixedValue","type":"uint128"},{"name":"dynamicGas","type":"uint128"}],"name":"deployDirectBuy","type":"tuple"},{"components":[{"name":"fixedValue","type":"uint128"},{"name":"dynamicGas","type":"uint128"}],"name":"make","type":"tuple"},{"components":[{"name":"fixedValue","type":"uint128"},{"name":"dynamicGas","type":"uint128"}],"name":"accept","type":"tuple"},{"components":[{"name":"fixedValue","type":"uint128"},{"name":"dynamicGas","type":"uint128"}],"name":"cancel","type":"tuple"}],"name":"value0","type":"tuple"}
 			]
 		},
 		{
@@ -21,12 +32,57 @@
 			]
 		},
 		{
+			"name": "getMarketFee",
+			"inputs": [
+			],
+			"outputs": [
+				{"components":[{"name":"numerator","type":"uint32"},{"name":"denominator","type":"uint32"}],"name":"value0","type":"tuple"}
+			]
+		},
+		{
+			"name": "setMarketFee",
+			"inputs": [
+				{"components":[{"name":"numerator","type":"uint32"},{"name":"denominator","type":"uint32"}],"name":"_fee","type":"tuple"}
+			],
+			"outputs": [
+			]
+		},
+		{
+			"name": "setMarketFeeForChildContract",
+			"inputs": [
+				{"name":"directBuy","type":"address"},
+				{"components":[{"name":"numerator","type":"uint32"},{"name":"denominator","type":"uint32"}],"name":"_fee","type":"tuple"}
+			],
+			"outputs": [
+			]
+		},
+		{
+			"name": "addCollectionsSpecialRules",
+			"inputs": [
+				{"name":"collection","type":"address"},
+				{"components":[{"name":"codeHash","type":"uint256"},{"name":"codeDepth","type":"uint16"},{"name":"numerator","type":"uint32"},{"name":"denominator","type":"uint32"}],"name":"collectionFeeInfo","type":"tuple"}
+			],
+			"outputs": [
+			]
+		},
+		{
+			"name": "removeCollectionsSpecialRules",
+			"inputs": [
+				{"name":"collection","type":"address"}
+			],
+			"outputs": [
+			]
+		},
+		{
 			"name": "buildDirectBuyCreationPayload",
 			"inputs": [
 				{"name":"callbackId","type":"uint32"},
+				{"name":"buyer","type":"address"},
 				{"name":"nft","type":"address"},
 				{"name":"startTime","type":"uint64"},
-				{"name":"durationTime","type":"uint64"}
+				{"name":"durationTime","type":"uint64"},
+				{"name":"discountCollection","type":"optional(address)"},
+				{"name":"discountNftId","type":"optional(uint256)"}
 			],
 			"outputs": [
 				{"name":"value0","type":"cell"}
@@ -57,6 +113,29 @@
 				{"name":"value3","type":"address"},
 				{"name":"originalGasTo","type":"address"},
 				{"name":"payload","type":"cell"}
+			],
+			"outputs": [
+			]
+		},
+		{
+			"name": "onAcceptTokensBurn",
+			"inputs": [
+				{"name":"amount","type":"uint128"},
+				{"name":"value1","type":"address"},
+				{"name":"value2","type":"address"},
+				{"name":"user","type":"address"},
+				{"name":"payload","type":"cell"}
+			],
+			"outputs": [
+			]
+		},
+		{
+			"name": "withdraw",
+			"inputs": [
+				{"name":"tokenWallet","type":"address"},
+				{"name":"amount","type":"uint128"},
+				{"name":"recipient","type":"address"},
+				{"name":"remainingGasTo","type":"address"}
 			],
 			"outputs": [
 			]
@@ -98,6 +177,30 @@
 			],
 			"outputs": [
 			]
+		},
+		{
+			"name": "weverVault",
+			"inputs": [
+			],
+			"outputs": [
+				{"name":"weverVault","type":"address"}
+			]
+		},
+		{
+			"name": "weverRoot",
+			"inputs": [
+			],
+			"outputs": [
+				{"name":"weverRoot","type":"address"}
+			]
+		},
+		{
+			"name": "collectionsSpecialRules",
+			"inputs": [
+			],
+			"outputs": [
+				{"components":[{"name":"codeHash","type":"uint256"},{"name":"codeDepth","type":"uint16"},{"name":"numerator","type":"uint32"},{"name":"denominator","type":"uint32"}],"name":"collectionsSpecialRules","type":"map(address,tuple)"}
+			]
 		}
 	],
 	"data": [
@@ -136,6 +239,50 @@
 			]
 		},
 		{
+			"name": "AddCollectionRules",
+			"inputs": [
+				{"name":"collection","type":"address"},
+				{"components":[{"name":"codeHash","type":"uint256"},{"name":"codeDepth","type":"uint16"},{"name":"numerator","type":"uint32"},{"name":"denominator","type":"uint32"}],"name":"collectionFeeInfo","type":"tuple"}
+			],
+			"outputs": [
+			]
+		},
+		{
+			"name": "RemoveCollectionRules",
+			"inputs": [
+				{"name":"collection","type":"address"}
+			],
+			"outputs": [
+			]
+		},
+		{
+			"name": "MarketFeeDefaultChanged",
+			"inputs": [
+				{"components":[{"name":"numerator","type":"uint32"},{"name":"denominator","type":"uint32"}],"name":"fee","type":"tuple"}
+			],
+			"outputs": [
+			]
+		},
+		{
+			"name": "MarketFeeChanged",
+			"inputs": [
+				{"name":"auction","type":"address"},
+				{"components":[{"name":"numerator","type":"uint32"},{"name":"denominator","type":"uint32"}],"name":"fee","type":"tuple"}
+			],
+			"outputs": [
+			]
+		},
+		{
+			"name": "MarketFeeWithdrawn",
+			"inputs": [
+				{"name":"recipient","type":"address"},
+				{"name":"amount","type":"uint128"},
+				{"name":"tokenWallet","type":"address"}
+			],
+			"outputs": [
+			]
+		},
+		{
 			"name": "OwnershipTransferred",
 			"inputs": [
 				{"name":"oldOwner","type":"address"},
@@ -154,6 +301,11 @@
 		{"name":"tokenPlatformCode","type":"cell"},
 		{"name":"directBuyCode","type":"cell"},
 		{"name":"currentVersion","type":"uint32"},
-		{"name":"currectVersionDirectBuy","type":"uint32"}
+		{"name":"currectVersionDirectBuy","type":"uint32"},
+		{"components":[{"name":"numerator","type":"uint32"},{"name":"denominator","type":"uint32"}],"name":"fee","type":"tuple"},
+		{"name":"weverVault","type":"address"},
+		{"name":"weverRoot","type":"address"},
+		{"components":[{"name":"gasK","type":"uint128"},{"components":[{"name":"fixedValue","type":"uint128"},{"name":"dynamicGas","type":"uint128"}],"name":"deployWallet","type":"tuple"},{"components":[{"name":"fixedValue","type":"uint128"},{"name":"dynamicGas","type":"uint128"}],"name":"deployDirectBuy","type":"tuple"},{"components":[{"name":"fixedValue","type":"uint128"},{"name":"dynamicGas","type":"uint128"}],"name":"make","type":"tuple"},{"components":[{"name":"fixedValue","type":"uint128"},{"name":"dynamicGas","type":"uint128"}],"name":"accept","type":"tuple"},{"components":[{"name":"fixedValue","type":"uint128"},{"name":"dynamicGas","type":"uint128"}],"name":"cancel","type":"tuple"}],"name":"directBuyGas","type":"tuple"},
+		{"components":[{"name":"codeHash","type":"uint256"},{"name":"codeDepth","type":"uint16"},{"name":"numerator","type":"uint32"},{"name":"denominator","type":"uint32"}],"name":"collectionsSpecialRules","type":"map(address,tuple)"}
 	]
 }

@@ -41,6 +41,11 @@ pub enum EventType {
 
     NftCreated,
     NftBurned,
+
+    MarketFeeDefaultChanged,
+    MarketFeeChanged,
+    AddCollectionRules,
+    RemoveCollectionRules,
 }
 
 #[derive(Clone, Debug, Serialize, sqlx::Type)]

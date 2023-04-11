@@ -205,6 +205,20 @@
     },
     "query": "\n        select price as \"price!: BigDecimal\", price_token as \"price_token!: String\" from nft\n        inner join nft_direct_sell as direct_sell\n        on nft.address = direct_sell.nft\n        where nft.collection = $1 and direct_sell.state = 'active'\n        union\n        select price as \"price!: BigDecimal\", price_token as \"price_token!: String\" from nft\n        inner join nft_auction as auction\n        on nft.address = auction.nft\n        inner join nft_auction_bid as bid\n        on auction.address = bid.auction\n        where nft.collection = $1 and auction.status = 'active'\n        "
   },
+  "44f3635fb703fcb859bcc33c1055a4d23c49113c1c690ac1aff687f252881da9": {
+    "describe": {
+      "columns": [],
+      "nullable": [],
+      "parameters": {
+        "Left": [
+          "Int4",
+          "Int4",
+          "Text"
+        ]
+      }
+    },
+    "query": "\n        update nft_collection\n        set fee_numerator = $1, fee_denominator = $2\n        where address = $3\n        "
+  },
   "4547659557f1abe087e9ab1b7a34d2eb4bb477b4ca734619e22f4e75698a6104": {
     "describe": {
       "columns": [],
@@ -517,6 +531,39 @@
     },
     "query": "\n            insert into nft_attributes (nft, collection, raw, trait_type, value)\n            values ($1, $2, $3, $4, $5)\n            "
   },
+  "b4684896963b00890592ed4979819d2b4a367ab59a679ea3bc8bfc7b697a0cc3": {
+    "describe": {
+      "columns": [
+        {
+          "name": "owners",
+          "ordinal": 0,
+          "type_info": "Int8"
+        }
+      ],
+      "nullable": [
+        null
+      ],
+      "parameters": {
+        "Left": [
+          "Text"
+        ]
+      }
+    },
+    "query": "\n        select count(distinct owner) as owners\n        from nft\n        where collection = $1\n        "
+  },
+  "b808a83b7b32970f4a83cf042616ecefb4db0522b0e9d568444996918ae92943": {
+    "describe": {
+      "columns": [],
+      "nullable": [],
+      "parameters": {
+        "Left": [
+          "Text",
+          "Int4"
+        ]
+      }
+    },
+    "query": "\n        update nft_collection\n        set owners_count = $2\n        where address = $1\n        "
+  },
   "b8b13f963528d468d88805d4a9a259453d2718690be834c989fffc3f07bf9ff4": {
     "describe": {
       "columns": [],
@@ -562,7 +609,11 @@
                   "nft_manager_changed",
                   "collection_ownership_transferred",
                   "nft_created",
-                  "nft_burned"
+                  "nft_burned",
+                  "market_fee_default_changed",
+                  "market_fee_changed",
+                  "add_collection_rules",
+                  "remove_collection_rules"
                 ]
               },
               "name": "event_type"
@@ -923,26 +974,6 @@
       }
     },
     "query": "\n        insert into nft_metadata (nft, meta, updated)\n        values ($1, $2, $3)\n        on conflict (nft) where updated < $3 do update\n        set meta = coalesce($2, nft_metadata.meta), updated = $3\n        "
-  },
-  "fe52b8cd41a93cbab36eb5466e1422c28d74bb62ad25a187a13baca47e5d5a80": {
-    "describe": {
-      "columns": [
-        {
-          "name": "count",
-          "ordinal": 0,
-          "type_info": "Int8"
-        }
-      ],
-      "nullable": [
-        null
-      ],
-      "parameters": {
-        "Left": [
-          "Text"
-        ]
-      }
-    },
-    "query": "\n        select count(*) from (\n            select distinct owner from nft\n            where collection = $1\n        ) as owners\n        "
   },
   "ff8c08cffde20cb62f7bccf368e9bbdd7dda5f400b04d7948814622364ee9321": {
     "describe": {
