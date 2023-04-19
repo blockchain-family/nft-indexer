@@ -2,7 +2,7 @@ use crate::{
     indexer::{events::*, traits::ContractEvent},
     settings::config::Config,
 };
-use anyhow::{anyhow, Result};
+use anyhow::{anyhow, Context, Result};
 use futures::{future::BoxFuture, StreamExt};
 use nekoton_abi::{transaction_parser::ExtractedOwned, TransactionParser};
 use once_cell::sync::OnceCell;
@@ -102,12 +102,14 @@ fn init_parsers_and_handlers() -> Result<()> {
 
     PARSERS_AND_HANDLERS
         .set(v)
-        .map_err(|_| anyhow!("Unable to inititalize parsers and handlers"))
+        .map_err(|_| anyhow!("Unable to initialize parsers and handlers"))
 }
 
 fn get_contract_parser(abi_path: &str) -> Result<TransactionParser> {
-    let abi_json = std::fs::read_to_string(abi_path)?;
-    let abi = ton_abi::Contract::load(&abi_json)?;
+    let abi_json = std::fs::read_to_string(abi_path)
+        .with_context(|| format!("Failed to read ABI file at '{abi_path}'"))?;
+    let abi = ton_abi::Contract::load(&abi_json)
+        .with_context(|| format!("Failed to load ABI file from '{abi_path}'"))?;
 
     let events = abi.events.into_values();
     let funs = abi.functions.into_values();
