@@ -3,6 +3,7 @@ use crate::{settings::config::Config, state_updater::run_updater};
 use anyhow::Result;
 use indexer::consumer;
 use std::net::SocketAddr;
+use std::process::exit;
 use std::str::FromStr;
 use std::{collections::HashMap, sync::Arc};
 use transaction_consumer::{ConsumerOptions, TransactionConsumer};
@@ -42,7 +43,14 @@ async fn main() -> Result<()> {
     {
         let pool = pg_pool.clone();
         let consumer = consumer.clone();
-        tokio::spawn(async move { consumer::serve(pool, consumer, config).await });
+        tokio::spawn(async move {
+            if let Err(e) = consumer::serve(pool, consumer, config).await {
+                log::error!("consumer error: {e}");
+                exit(-1)
+            }
+            log::warn!("consumer stopped");
+            exit(-1);
+        });
     }
 
     run_api(&socket_addr, pg_pool, consumer)
