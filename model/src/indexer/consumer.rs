@@ -23,6 +23,7 @@ static TRUSTED_ADDRESSES: OnceCell<HashMap<OfferRootType, Vec<String>>> = OnceCe
 static PARSERS_AND_HANDLERS: OnceCell<Vec<(TransactionParser, Handler)>> = OnceCell::new();
 
 pub async fn serve(pool: PgPool, consumer: Arc<TransactionConsumer>, config: Config) -> Result<()> {
+    log::info!("Run consumer serve function");
     let from = if config.reset {
         StreamFrom::Beginning
     } else {
@@ -30,8 +31,11 @@ pub async fn serve(pool: PgPool, consumer: Arc<TransactionConsumer>, config: Con
     };
 
     init_trusted_addresses(config)?;
+    log::info!("init_trusted_addresses completed");
     init_parsers_and_handlers()?;
+    log::info!("init_parsers_and_handlers completed");
     init_whitelist_addresses(&pool).await;
+    log::info!("init_whitelist_addresses completed");
 
     let (mut stream, offsets) = consumer.stream_until_highest_offsets(from).await?;
 
