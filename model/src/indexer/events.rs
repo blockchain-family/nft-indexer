@@ -3049,17 +3049,17 @@ impl ContractEvent for NftCreated {
             actions::update_collection_by_nft("nft_events", &self.nft, &self.address, &mut tx),
             "Updating collection by nft",
         )
-        .await;
+            .await;
         await_handling_error(
             actions::update_collection_by_nft("nft_direct_sell", &self.nft, &self.address, &mut tx),
             "Updating collection by nft",
         )
-        .await;
+            .await;
         await_handling_error(
             actions::update_collection_by_nft("nft_direct_buy", &self.nft, &self.address, &mut tx),
             "Updating collection by nft",
         )
-        .await;
+            .await;
         await_handling_error(
             actions::update_collection_by_nft(
                 "nft_price_history",
@@ -3069,12 +3069,12 @@ impl ContractEvent for NftCreated {
             ),
             "Updating collection by nft",
         )
-        .await;
+            .await;
         await_handling_error(
             actions::update_collection_by_nft("nft_attributes", &self.nft, &self.address, &mut tx),
             "Updating collection by nft",
         )
-        .await;
+            .await;
 
         tx.commit().await.map_err(|e| anyhow!(e))
     }
