@@ -43,25 +43,6 @@ cloudbuild:image:prod:
     - tags
   extends: .cloudbuild:common
 
-deploy:prod:
-  only:
-    - main
-  except:
-    - tags
-  extends: .deploy
-  environment:
-    name: prod
-    on_stop: stop:prod
-
-stop:prod:
-  only:
-    - main
-  except:
-    - tags
-  extends: .stop
-  environment:
-    name: prod
-
 deploy:venom-prod:
   only:
     - main
@@ -116,25 +97,6 @@ stop:v1-prod:
   extends: .stop
   variables:
     APP_CONFIG: v1
-  environment:
-    name: prod
-
-deploy:v2reindex:
-  only:
-    - main
-  extends: .deploy
-  variables:
-    APP_CONFIG: v2reindex
-  environment:
-    name: prod
-    on_stop: stop:v2reindex
-
-stop:v2reindex:
-  only:
-    - main
-  extends: .stop
-  variables:
-    APP_CONFIG: v2reindex
   environment:
     name: prod
 
