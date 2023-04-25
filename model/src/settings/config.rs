@@ -1,5 +1,6 @@
 use serde::Deserialize;
 use std::collections::HashMap;
+use url::Url;
 
 #[derive(Debug, Deserialize, Clone)]
 pub struct Config {
@@ -8,7 +9,7 @@ pub struct Config {
     pub kafka_topic: String,
     pub kafka_consumer_group: String,
     pub kafka_reset: Option<bool>,
-    pub states_rpc_endpoints: Vec<String>,
+    pub states_rpc_endpoints: Vec<Url>,
     pub kafka_settings: HashMap<String, String>,
     pub reset: bool,
     pub trusted_auction_roots: Vec<String>,
