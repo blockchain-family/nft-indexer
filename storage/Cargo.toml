@@ -24,4 +24,4 @@ chrono = "0.4"
 ton_abi = { git = "https://github.com/broxus/ton-labs-abi" }
 ton_block = { git = "https://github.com/broxus/ton-labs-block" }
 tokio = { version = "1.2", features = ["macros", "rt-multi-thread"] }
-transaction-consumer = { git = "https://github.com/broxus/transaction-consumer.git", rev = "f3806978e266323611a27e7a0280fb01eb035bb5" }
+transaction-consumer = { git = "https://github.com/broxus/transaction-consumer.git" }
