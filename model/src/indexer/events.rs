@@ -3268,50 +3268,54 @@ async fn get_collection_data(
 ) -> NftCollection {
     let collection_owner = get_collection_owner(collection.clone(), consumer).await;
 
-    let collection_meta = fetch_metadata(collection.clone(), consumer).await;
+    // let _collection_meta = fetch_metadata(collection.clone(), consumer).await;
     let now = chrono::Utc::now().naive_utc();
 
     NftCollection {
         address: ("0:".to_owned() + &collection.address().as_hex_string()).into(),
         owner: collection_owner,
-        name: collection_meta
-            .get("name")
-            .cloned()
-            .unwrap_or_default()
-            .as_str()
-            .map(str::to_string),
-        description: collection_meta
-            .get("description")
-            .cloned()
-            .unwrap_or_default()
-            .as_str()
-            .map(str::to_string),
+        name: None,
+        description: None,
+        // name: collection_meta
+        //     .get("name")
+        //     .cloned()
+        //     .unwrap_or_default()
+        //     .as_str()
+        //     .map(str::to_string),
+        // description: collection_meta
+        //     .get("description")
+        //     .cloned()
+        //     .unwrap_or_default()
+        //     .as_str()
+        //     .map(str::to_string),
         created: now,
         updated: now,
-        logo: collection_meta
-            .get("preview")
-            .cloned()
-            .unwrap_or_default()
-            .get("source")
-            .cloned()
-            .unwrap_or_default()
-            .as_str()
-            .map(|s| s.into()),
-        wallpaper: collection_meta
-            .get("files")
-            .cloned()
-            .unwrap_or_default()
-            .as_array()
-            .cloned()
-            .unwrap_or_default()
-            .first()
-            .cloned()
-            .unwrap_or_default()
-            .get("source")
-            .cloned()
-            .unwrap_or_default()
-            .as_str()
-            .map(|s| s.into()),
+        logo: None,
+        wallpaper: None
+        // logo: collection_meta
+        //     .get("preview")
+        //     .cloned()
+        //     .unwrap_or_default()
+        //     .get("source")
+        //     .cloned()
+        //     .unwrap_or_default()
+        //     .as_str()
+        //     .map(|s| s.into()),
+        // wallpaper: collection_meta
+        //     .get("files")
+        //     .cloned()
+        //     .unwrap_or_default()
+        //     .as_array()
+        //     .cloned()
+        //     .unwrap_or_default()
+        //     .first()
+        //     .cloned()
+        //     .unwrap_or_default()
+        //     .get("source")
+        //     .cloned()
+        //     .unwrap_or_default()
+        //     .as_str()
+        //     .map(|s| s.into()),
     }
 }
 
