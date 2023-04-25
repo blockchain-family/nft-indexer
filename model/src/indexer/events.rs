@@ -2586,60 +2586,62 @@ impl ContractEvent for NftOwnerChanged {
     }
 
     async fn update_dependent_tables(&mut self) -> Result<()> {
-        let meta = fetch_metadata(
-            MsgAddressInt::from_str(self.address.0.as_str())?,
-            &self.consumer,
-        )
-        .await;
+        // let meta = fetch_metadata(
+        //     MsgAddressInt::from_str(self.address.0.as_str())?,
+        //     &self.consumer,
+        // )
+        // .await;
 
         let mut tx = self.pool.begin().await?;
 
         self.event_collection = actions::get_collection_by_nft(&self.address, &mut tx).await;
 
-        if let Some(attributes) = meta.get("attributes").and_then(|v| v.as_array()) {
-            let nft_attributes: Vec<NftAttribute> = attributes
-                .iter()
-                .map(|item| {
-                    NftAttribute::new(
-                        self.address.clone(),
-                        self.event_collection.clone(),
-                        item.clone(),
-                    )
-                })
-                .collect();
+        // if let Some(attributes) = meta.get("attributes").and_then(|v| v.as_array()) {
+        //     let nft_attributes: Vec<NftAttribute> = attributes
+        //         .iter()
+        //         .map(|item| {
+        //             NftAttribute::new(
+        //                 self.address.clone(),
+        //                 self.event_collection.clone(),
+        //                 item.clone(),
+        //             )
+        //         })
+        //         .collect();
 
-            await_handling_error(
-                actions::upsert_nft_attributes(&nft_attributes, &mut tx),
-                "Updating nft attributes",
-            )
-            .await;
-        }
+            // await_handling_error(
+            //     actions::upsert_nft_attributes(&nft_attributes, &mut tx),
+            //     "Updating nft attributes",
+            // )
+            // .await;
+        // }
 
-        let nft_meta = NftMeta {
-            nft: self.address.clone(),
-            meta,
-            updated: chrono::Utc::now().naive_utc(),
-        };
+        // let nft_meta = NftMeta {
+        //     nft: self.address.clone(),
+        //     meta,
+        //     updated: chrono::Utc::now().naive_utc(),
+        // };
 
         let nft = Nft {
             address: self.address.clone(),
             collection: self.event_collection.clone(),
             owner: Some(self.new_owner.clone()),
             manager: None,
-            name: nft_meta
-                .meta
-                .get("name")
-                .cloned()
-                .unwrap_or_default()
-                .as_str()
-                .map(str::to_string),
-            description: nft_meta
-                .meta
-                .get("description")
-                .cloned()
-                .unwrap_or_default()
-                .as_str()
-                .map(str::to_string),
+            // name: nft_meta
+            //     .meta
+            //     .get("name")
+            //     .cloned()
+            //     .unwrap_or_default()
+            //     .as_str()
+            //     .map(str::to_string),
+            // description: nft_meta
+            //     .meta
+            //     .get("description")
+            //     .cloned()
+            //     .unwrap_or_default()
+            //     .as_str()
+            //     .map(str::to_string),
+            name: None,
+            description: None,
             burned: false,
             updated: NaiveDateTime::from_timestamp_opt(self.created_at, 0).unwrap_or_default(),
             owner_update_lt: self.created_lt,
@@ -2647,11 +2649,11 @@ impl ContractEvent for NftOwnerChanged {
         };
 
         await_handling_error(actions::upsert_nft(&nft, &mut tx), "Updating nft").await;
-        await_handling_error(
-            actions::upsert_nft_meta(&nft_meta, &mut tx),
-            "Updating nft meta",
-        )
-        .await;
+        // await_handling_error(
+        //     actions::upsert_nft_meta(&nft_meta, &mut tx),
+        //     "Updating nft meta",
+        // )
+        // .await;
 
         if let Some(event_collection) = &self.event_collection {
             await_handling_error(
@@ -2719,60 +2721,62 @@ impl ContractEvent for NftManagerChanged {
     }
 
     async fn update_dependent_tables(&mut self) -> Result<()> {
-        let meta = fetch_metadata(
-            MsgAddressInt::from_str(self.address.0.as_str())?,
-            &self.consumer,
-        )
-        .await;
+        // let meta = fetch_metadata(
+        //     MsgAddressInt::from_str(self.address.0.as_str())?,
+        //     &self.consumer,
+        // )
+        // .await;
 
         let mut tx = self.pool.begin().await?;
 
         self.event_collection = actions::get_collection_by_nft(&self.address, &mut tx).await;
 
-        if let Some(attributes) = meta.get("attributes").and_then(|v| v.as_array()) {
-            let nft_attributes: Vec<NftAttribute> = attributes
-                .iter()
-                .map(|item| {
-                    NftAttribute::new(
-                        self.address.clone(),
-                        self.event_collection.clone(),
-                        item.clone(),
-                    )
-                })
-                .collect();
-
-            await_handling_error(
-                actions::upsert_nft_attributes(&nft_attributes, &mut tx),
-                "Updating nft attributes",
-            )
-            .await;
-        }
-
-        let nft_meta = NftMeta {
-            nft: self.address.clone(),
-            meta,
-            updated: chrono::Utc::now().naive_utc(),
-        };
+        // if let Some(attributes) = meta.get("attributes").and_then(|v| v.as_array()) {
+        //     let nft_attributes: Vec<NftAttribute> = attributes
+        //         .iter()
+        //         .map(|item| {
+        //             NftAttribute::new(
+        //                 self.address.clone(),
+        //                 self.event_collection.clone(),
+        //                 item.clone(),
+        //             )
+        //         })
+        //         .collect();
+        //
+        //     await_handling_error(
+        //         actions::upsert_nft_attributes(&nft_attributes, &mut tx),
+        //         "Updating nft attributes",
+        //     )
+        //     .await;
+        // }
+        //
+        // let nft_meta = NftMeta {
+        //     nft: self.address.clone(),
+        //     meta,
+        //     updated: chrono::Utc::now().naive_utc(),
+        // };
 
         let nft = Nft {
             address: self.address.clone(),
             collection: self.event_collection.clone(),
             owner: None,
             manager: Some(self.new_manager.clone()),
-            name: nft_meta
-                .meta
-                .get("name")
-                .cloned()
-                .unwrap_or_default()
-                .as_str()
-                .map(str::to_string),
-            description: nft_meta
-                .meta
-                .get("description")
-                .cloned()
-                .unwrap_or_default()
-                .as_str()
-                .map(str::to_string),
+            // name: nft_meta
+            //     .meta
+            //     .get("name")
+            //     .cloned()
+            //     .unwrap_or_default()
+            //     .as_str()
+            //     .map(str::to_string),
+            // description: nft_meta
+            //     .meta
+            //     .get("description")
+            //     .cloned()
+            //     .unwrap_or_default()
+            //     .as_str()
+            //     .map(str::to_string),
+            name: None,
+            description: None,
             burned: false,
             updated: NaiveDateTime::from_timestamp_opt(self.created_at, 0).unwrap_or_default(),
             owner_update_lt: 0,
@@ -2780,11 +2784,11 @@ impl ContractEvent for NftManagerChanged {
         };
 
         await_handling_error(actions::upsert_nft(&nft, &mut tx), "Updating nft").await;
-        await_handling_error(
-            actions::upsert_nft_meta(&nft_meta, &mut tx),
-            "Updating nft meta",
-        )
-        .await;
+        // await_handling_error(
+        //     actions::upsert_nft_meta(&nft_meta, &mut tx),
+        //     "Updating nft meta",
+        // )
+        // .await;
 
         if let Some(event_collection) = &self.event_collection {
             await_handling_error(
