@@ -14,7 +14,7 @@ mod server;
 mod settings;
 mod state_updater;
 
-#[tokio::main]
+#[tokio::main(worker_threads = 16)]
 async fn main() -> Result<()> {
     dotenv::dotenv().ok();
     stackdriver_logger::init_with_cargo!();
