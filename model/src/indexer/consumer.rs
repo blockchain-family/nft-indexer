@@ -77,6 +77,7 @@ fn indexer_routine(
         tx.partition,
         tx.transaction
     );
+
     tokio::spawn(async move {
         for (parser, handler) in PARSERS_AND_HANDLERS.get().unwrap().iter() {
             if let Ok(extracted) = parser.parse(&tx.transaction) {
