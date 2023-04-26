@@ -8,8 +8,8 @@ use nekoton_abi::{transaction_parser::ExtractedOwned, TransactionParser};
 use once_cell::sync::OnceCell;
 use serde::Serialize;
 use sqlx::PgPool;
-use std::{collections::HashMap, sync::Arc};
 use std::time::Instant;
+use std::{collections::HashMap, sync::Arc};
 use storage::{actions, traits::*};
 use transaction_consumer::{ConsumedTransaction, StreamFrom, TransactionConsumer};
 
@@ -189,7 +189,6 @@ where
     EventType: ContractEvent + EventRecord + Serialize + Sync,
 {
     if let Some(event) = extracted.iter().find(|e| e.name == event_name) {
-
         let mut record = match EventType::build_from(event, pool, consumer) {
             Ok(record) => record,
             Err(e) => {
