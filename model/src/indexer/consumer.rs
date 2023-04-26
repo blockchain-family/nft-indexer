@@ -9,6 +9,7 @@ use once_cell::sync::OnceCell;
 use serde::Serialize;
 use sqlx::PgPool;
 use std::{collections::HashMap, sync::Arc};
+use std::time::Instant;
 use storage::{actions, traits::*};
 use transaction_consumer::{ConsumedTransaction, StreamFrom, TransactionConsumer};
 
@@ -182,6 +183,7 @@ where
     EventType: ContractEvent + EventRecord + Serialize + Sync,
 {
     if let Some(event) = extracted.iter().find(|e| e.name == event_name) {
+
         let mut record = match EventType::build_from(event, pool, consumer) {
             Ok(record) => record,
             Err(e) => {
@@ -189,6 +191,8 @@ where
                 return None;
             }
         };
+
+        let start_time = Instant::now();
 
         if let Err(e) = record.update_dependent_tables().await {
             log::error!(
@@ -198,6 +202,13 @@ where
             );
             return None;
         }
+
+        let elapsed_time = start_time.elapsed();
+        log::debug!(
+            "Time taken to update dependent tables of {}: {} ms",
+            event_name,
+            elapsed_time.as_millis()
+        );
 
         Some(record)
     } else {
