@@ -2960,6 +2960,15 @@ impl ContractEvent for NftCreated {
     }
 
     async fn update_dependent_tables(&mut self) -> Result<()> {
+        if let Some(event_collection) = &self.event_collection {
+            if event_collection
+                .0
+                .eq("0:b288234ed66c5d45250c01b5aa3a77f0b95050c4fb785bf62d05f580c9f7a341")
+            {
+                log::debug!("Skip nft");
+                return Ok(());
+            }
+        }
         // let meta = fetch_metadata(
         //     MsgAddressInt::from_str(self.nft.0.as_str())?,
         //     &self.consumer,
