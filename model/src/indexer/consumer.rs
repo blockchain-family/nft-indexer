@@ -42,7 +42,7 @@ pub async fn serve(pool: PgPool, consumer: Arc<TransactionConsumer>, config: Con
     let (mut stream, offsets) = consumer.stream_until_highest_offsets(from).await?;
 
     log::info!("Starting fast streaming");
-    let semaphore = Arc::new(tokio::sync::Semaphore::new(100));
+    let semaphore = Arc::new(tokio::sync::Semaphore::new(50));
     while let Some(tx) = stream.next().await {
         let permit = semaphore.clone().acquire_owned().await.unwrap();
         indexer_routine(tx, pool.clone(), consumer.clone(), permit);
@@ -53,7 +53,7 @@ pub async fn serve(pool: PgPool, consumer: Arc<TransactionConsumer>, config: Con
         .await?;
 
     log::info!("Starting realtime streaming");
-    let semaphore = Arc::new(tokio::sync::Semaphore::new(100));
+    let semaphore = Arc::new(tokio::sync::Semaphore::new(50));
     while let Some(tx) = stream.next().await {
         let permit = semaphore.clone().acquire_owned().await.unwrap();
         indexer_routine(tx, pool.clone(), consumer.clone(), permit);

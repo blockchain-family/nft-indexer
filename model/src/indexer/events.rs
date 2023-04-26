@@ -1445,8 +1445,17 @@ impl ContractEvent for AuctionBidPlaced {
     async fn update_dependent_tables(&mut self) -> Result<()> {
         let mut tx = self.pool.begin().await?;
 
+        let start_time = Instant::now();
+
         (self.event_nft, self.event_collection) =
             actions::get_nft_and_collection_by_auction(&self.address, &mut tx).await;
+
+        let elapsed_time = start_time.elapsed();
+        log::debug!(
+            "Bid placed debug 1 {} ms",
+            elapsed_time.as_millis()
+        );
+
 
         let bid = NftAuctionBid {
             auction: self.address.clone(),
@@ -1457,11 +1466,21 @@ impl ContractEvent for AuctionBidPlaced {
             created_at: NaiveDateTime::from_timestamp_opt(self.created_at, 0).unwrap_or_default(),
             tx_lt: self.created_lt,
         };
+
+        let start_time = Instant::now();
+
         await_handling_error(
             actions::insert_auction_bid(&bid, &mut tx),
             "Updating AuctionBid",
         )
         .await;
+
+        let elapsed_time = start_time.elapsed();
+        log::debug!(
+            "Bid placed debug 2 {} ms",
+            elapsed_time.as_millis()
+        );
+
 
         let min_bid = Some(self.next_bid_value.clone());
 
@@ -1479,11 +1498,20 @@ impl ContractEvent for AuctionBidPlaced {
             finished_at: None,
             tx_lt: self.created_lt,
         };
+
+        let start_time = Instant::now();
+
         await_handling_error(
             actions::upsert_auction(&auction, &mut tx),
             "Updating Auction",
         )
         .await;
+
+        let elapsed_time = start_time.elapsed();
+        log::debug!(
+            "Bid placed debug 3 {} ms",
+            elapsed_time.as_millis()
+        );
 
         let price_history = NftPriceHistory {
             source: self.address.clone(),
@@ -1494,34 +1522,92 @@ impl ContractEvent for AuctionBidPlaced {
             nft: self.event_nft.clone(),
             collection: self.event_collection.clone(),
         };
+
+        let start_time = Instant::now();
+
         await_handling_error(
             actions::upsert_nft_price_history(&price_history, &mut tx),
             "Updating NftPriceHistory",
         )
         .await;
 
+        let elapsed_time = start_time.elapsed();
+        log::debug!(
+            "Bid placed debug 4 {} ms",
+            elapsed_time.as_millis()
+        );
+
+
         if let Some(collection) = self.event_collection.as_ref() {
+
+            let start_time = Instant::now();
+
             let collection = get_collection_data(
                 MsgAddressInt::from_str(collection.0.as_str())?,
                 &self.consumer,
             )
             .await;
+
+            let elapsed_time = start_time.elapsed();
+            log::debug!(
+            "Bid placed debug 5 {} ms",
+            elapsed_time.as_millis()
+        );
+
+            let start_time = Instant::now();
+
             await_handling_error(
                 actions::upsert_collection(&collection, &mut tx, None),
                 "Inserting collection",
             )
             .await;
+
+            let elapsed_time = start_time.elapsed();
+            log::debug!(
+            "Bid placed debug 6 {} ms",
+            elapsed_time.as_millis()
+        );
+
         }
+        let start_time = Instant::now();
 
         let save_result = actions::save_event(self, &mut tx)
             .await
             .expect("Failed to save AuctionBid event");
+
+        let elapsed_time = start_time.elapsed();
+        log::debug!(
+            "Bid placed debug 7 {} ms",
+            elapsed_time.as_millis()
+        );
+
         if save_result.rows_affected() == 0 {
+            let start_time = Instant::now();
+
             tx.rollback().await?;
+
+            let elapsed_time = start_time.elapsed();
+            log::debug!(
+            "Bid placed debug 8 {} ms",
+            elapsed_time.as_millis()
+        );
+
             return Ok(());
         }
 
-        tx.commit().await.map_err(|e| anyhow!(e))
+        let start_time = Instant::now();
+
+
+        let commit = tx.commit().await.map_err(|e| anyhow!(e));
+
+        let elapsed_time = start_time.elapsed();
+        log::debug!(
+            "Bid placed debug 9 {} ms",
+            elapsed_time.as_millis()
+        );
+
+        commit
+
     }
 }
 
