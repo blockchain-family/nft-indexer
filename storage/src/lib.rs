@@ -12,7 +12,7 @@ use std::{str::FromStr, time::Duration};
 
 pub async fn init_pg_pool(db_string: &str, _pool_size: u32) -> Result<PgPool> {
     Ok(PgPoolOptions::new()
-        .max_connections(100)
+        .max_connections(50)
         .connect_with(std::mem::take(
             PgConnectOptions::from_str(db_string)?
                 .log_statements(LevelFilter::Debug)
