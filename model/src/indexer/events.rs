@@ -10,6 +10,7 @@ use sqlx::{
     types::BigDecimal,
     PgPool,
 };
+use std::time::Instant;
 use std::{str::FromStr, sync::Arc};
 use storage::{actions, traits::EventRecord, types::*};
 use ton_abi::TokenValue::Tuple;
@@ -2608,11 +2609,11 @@ impl ContractEvent for NftOwnerChanged {
         //         })
         //         .collect();
 
-            // await_handling_error(
-            //     actions::upsert_nft_attributes(&nft_attributes, &mut tx),
-            //     "Updating nft attributes",
-            // )
-            // .await;
+        // await_handling_error(
+        //     actions::upsert_nft_attributes(&nft_attributes, &mut tx),
+        //     "Updating nft attributes",
+        // )
+        // .await;
         // }
 
         // let nft_meta = NftMeta {
@@ -2964,8 +2965,14 @@ impl ContractEvent for NftCreated {
         //     &self.consumer,
         // )
         // .await;
-
+        let start_time = Instant::now();
         let mut tx = self.pool.begin().await?;
+
+        let elapsed_time = start_time.elapsed();
+        log::debug!(
+            "NftCreated debug create session {} ms",
+            elapsed_time.as_millis()
+        );
 
         // if let Some(attributes) = meta.get("attributes").and_then(|v| v.as_array()) {
         //     let nft_attributes: Vec<NftAttribute> = attributes
@@ -3019,7 +3026,16 @@ impl ContractEvent for NftCreated {
             manager_update_lt: self.created_lt,
         };
 
+        let start_time = Instant::now();
+
         await_handling_error(actions::upsert_nft(&nft, &mut tx), "Updating nft").await;
+
+        let elapsed_time = start_time.elapsed();
+        log::debug!(
+            "NftCreated debug Updating nft {} ms",
+            elapsed_time.as_millis()
+        );
+
         // await_handling_error(
         //     actions::upsert_nft_meta(&nft_meta, &mut tx),
         //     "Updating nft meta",
@@ -3039,31 +3055,69 @@ impl ContractEvent for NftCreated {
         //     "Updating collection",
         // )
         // .await;
+        let start_time = Instant::now();
 
         let save_result = actions::save_event(self, &mut tx)
             .await
             .expect("Failed to save NftCreated event");
 
+        let elapsed_time = start_time.elapsed();
+        log::debug!(
+            "NftCreated debug Save event {} ms",
+            elapsed_time.as_millis()
+        );
+
         if save_result.rows_affected() == 0 {
+            let start_time = Instant::now();
             tx.rollback().await?;
+            let elapsed_time = start_time.elapsed();
+            log::debug!("NftCreated debug rollback {} ms", elapsed_time.as_millis());
             return Ok(());
         }
+        let start_time = Instant::now();
 
         await_handling_error(
             actions::update_collection_by_nft("nft_events", &self.nft, &self.address, &mut tx),
             "Updating collection by nft",
         )
-            .await;
+        .await;
+
+        let elapsed_time = start_time.elapsed();
+        log::debug!(
+            "NftCreated debug Updating collection by nft nft_events{} ms",
+            elapsed_time.as_millis()
+        );
+
+        let start_time = Instant::now();
+
         await_handling_error(
             actions::update_collection_by_nft("nft_direct_sell", &self.nft, &self.address, &mut tx),
             "Updating collection by nft",
         )
-            .await;
+        .await;
+
+        let elapsed_time = start_time.elapsed();
+        log::debug!(
+            "NftCreated debug Updating collection by nft nft_direct_sell {} ms",
+            elapsed_time.as_millis()
+        );
+
+        let start_time = Instant::now();
+
         await_handling_error(
             actions::update_collection_by_nft("nft_direct_buy", &self.nft, &self.address, &mut tx),
             "Updating collection by nft",
         )
-            .await;
+        .await;
+
+        let elapsed_time = start_time.elapsed();
+        log::debug!(
+            "NftCreated debug Updating collection by nft nft_direct_buy {} ms",
+            elapsed_time.as_millis()
+        );
+
+        let start_time = Instant::now();
+
         await_handling_error(
             actions::update_collection_by_nft(
                 "nft_price_history",
@@ -3073,14 +3127,36 @@ impl ContractEvent for NftCreated {
             ),
             "Updating collection by nft",
         )
-            .await;
+        .await;
+
+        let elapsed_time = start_time.elapsed();
+        log::debug!(
+            "NftCreated debug Updating collection by nft nft_price_history {} ms",
+            elapsed_time.as_millis()
+        );
+
+        let start_time = Instant::now();
+
         await_handling_error(
             actions::update_collection_by_nft("nft_attributes", &self.nft, &self.address, &mut tx),
             "Updating collection by nft",
         )
-            .await;
+        .await;
 
-        tx.commit().await.map_err(|e| anyhow!(e))
+        let elapsed_time = start_time.elapsed();
+        log::debug!(
+            "NftCreated debug Updating collection by nft nft_attributes {} ms",
+            elapsed_time.as_millis()
+        );
+
+        let start_time = Instant::now();
+
+        let res = tx.commit().await.map_err(|e| anyhow!(e));
+
+        let elapsed_time = start_time.elapsed();
+        log::debug!("NftCreated debug commit {} ms", elapsed_time.as_millis());
+
+        res
     }
 }
 
@@ -3291,31 +3367,30 @@ async fn get_collection_data(
         created: now,
         updated: now,
         logo: None,
-        wallpaper: None
-        // logo: collection_meta
-        //     .get("preview")
-        //     .cloned()
-        //     .unwrap_or_default()
-        //     .get("source")
-        //     .cloned()
-        //     .unwrap_or_default()
-        //     .as_str()
-        //     .map(|s| s.into()),
-        // wallpaper: collection_meta
-        //     .get("files")
-        //     .cloned()
-        //     .unwrap_or_default()
-        //     .as_array()
-        //     .cloned()
-        //     .unwrap_or_default()
-        //     .first()
-        //     .cloned()
-        //     .unwrap_or_default()
-        //     .get("source")
-        //     .cloned()
-        //     .unwrap_or_default()
-        //     .as_str()
-        //     .map(|s| s.into()),
+        wallpaper: None, // logo: collection_meta
+                         //     .get("preview")
+                         //     .cloned()
+                         //     .unwrap_or_default()
+                         //     .get("source")
+                         //     .cloned()
+                         //     .unwrap_or_default()
+                         //     .as_str()
+                         //     .map(|s| s.into()),
+                         // wallpaper: collection_meta
+                         //     .get("files")
+                         //     .cloned()
+                         //     .unwrap_or_default()
+                         //     .as_array()
+                         //     .cloned()
+                         //     .unwrap_or_default()
+                         //     .first()
+                         //     .cloned()
+                         //     .unwrap_or_default()
+                         //     .get("source")
+                         //     .cloned()
+                         //     .unwrap_or_default()
+                         //     .as_str()
+                         //     .map(|s| s.into()),
     }
 }
 
