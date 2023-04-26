@@ -11,6 +11,7 @@ use sqlx::PgPool;
 use std::time::Instant;
 use std::{collections::HashMap, sync::Arc};
 use storage::{actions, traits::*};
+use tokio::sync::OwnedSemaphorePermit;
 use transaction_consumer::{ConsumedTransaction, StreamFrom, TransactionConsumer};
 
 #[derive(PartialEq, Eq, Hash)]
@@ -41,8 +42,10 @@ pub async fn serve(pool: PgPool, consumer: Arc<TransactionConsumer>, config: Con
     let (mut stream, offsets) = consumer.stream_until_highest_offsets(from).await?;
 
     log::info!("Starting fast streaming");
+    let semaphore = Arc::new(tokio::sync::Semaphore::new(16));
     while let Some(tx) = stream.next().await {
-        indexer_routine(tx, pool.clone(), consumer.clone());
+        let permit = semaphore.clone().acquire_owned().await.unwrap();
+        indexer_routine(tx, pool.clone(), consumer.clone(), permit);
     }
 
     let mut stream = consumer
@@ -50,8 +53,10 @@ pub async fn serve(pool: PgPool, consumer: Arc<TransactionConsumer>, config: Con
         .await?;
 
     log::info!("Starting realtime streaming");
+    let semaphore = Arc::new(tokio::sync::Semaphore::new(16));
     while let Some(tx) = stream.next().await {
-        indexer_routine(tx, pool.clone(), consumer.clone());
+        let permit = semaphore.clone().acquire_owned().await.unwrap();
+        indexer_routine(tx, pool.clone(), consumer.clone(), permit);
     }
 
     log::warn!("Transactions stream terminated.");
@@ -59,7 +64,12 @@ pub async fn serve(pool: PgPool, consumer: Arc<TransactionConsumer>, config: Con
     Ok(())
 }
 
-fn indexer_routine(tx: ConsumedTransaction, pool: PgPool, consumer: Arc<TransactionConsumer>) {
+fn indexer_routine(
+    tx: ConsumedTransaction,
+    pool: PgPool,
+    consumer: Arc<TransactionConsumer>,
+    permit: OwnedSemaphorePermit,
+) {
     log::debug!(
         "Received transaction. ID: {:?} offset: {} partition: {} detail{:?}",
         tx.id,
@@ -78,6 +88,7 @@ fn indexer_routine(tx: ConsumedTransaction, pool: PgPool, consumer: Arc<Transact
         if let Err(e) = tx.commit() {
             log::error!("Failed committing transaction: {:#?}", e);
         }
+        drop(permit);
     });
 }
 
