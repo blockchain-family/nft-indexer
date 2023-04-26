@@ -179,32 +179,6 @@
     },
     "query": "\n        update nft_direct_buy set state = $1\n        where expired_at != $2 and expired_at < $3 and nft_direct_buy.state = $4\n        "
   },
-  "4323e0dd2ce961e5ec8f648d08895b1bd0b1d5d0d31d1871dd04e611dfd674a9": {
-    "describe": {
-      "columns": [
-        {
-          "name": "price!: BigDecimal",
-          "ordinal": 0,
-          "type_info": "Numeric"
-        },
-        {
-          "name": "price_token!: String",
-          "ordinal": 1,
-          "type_info": "Varchar"
-        }
-      ],
-      "nullable": [
-        null,
-        null
-      ],
-      "parameters": {
-        "Left": [
-          "Text"
-        ]
-      }
-    },
-    "query": "\n        select price as \"price!: BigDecimal\", price_token as \"price_token!: String\" from nft\n        inner join nft_direct_sell as direct_sell\n        on nft.address = direct_sell.nft\n        where nft.collection = $1 and direct_sell.state = 'active'\n        union\n        select price as \"price!: BigDecimal\", price_token as \"price_token!: String\" from nft\n        inner join nft_auction as auction\n        on nft.address = auction.nft\n        inner join nft_auction_bid as bid\n        on auction.address = bid.auction\n        where nft.collection = $1 and auction.status = 'active'\n        "
-  },
   "44f3635fb703fcb859bcc33c1055a4d23c49113c1c690ac1aff687f252881da9": {
     "describe": {
       "columns": [],
@@ -722,6 +696,32 @@
       }
     },
     "query": "\n        select collection as \"collection?: Address\" from nft\n        where nft.address = $1\n        "
+  },
+  "cf091cf058b90c06d15d84a24f7707c8f4b4928013648d2b05e7895abc80d07e": {
+    "describe": {
+      "columns": [
+        {
+          "name": "price!: BigDecimal",
+          "ordinal": 0,
+          "type_info": "Numeric"
+        },
+        {
+          "name": "price_token!: String",
+          "ordinal": 1,
+          "type_info": "Varchar"
+        }
+      ],
+      "nullable": [
+        null,
+        null
+      ],
+      "parameters": {
+        "Left": [
+          "Text"
+        ]
+      }
+    },
+    "query": "\n        select sum(ag.price)  as \"price!: BigDecimal\", ag.price_token as \"price_token!: String\" from (\n                            select price, price_token\n                            from nft\n                                     inner join nft_direct_sell as direct_sell\n                                                on nft.address = direct_sell.nft\n                            where nft.collection = $1\n                              and direct_sell.state = 'active'\n                            union\n                            select price as \"price!: BigDecimal\", price_token as \"price_token!: String\"\n                            from nft\n                                     inner join nft_auction as auction\n                                                on nft.address = auction.nft\n                                     inner join nft_auction_bid as bid\n                                                on auction.address = bid.auction\n                            where nft.collection = $1\n                              and auction.status = 'active'\n                        ) ag\n        group by ag.price_token\n        "
   },
   "db9147b6e9cbefc50b732ac9e6f16852f9f8e89c774357b158aefd62a0683031": {
     "describe": {

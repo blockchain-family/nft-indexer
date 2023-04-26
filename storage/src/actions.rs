@@ -70,17 +70,24 @@ pub async fn get_prices(
     let pairs = sqlx::query_as!(
         PricePair,
         r#"
-        select price as "price!: BigDecimal", price_token as "price_token!: String" from nft
-        inner join nft_direct_sell as direct_sell
-        on nft.address = direct_sell.nft
-        where nft.collection = $1 and direct_sell.state = 'active'
-        union
-        select price as "price!: BigDecimal", price_token as "price_token!: String" from nft
-        inner join nft_auction as auction
-        on nft.address = auction.nft
-        inner join nft_auction_bid as bid
-        on auction.address = bid.auction
-        where nft.collection = $1 and auction.status = 'active'
+        select sum(ag.price)  as "price!: BigDecimal", ag.price_token as "price_token!: String" from (
+                            select price, price_token
+                            from nft
+                                     inner join nft_direct_sell as direct_sell
+                                                on nft.address = direct_sell.nft
+                            where nft.collection = $1
+                              and direct_sell.state = 'active'
+                            union
+                            select price as "price!: BigDecimal", price_token as "price_token!: String"
+                            from nft
+                                     inner join nft_auction as auction
+                                                on nft.address = auction.nft
+                                     inner join nft_auction_bid as bid
+                                                on auction.address = bid.auction
+                            where nft.collection = $1
+                              and auction.status = 'active'
+                        ) ag
+        group by ag.price_token
         "#,
         collection as &Address,
     )
@@ -105,6 +112,8 @@ pub async fn upsert_collection(
     tx: &mut Transaction<'_, Postgres>,
     nft_created_at: Option<NaiveDateTime>,
 ) -> Result<PgQueryResult, sqlx::Error> {
+
+
     let owners_count = get_owners_count(&collection.address, tx).await;
     let (total_price, max_price) = get_prices(&collection.address, tx).await?;
 
