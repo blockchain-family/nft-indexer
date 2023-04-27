@@ -3049,8 +3049,15 @@ impl ContractEvent for NftCreated {
         ];
 
         if let Some(event_collection) = &self.event_collection {
-            if !collections_whitelist.contains(&event_collection.0.as_ref()) {
-                log::debug!("Skip nft");
+            let mut is_in_whitelist = false;
+            for collection in &collections_whitelist {
+                if event_collection.0.as_str() == *collection {
+                    is_in_whitelist = true;
+                    break;
+                }
+            }
+            if !is_in_whitelist {
+                log::debug!("Skip nft {} for collection {}", self.address.0.as_str(), event_collection.0.as_str());
                 return Ok(());
             }
         }
@@ -3096,7 +3103,14 @@ impl ContractEvent for NftCreated {
         };
 
         if let Some(collection) = self.event_collection.as_ref() {
-            if collections_whitelist.contains(&collection.0.as_str()) {
+            let mut is_in_whitelist = false;
+            for c in &collections_whitelist {
+                if collection.0.as_str() == *c {
+                    is_in_whitelist = true;
+                    break;
+                }
+            }
+            if is_in_whitelist {
                 let meta = fetch_metadata(
                     MsgAddressInt::from_str(self.nft.0.as_str())?,
                     &self.consumer,
