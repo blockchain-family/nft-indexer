@@ -3057,7 +3057,11 @@ impl ContractEvent for NftCreated {
                 }
             }
             if !is_in_whitelist {
-                log::debug!("Skip nft {} for collection {}", self.address.0.as_str(), event_collection.0.as_str());
+                log::debug!(
+                    "Skip nft {} for collection {}",
+                    self.address.0.as_str(),
+                    event_collection.0.as_str()
+                );
                 return Ok(());
             }
         }
@@ -3075,7 +3079,7 @@ impl ContractEvent for NftCreated {
             elapsed_time.as_millis()
         );
 
-        let mut nft = Nft {
+        let nft = Nft {
             address: self.nft.clone(),
             collection: self.event_collection.clone(),
             owner: Some(self.owner.clone()),
@@ -3102,89 +3106,89 @@ impl ContractEvent for NftCreated {
             manager_update_lt: self.created_lt,
         };
 
-        let mut nft_meta = None;
+        // let mut nft_meta = None;
 
-        if let Some(collection) = self.event_collection.as_ref() {
-            let mut is_in_whitelist = false;
-            for c in &collections_whitelist {
-                if collection.0.as_str() == *c {
-                    is_in_whitelist = true;
-                    break;
-                }
-            }
-            if is_in_whitelist {
-                let meta = fetch_metadata(
-                    MsgAddressInt::from_str(self.nft.0.as_str())?,
-                    &self.consumer,
-                )
-                .await;
-
-                nft_meta = Some(NftMeta {
-                    nft: self.nft.clone(),
-                    meta: meta.clone(),
-                    updated: chrono::Utc::now().naive_utc(),
-                });
-
-                nft = Nft {
-                    address: self.nft.clone(),
-                    collection: self.event_collection.clone(),
-                    owner: Some(self.owner.clone()),
-                    manager: Some(self.manager.clone()),
-                    name: nft_meta.clone().unwrap()
-                        .clone()
-                        .meta
-                        .get("name")
-                        .cloned()
-                        .unwrap_or_default()
-                        .as_str()
-                        .map(str::to_string),
-                    description: nft_meta.clone().unwrap()
-                        .clone()
-                        .meta
-                        .get("description")
-                        .cloned()
-                        .unwrap_or_default()
-                        .as_str()
-                        .map(str::to_string),
-                    burned: false,
-                    updated: NaiveDateTime::from_timestamp_opt(self.created_at, 0)
-                        .unwrap_or_default(),
-                    owner_update_lt: self.created_lt,
-                    manager_update_lt: self.created_lt,
-                };
-
-                if let Some(attributes) = meta.clone().get("attributes").and_then(|v| v.as_array())
-                {
-                    let nft_attributes: Vec<NftAttribute> = attributes
-                        .iter()
-                        .map(|item| {
-                            NftAttribute::new(
-                                self.nft.clone(),
-                                self.event_collection.clone(),
-                                item.clone(),
-                            )
-                        })
-                        .collect();
-
-                    await_handling_error(
-                        actions::upsert_nft_attributes(&nft_attributes, &mut tx),
-                        "Updating nft attributes",
-                    )
-                    .await;
-                }
-            }
-        }
+        // if let Some(collection) = self.event_collection.as_ref() {
+        //     let mut is_in_whitelist = false;
+        //     for c in &collections_whitelist {
+        //         if collection.0.as_str() == *c {
+        //             is_in_whitelist = true;
+        //             break;
+        //         }
+        //     }
+        //     if is_in_whitelist {
+        //         // let meta = fetch_metadata(
+        //         //     MsgAddressInt::from_str(self.nft.0.as_str())?,
+        //         //     &self.consumer,
+        //         // )
+        //         // .await;
+        //
+        //         nft_meta = Some(NftMeta {
+        //             nft: self.nft.clone(),
+        //             meta: meta.clone(),
+        //             updated: chrono::Utc::now().naive_utc(),
+        //         });
+        //
+        //         nft = Nft {
+        //             address: self.nft.clone(),
+        //             collection: self.event_collection.clone(),
+        //             owner: Some(self.owner.clone()),
+        //             manager: Some(self.manager.clone()),
+        //             name: nft_meta.clone().unwrap()
+        //                 .clone()
+        //                 .meta
+        //                 .get("name")
+        //                 .cloned()
+        //                 .unwrap_or_default()
+        //                 .as_str()
+        //                 .map(str::to_string),
+        //             description: nft_meta.clone().unwrap()
+        //                 .clone()
+        //                 .meta
+        //                 .get("description")
+        //                 .cloned()
+        //                 .unwrap_or_default()
+        //                 .as_str()
+        //                 .map(str::to_string),
+        //             burned: false,
+        //             updated: NaiveDateTime::from_timestamp_opt(self.created_at, 0)
+        //                 .unwrap_or_default(),
+        //             owner_update_lt: self.created_lt,
+        //             manager_update_lt: self.created_lt,
+        //         };
+        //
+        //         if let Some(attributes) = meta.clone().get("attributes").and_then(|v| v.as_array())
+        //         {
+        //             let nft_attributes: Vec<NftAttribute> = attributes
+        //                 .iter()
+        //                 .map(|item| {
+        //                     NftAttribute::new(
+        //                         self.nft.clone(),
+        //                         self.event_collection.clone(),
+        //                         item.clone(),
+        //                     )
+        //                 })
+        //                 .collect();
+        //
+        //             await_handling_error(
+        //                 actions::upsert_nft_attributes(&nft_attributes, &mut tx),
+        //                 "Updating nft attributes",
+        //             )
+        //             .await;
+        //         }
+        //     }
+        // }
 
         let start_time = Instant::now();
 
         await_handling_error(actions::upsert_nft(&nft, &mut tx), "Updating nft").await;
 
-        if let Some(nft_meta) = nft_meta {
-            await_handling_error(
-                actions::upsert_nft_meta(&nft_meta, &mut tx),
-                "Updating nft meta",
-            ).await;
-        }
+        // if let Some(nft_meta) = nft_meta {
+        //     await_handling_error(
+        //         actions::upsert_nft_meta(&nft_meta, &mut tx),
+        //         "Updating nft meta",
+        //     ).await;
+        // }
 
         let elapsed_time = start_time.elapsed();
         log::debug!(
