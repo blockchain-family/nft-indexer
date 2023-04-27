@@ -115,20 +115,18 @@ pub async fn upsert_collection(
 
 
     let owners_count = get_owners_count(&collection.address, tx).await;
-    // let (total_price, max_price) = get_prices(&collection.address, tx).await?;
-    let (total_price, max_price) = (BigDecimal::default(), BigDecimal::default());
 
     sqlx::query!(
         r#"
         insert into nft_collection (address, owner, name, description, created, updated, logo, wallpaper,
-            total_price, max_price, owners_count, first_mint)
-        values ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12)
+            owners_count, first_mint)
+        values ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10)
         on conflict (address) do update
-        set owner = $2, name = coalesce($3, nft_collection.name), 
-            description = coalesce($4, nft_collection.description), 
+        set owner = $2, name = coalesce($3, nft_collection.name),
+            description = coalesce($4, nft_collection.description),
             created = case when nft_collection.created < $5 then nft_collection.created else $5 end, updated = $6,
-            logo = coalesce($7, nft_collection.logo), wallpaper = coalesce($8, nft_collection.wallpaper), total_price = $9,
-            max_price = $10, owners_count = $11, first_mint = least($12, nft_collection.first_mint)
+            logo = coalesce($7, nft_collection.logo), wallpaper = coalesce($8, nft_collection.wallpaper),
+            owners_count = $9, first_mint = least($10, nft_collection.first_mint)
         "#,
         &collection.address as &Address,
         &collection.owner as &Address,
@@ -138,8 +136,6 @@ pub async fn upsert_collection(
         collection.updated,
         &collection.logo as &Option<Uri>,
         &collection.wallpaper as &Option<Uri>,
-        total_price,
-        max_price,
         owners_count.unwrap_or_default() as i32,
         nft_created_at
     )
@@ -290,8 +286,8 @@ pub async fn upsert_nft(
     let nft = if let Some(mut saved_nft) = sqlx::query_as!(
         Nft,
         r#"
-        select address as "address!: Address", collection as "collection?: Address", owner as "owner?: Address", 
-            manager as "manager?: Address", name as "name?", description as "description?", burned as "burned!", 
+        select address as "address!: Address", collection as "collection?: Address", owner as "owner?: Address",
+            manager as "manager?: Address", name as "name?", description as "description?", burned as "burned!",
             updated as "updated!", owner_update_lt as "owner_update_lt!", manager_update_lt as "manager_update_lt!"
         from nft where address = $1
         "#,
@@ -363,7 +359,7 @@ pub async fn upsert_auction(
         NftAuction,
         r#"
         select address as "address!: Address", nft as "nft?: Address", wallet_for_bids as "wallet_for_bids?: Address",
-            price_token as "price_token?: Address", start_price as "start_price?", 
+            price_token as "price_token?: Address", start_price as "start_price?",
             closing_price_usd as "closing_price_usd?", min_bid as "min_bid?", max_bid as "max_bid?",
             status as "status?: AuctionStatus", created_at as "created_at?", finished_at as "finished_at?",
             tx_lt as "tx_lt!"
@@ -526,7 +522,7 @@ pub async fn upsert_direct_buy(
     sqlx::query!(
         r#"
         insert into nft_direct_buy (address, nft, collection, price_token, price, buy_price_usd, buyer, finished_at,
-            expired_at, state, created, updated, tx_lt)    
+            expired_at, state, created, updated, tx_lt)
         values ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13)
         on conflict (address) where tx_lt <= $13 do update
         set collection = $3, price = $5, buy_price_usd = coalesce($6, nft_direct_buy.buy_price_usd), finished_at = $8,
@@ -573,7 +569,7 @@ pub async fn upsert_nft_price_history(
     sqlx::query!(
         r#"
         update nft_price_history as nph
-        set price_token = coalesce(nph.price_token, $2), nft = coalesce(nph.nft, $3), 
+        set price_token = coalesce(nph.price_token, $2), nft = coalesce(nph.nft, $3),
             collection = coalesce(nph.collection, $4)
         where source = $1
         "#,
