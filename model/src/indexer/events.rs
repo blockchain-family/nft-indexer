@@ -1451,11 +1451,7 @@ impl ContractEvent for AuctionBidPlaced {
             actions::get_nft_and_collection_by_auction(&self.address, &mut tx).await;
 
         let elapsed_time = start_time.elapsed();
-        log::debug!(
-            "Bid placed debug 1 {} ms",
-            elapsed_time.as_millis()
-        );
-
+        log::debug!("Bid placed debug 1 {} ms", elapsed_time.as_millis());
 
         let bid = NftAuctionBid {
             auction: self.address.clone(),
@@ -1476,11 +1472,7 @@ impl ContractEvent for AuctionBidPlaced {
         .await;
 
         let elapsed_time = start_time.elapsed();
-        log::debug!(
-            "Bid placed debug 2 {} ms",
-            elapsed_time.as_millis()
-        );
-
+        log::debug!("Bid placed debug 2 {} ms", elapsed_time.as_millis());
 
         let min_bid = Some(self.next_bid_value.clone());
 
@@ -1508,10 +1500,7 @@ impl ContractEvent for AuctionBidPlaced {
         .await;
 
         let elapsed_time = start_time.elapsed();
-        log::debug!(
-            "Bid placed debug 3 {} ms",
-            elapsed_time.as_millis()
-        );
+        log::debug!("Bid placed debug 3 {} ms", elapsed_time.as_millis());
 
         let price_history = NftPriceHistory {
             source: self.address.clone(),
@@ -1532,14 +1521,9 @@ impl ContractEvent for AuctionBidPlaced {
         .await;
 
         let elapsed_time = start_time.elapsed();
-        log::debug!(
-            "Bid placed debug 4 {} ms",
-            elapsed_time.as_millis()
-        );
-
+        log::debug!("Bid placed debug 4 {} ms", elapsed_time.as_millis());
 
         if let Some(collection) = self.event_collection.as_ref() {
-
             let start_time = Instant::now();
 
             let collection = get_collection_data(
@@ -1549,10 +1533,7 @@ impl ContractEvent for AuctionBidPlaced {
             .await;
 
             let elapsed_time = start_time.elapsed();
-            log::debug!(
-            "Bid placed debug 5 {} ms",
-            elapsed_time.as_millis()
-        );
+            log::debug!("Bid placed debug 5 {} ms", elapsed_time.as_millis());
 
             let start_time = Instant::now();
 
@@ -1563,11 +1544,7 @@ impl ContractEvent for AuctionBidPlaced {
             .await;
 
             let elapsed_time = start_time.elapsed();
-            log::debug!(
-            "Bid placed debug 6 {} ms",
-            elapsed_time.as_millis()
-        );
-
+            log::debug!("Bid placed debug 6 {} ms", elapsed_time.as_millis());
         }
         let start_time = Instant::now();
 
@@ -1576,10 +1553,7 @@ impl ContractEvent for AuctionBidPlaced {
             .expect("Failed to save AuctionBid event");
 
         let elapsed_time = start_time.elapsed();
-        log::debug!(
-            "Bid placed debug 7 {} ms",
-            elapsed_time.as_millis()
-        );
+        log::debug!("Bid placed debug 7 {} ms", elapsed_time.as_millis());
 
         if save_result.rows_affected() == 0 {
             let start_time = Instant::now();
@@ -1587,27 +1561,19 @@ impl ContractEvent for AuctionBidPlaced {
             tx.rollback().await?;
 
             let elapsed_time = start_time.elapsed();
-            log::debug!(
-            "Bid placed debug 8 {} ms",
-            elapsed_time.as_millis()
-        );
+            log::debug!("Bid placed debug 8 {} ms", elapsed_time.as_millis());
 
             return Ok(());
         }
 
         let start_time = Instant::now();
 
-
         let commit = tx.commit().await.map_err(|e| anyhow!(e));
 
         let elapsed_time = start_time.elapsed();
-        log::debug!(
-            "Bid placed debug 9 {} ms",
-            elapsed_time.as_millis()
-        );
+        log::debug!("Bid placed debug 9 {} ms", elapsed_time.as_millis());
 
         commit
-
     }
 }
 
@@ -1749,7 +1715,8 @@ impl ContractEvent for AuctionComplete {
             actions::get_nft_and_collection_by_auction(&self.address, &mut tx).await;
 
         let price_token = actions::get_auction_price_token(&self.address, &mut tx).await;
-        let closing_price_usd = if price_token.is_some() {
+        // HACK: turn off the usd price request
+        let closing_price_usd = if price_token.is_some() && false {
             let usd_price = rpc::token_to_usd(&price_token.as_ref().unwrap().0)
                 .await
                 .unwrap_or_default();
@@ -2436,7 +2403,8 @@ impl ContractEvent for DirectBuyStateChanged {
             .await;
         }
 
-        let (buy_price_usd, finished_at) = if state == DirectBuyState::Filled {
+        // HACK: turn off the usd price request
+        let (buy_price_usd, finished_at) = if state == DirectBuyState::Filled && false {
             let usd_price = rpc::token_to_usd(&self.spent_token.0)
                 .await
                 .unwrap_or_default();
@@ -2574,7 +2542,8 @@ impl ContractEvent for DirectSellStateChanged {
             .await;
         }
 
-        let (sell_price_usd, finished_at) = if state == DirectSellState::Filled {
+        // HACK: turn off the usd price request
+        let (sell_price_usd, finished_at) = if state == DirectSellState::Filled && false {
             let usd_price = rpc::token_to_usd(&self.token.0).await.unwrap_or_default();
             (Some(usd_price * self._price.clone()), Some(created_ts))
         } else {
