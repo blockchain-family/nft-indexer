@@ -3041,15 +3041,19 @@ impl ContractEvent for NftCreated {
     }
 
     async fn update_dependent_tables(&mut self) -> Result<()> {
-        // if let Some(event_collection) = &self.event_collection {
-        //     if event_collection
-        //         .0
-        //         .eq("0:b288234ed66c5d45250c01b5aa3a77f0b95050c4fb785bf62d05f580c9f7a341")
-        //     {
-        //         log::debug!("Skip nft");
-        //         return Ok(());
-        //     }
-        // }
+        let collections_whitelist = vec![
+            "0:ec0ab798c85aa7256865221bacd4f3df220cf60277a2b79b3091b76c265d1cd7",
+            "0:33a630f9c54fc4092f43ab978f3fd65964bb0d775553c16953aa1568eb63ab0f",
+            "0:d62691c79f447f512d7ad235a291435a8a886debff1b72dfc3ff5e486798d96e",
+            "0:7eb6488246ba08f88fe8779e9257ca9ebc7d2f82f6111ce6747abda368e3c7a8",
+        ];
+
+        if let Some(event_collection) = &self.event_collection {
+            if !collections_whitelist.contains(&event_collection.0.as_ref()) {
+                log::debug!("Skip nft");
+                return Ok(());
+            }
+        }
         // let meta = fetch_metadata(
         //     MsgAddressInt::from_str(self.nft.0.as_str())?,
         //     &self.consumer,
@@ -3063,13 +3067,6 @@ impl ContractEvent for NftCreated {
             "NftCreated debug create session {} ms",
             elapsed_time.as_millis()
         );
-
-        let collections_whitelist = vec![
-            "0:ec0ab798c85aa7256865221bacd4f3df220cf60277a2b79b3091b76c265d1cd7",
-            "0:33a630f9c54fc4092f43ab978f3fd65964bb0d775553c16953aa1568eb63ab0f",
-            "0:d62691c79f447f512d7ad235a291435a8a886debff1b72dfc3ff5e486798d96e",
-            "0:7eb6488246ba08f88fe8779e9257ca9ebc7d2f82f6111ce6747abda368e3c7a8",
-        ];
 
         let mut nft = Nft {
             address: self.nft.clone(),
