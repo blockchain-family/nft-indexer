@@ -3102,6 +3102,8 @@ impl ContractEvent for NftCreated {
             manager_update_lt: self.created_lt,
         };
 
+        let mut nft_meta = None;
+
         if let Some(collection) = self.event_collection.as_ref() {
             let mut is_in_whitelist = false;
             for c in &collections_whitelist {
@@ -3117,18 +3119,18 @@ impl ContractEvent for NftCreated {
                 )
                 .await;
 
-                let nft_meta = NftMeta {
+                nft_meta = Some(NftMeta {
                     nft: self.nft.clone(),
                     meta: meta.clone(),
                     updated: chrono::Utc::now().naive_utc(),
-                };
+                });
 
                 nft = Nft {
                     address: self.nft.clone(),
                     collection: self.event_collection.clone(),
                     owner: Some(self.owner.clone()),
                     manager: Some(self.manager.clone()),
-                    name: nft_meta
+                    name: nft_meta.clone().unwrap()
                         .clone()
                         .meta
                         .get("name")
@@ -3136,7 +3138,7 @@ impl ContractEvent for NftCreated {
                         .unwrap_or_default()
                         .as_str()
                         .map(str::to_string),
-                    description: nft_meta
+                    description: nft_meta.clone().unwrap()
                         .clone()
                         .meta
                         .get("description")
@@ -3170,18 +3172,19 @@ impl ContractEvent for NftCreated {
                     )
                     .await;
                 }
-
-                await_handling_error(
-                    actions::upsert_nft_meta(&nft_meta, &mut tx),
-                    "Updating nft meta",
-                )
-                .await;
             }
         }
 
         let start_time = Instant::now();
 
         await_handling_error(actions::upsert_nft(&nft, &mut tx), "Updating nft").await;
+
+        if let Some(nft_meta) = nft_meta {
+            await_handling_error(
+                actions::upsert_nft_meta(&nft_meta, &mut tx),
+                "Updating nft meta",
+            ).await;
+        }
 
         let elapsed_time = start_time.elapsed();
         log::debug!(
