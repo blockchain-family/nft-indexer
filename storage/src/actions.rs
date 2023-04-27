@@ -115,7 +115,8 @@ pub async fn upsert_collection(
 
 
     let owners_count = get_owners_count(&collection.address, tx).await;
-    let (total_price, max_price) = get_prices(&collection.address, tx).await?;
+    // let (total_price, max_price) = get_prices(&collection.address, tx).await?;
+    let (total_price, max_price) = (BigDecimal::default(), BigDecimal::default());
 
     sqlx::query!(
         r#"
