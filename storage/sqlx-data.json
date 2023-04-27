@@ -475,6 +475,26 @@
     },
     "query": "\n        select nft.address as \"nft?: Address\", collection as \"collection?: Address\" from nft\n        inner join nft_auction\n        on nft_auction.nft = nft.address\n        where nft_auction.address = $1\n        "
   },
+  "965401cd18387f2be3588882815ccced1fc69944139a120d23573be977608e53": {
+    "describe": {
+      "columns": [
+        {
+          "name": "count",
+          "ordinal": 0,
+          "type_info": "Int8"
+        }
+      ],
+      "nullable": [
+        null
+      ],
+      "parameters": {
+        "Left": [
+          "Text"
+        ]
+      }
+    },
+    "query": "SELECT count(1) FROM nft_collection WHERE address = $1"
+  },
   "a2d8d0a1ecf451e456031ebe16b13914253a7af85ad73639b848a0e61d46ddeb": {
     "describe": {
       "columns": [],

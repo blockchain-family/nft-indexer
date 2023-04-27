@@ -1348,17 +1348,23 @@ impl ContractEvent for AuctionActive {
 
         self.event_collection =
             actions::get_collection_by_nft(&self.auction_subject, &mut tx).await;
+
         if let Some(collection) = self.event_collection.as_ref() {
-            let collection = get_collection_data(
-                MsgAddressInt::from_str(collection.0.as_str())?,
-                &self.consumer,
-            )
-            .await;
-            await_handling_error(
-                actions::upsert_collection(&collection, &mut tx, None),
-                "Inserting collection",
-            )
-            .await;
+            let exists = actions::check_collection_exists(collection.0.as_str(), &mut tx)
+                .await
+                .expect("Failed to check collection exists for collection {collection:?}");
+            if !exists {
+                let collection = get_collection_data(
+                    MsgAddressInt::from_str(collection.0.as_str())?,
+                    &self.consumer,
+                )
+                .await;
+                await_handling_error(
+                    actions::upsert_collection(&collection, &mut tx, None),
+                    "Inserting collection",
+                )
+                .await;
+            }
         }
 
         let price_history = NftPriceHistory {
@@ -1524,27 +1530,32 @@ impl ContractEvent for AuctionBidPlaced {
         log::debug!("Bid placed debug 4 {} ms", elapsed_time.as_millis());
 
         if let Some(collection) = self.event_collection.as_ref() {
-            let start_time = Instant::now();
+            let exists = actions::check_collection_exists(collection.0.as_str(), &mut tx)
+                .await
+                .expect("Failed to check collection exists for collection {collection:?}");
+            if !exists {
+                let start_time = Instant::now();
 
-            let collection = get_collection_data(
-                MsgAddressInt::from_str(collection.0.as_str())?,
-                &self.consumer,
-            )
-            .await;
+                let collection = get_collection_data(
+                    MsgAddressInt::from_str(collection.0.as_str())?,
+                    &self.consumer,
+                )
+                .await;
 
-            let elapsed_time = start_time.elapsed();
-            log::debug!("Bid placed debug 5 {} ms", elapsed_time.as_millis());
+                let elapsed_time = start_time.elapsed();
+                log::debug!("Bid placed debug 5 {} ms", elapsed_time.as_millis());
 
-            let start_time = Instant::now();
+                let start_time = Instant::now();
 
-            await_handling_error(
-                actions::upsert_collection(&collection, &mut tx, None),
-                "Inserting collection",
-            )
-            .await;
+                await_handling_error(
+                    actions::upsert_collection(&collection, &mut tx, None),
+                    "Inserting collection",
+                )
+                .await;
 
-            let elapsed_time = start_time.elapsed();
-            log::debug!("Bid placed debug 6 {} ms", elapsed_time.as_millis());
+                let elapsed_time = start_time.elapsed();
+                log::debug!("Bid placed debug 6 {} ms", elapsed_time.as_millis());
+            }
         }
         let start_time = Instant::now();
 
@@ -1746,16 +1757,21 @@ impl ContractEvent for AuctionComplete {
         .await;
 
         if let Some(collection) = self.event_collection.as_ref() {
-            let collection = get_collection_data(
-                MsgAddressInt::from_str(collection.0.as_str())?,
-                &self.consumer,
-            )
-            .await;
-            await_handling_error(
-                actions::upsert_collection(&collection, &mut tx, None),
-                "Inserting collection",
-            )
-            .await;
+            let exists = actions::check_collection_exists(collection.0.as_str(), &mut tx)
+                .await
+                .expect("Failed to check collection exists for collection {collection:?}");
+            if !exists {
+                let collection = get_collection_data(
+                    MsgAddressInt::from_str(collection.0.as_str())?,
+                    &self.consumer,
+                )
+                .await;
+                await_handling_error(
+                    actions::upsert_collection(&collection, &mut tx, None),
+                    "Inserting collection",
+                )
+                .await;
+            }
         }
 
         let save_result = actions::save_event(self, &mut tx)
@@ -1821,16 +1837,21 @@ impl ContractEvent for AuctionCancelled {
         .await;
 
         if let Some(collection) = self.event_collection.as_ref() {
-            let collection = get_collection_data(
-                MsgAddressInt::from_str(collection.0.as_str())?,
-                &self.consumer,
-            )
-            .await;
-            await_handling_error(
-                actions::upsert_collection(&collection, &mut tx, None),
-                "Inserting collection",
-            )
-            .await;
+            let exists = actions::check_collection_exists(collection.0.as_str(), &mut tx)
+                .await
+                .expect("Failed to check collection exists for collection {collection:?}");
+            if !exists {
+                let collection = get_collection_data(
+                    MsgAddressInt::from_str(collection.0.as_str())?,
+                    &self.consumer,
+                )
+                .await;
+                await_handling_error(
+                    actions::upsert_collection(&collection, &mut tx, None),
+                    "Inserting collection",
+                )
+                .await;
+            }
         }
 
         let save_result = actions::save_event(self, &mut tx)
@@ -2572,16 +2593,21 @@ impl ContractEvent for DirectSellStateChanged {
         .await;
 
         if let Some(collection) = self.event_collection.as_ref() {
-            let collection = get_collection_data(
-                MsgAddressInt::from_str(collection.0.as_str())?,
-                &self.consumer,
-            )
-            .await;
-            await_handling_error(
-                actions::upsert_collection(&collection, &mut tx, None),
-                "Inserting collection",
-            )
-            .await;
+            let exists = actions::check_collection_exists(collection.0.as_str(), &mut tx)
+                .await
+                .expect("Failed to check collection exists for collection {collection:?}");
+            if !exists {
+                let collection = get_collection_data(
+                    MsgAddressInt::from_str(collection.0.as_str())?,
+                    &self.consumer,
+                )
+                .await;
+                await_handling_error(
+                    actions::upsert_collection(&collection, &mut tx, None),
+                    "Inserting collection",
+                )
+                .await;
+            }
         }
 
         let save_result = actions::save_event(self, &mut tx)
@@ -3015,15 +3041,15 @@ impl ContractEvent for NftCreated {
     }
 
     async fn update_dependent_tables(&mut self) -> Result<()> {
-        if let Some(event_collection) = &self.event_collection {
-            if event_collection
-                .0
-                .eq("0:b288234ed66c5d45250c01b5aa3a77f0b95050c4fb785bf62d05f580c9f7a341")
-            {
-                log::debug!("Skip nft");
-                return Ok(());
-            }
-        }
+        // if let Some(event_collection) = &self.event_collection {
+        //     if event_collection
+        //         .0
+        //         .eq("0:b288234ed66c5d45250c01b5aa3a77f0b95050c4fb785bf62d05f580c9f7a341")
+        //     {
+        //         log::debug!("Skip nft");
+        //         return Ok(());
+        //     }
+        // }
         // let meta = fetch_metadata(
         //     MsgAddressInt::from_str(self.nft.0.as_str())?,
         //     &self.consumer,
@@ -3038,32 +3064,14 @@ impl ContractEvent for NftCreated {
             elapsed_time.as_millis()
         );
 
-        // if let Some(attributes) = meta.get("attributes").and_then(|v| v.as_array()) {
-        //     let nft_attributes: Vec<NftAttribute> = attributes
-        //         .iter()
-        //         .map(|item| {
-        //             NftAttribute::new(
-        //                 self.nft.clone(),
-        //                 self.event_collection.clone(),
-        //                 item.clone(),
-        //             )
-        //         })
-        //         .collect();
-        //
-        //     await_handling_error(
-        //         actions::upsert_nft_attributes(&nft_attributes, &mut tx),
-        //         "Updating nft attributes",
-        //     )
-        //     .await;
-        // }
-        //
-        // let nft_meta = NftMeta {
-        //     nft: self.nft.clone(),
-        //     meta,
-        //     updated: chrono::Utc::now().naive_utc(),
-        // };
+        let collections_whitelist = vec![
+            "0:ec0ab798c85aa7256865221bacd4f3df220cf60277a2b79b3091b76c265d1cd7",
+            "0:33a630f9c54fc4092f43ab978f3fd65964bb0d775553c16953aa1568eb63ab0f",
+            "0:d62691c79f447f512d7ad235a291435a8a886debff1b72dfc3ff5e486798d96e",
+            "0:7eb6488246ba08f88fe8779e9257ca9ebc7d2f82f6111ce6747abda368e3c7a8",
+        ];
 
-        let nft = Nft {
+        let mut nft = Nft {
             address: self.nft.clone(),
             collection: self.event_collection.clone(),
             owner: Some(self.owner.clone()),
@@ -3090,6 +3098,76 @@ impl ContractEvent for NftCreated {
             manager_update_lt: self.created_lt,
         };
 
+        if let Some(collection) = self.event_collection.as_ref() {
+            if collections_whitelist.contains(&collection.0.as_str()) {
+                let meta = fetch_metadata(
+                    MsgAddressInt::from_str(self.nft.0.as_str())?,
+                    &self.consumer,
+                )
+                .await;
+
+                let nft_meta = NftMeta {
+                    nft: self.nft.clone(),
+                    meta: meta.clone(),
+                    updated: chrono::Utc::now().naive_utc(),
+                };
+
+                nft = Nft {
+                    address: self.nft.clone(),
+                    collection: self.event_collection.clone(),
+                    owner: Some(self.owner.clone()),
+                    manager: Some(self.manager.clone()),
+                    name: nft_meta
+                        .clone()
+                        .meta
+                        .get("name")
+                        .cloned()
+                        .unwrap_or_default()
+                        .as_str()
+                        .map(str::to_string),
+                    description: nft_meta
+                        .clone()
+                        .meta
+                        .get("description")
+                        .cloned()
+                        .unwrap_or_default()
+                        .as_str()
+                        .map(str::to_string),
+                    burned: false,
+                    updated: NaiveDateTime::from_timestamp_opt(self.created_at, 0)
+                        .unwrap_or_default(),
+                    owner_update_lt: self.created_lt,
+                    manager_update_lt: self.created_lt,
+                };
+
+                if let Some(attributes) = meta.clone().get("attributes").and_then(|v| v.as_array())
+                {
+                    let nft_attributes: Vec<NftAttribute> = attributes
+                        .iter()
+                        .map(|item| {
+                            NftAttribute::new(
+                                self.nft.clone(),
+                                self.event_collection.clone(),
+                                item.clone(),
+                            )
+                        })
+                        .collect();
+
+                    await_handling_error(
+                        actions::upsert_nft_attributes(&nft_attributes, &mut tx),
+                        "Updating nft attributes",
+                    )
+                    .await;
+                }
+
+                await_handling_error(
+                    actions::upsert_nft_meta(&nft_meta, &mut tx),
+                    "Updating nft meta",
+                )
+                .await;
+            }
+        }
+
         let start_time = Instant::now();
 
         await_handling_error(actions::upsert_nft(&nft, &mut tx), "Updating nft").await;
@@ -3100,25 +3178,27 @@ impl ContractEvent for NftCreated {
             elapsed_time.as_millis()
         );
 
-        // await_handling_error(
-        //     actions::upsert_nft_meta(&nft_meta, &mut tx),
-        //     "Updating nft meta",
-        // )
-        // .await;
+        if let Some(collection) = self.event_collection.as_ref() {
+            let exists = actions::check_collection_exists(collection.0.as_str(), &mut tx)
+                .await
+                .expect("Failed to check collection exists for collection {collection:?}");
+            if !exists {
+                let collection = get_collection_data(
+                    MsgAddressInt::from_str(self.address.0.as_str())?,
+                    &self.consumer,
+                )
+                .await;
 
-        // let collection = get_collection_data(
-        //     MsgAddressInt::from_str(self.address.0.as_str())?,
-        //     &self.consumer,
-        // )
-        // .await;
+                let nft_created_at_timestamp =
+                    NaiveDateTime::from_timestamp_opt(self.created_at, 0);
 
-        // let nft_created_at_timestamp = NaiveDateTime::from_timestamp_opt(self.created_at, 0);
-
-        // await_handling_error(
-        //     actions::upsert_collection(&collection, &mut tx, nft_created_at_timestamp),
-        //     "Updating collection",
-        // )
-        // .await;
+                await_handling_error(
+                    actions::upsert_collection(&collection, &mut tx, nft_created_at_timestamp),
+                    "Updating collection",
+                )
+                .await;
+            }
+        }
         let start_time = Instant::now();
 
         let save_result = actions::save_event(self, &mut tx)
@@ -3313,32 +3393,20 @@ impl ContractEvent for NftBurned {
             )
             .await;
         }
-
-        let nft_meta = NftMeta {
-            nft: self.nft.clone(),
-            meta,
-            updated: chrono::Utc::now().naive_utc(),
-        };
+        //
+        // let nft_meta = NftMeta {
+        //     nft: self.nft.clone(),
+        //     meta,
+        //     updated: chrono::Utc::now().naive_utc(),
+        // };
 
         let nft = Nft {
             address: self.nft.clone(),
             collection: self.event_collection.clone(),
             owner: Some(self.owner.clone()),
             manager: Some(self.manager.clone()),
-            name: nft_meta
-                .meta
-                .get("name")
-                .cloned()
-                .unwrap_or_default()
-                .as_str()
-                .map(str::to_string),
-            description: nft_meta
-                .meta
-                .get("description")
-                .cloned()
-                .unwrap_or_default()
-                .as_str()
-                .map(str::to_string),
+            name: None,
+            description: None,
             burned: true,
             updated: NaiveDateTime::from_timestamp_opt(self.created_at, 0).unwrap_or_default(),
             owner_update_lt: self.created_lt,
@@ -3346,23 +3414,30 @@ impl ContractEvent for NftBurned {
         };
 
         await_handling_error(actions::upsert_nft(&nft, &mut tx), "Updating nft").await;
-        await_handling_error(
-            actions::upsert_nft_meta(&nft_meta, &mut tx),
-            "Updating nft meta",
-        )
-        .await;
+        // await_handling_error(
+        //     actions::upsert_nft_meta(&nft_meta, &mut tx),
+        //     "Updating nft meta",
+        // )
+        // .await;
 
-        let collection = get_collection_data(
-            MsgAddressInt::from_str(self.address.0.as_str())?,
-            &self.consumer,
-        )
-        .await;
+        if let Some(collection) = self.event_collection.as_ref() {
+            let exists = actions::check_collection_exists(collection.0.as_str(), &mut tx)
+                .await
+                .expect("Failed to check collection exists for collection {collection:?}");
+            if !exists {
+                let collection = get_collection_data(
+                    MsgAddressInt::from_str(self.address.0.as_str())?,
+                    &self.consumer,
+                )
+                .await;
 
-        await_handling_error(
-            actions::upsert_collection(&collection, &mut tx, None),
-            "Updating collection",
-        )
-        .await;
+                await_handling_error(
+                    actions::upsert_collection(&collection, &mut tx, None),
+                    "Updating collection",
+                )
+                .await;
+            }
+        }
 
         let save_result = actions::save_event(self, &mut tx)
             .await
