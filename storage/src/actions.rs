@@ -107,13 +107,26 @@ pub async fn get_prices(
     Ok((total_price, max_price))
 }
 
+pub async fn check_collection_exists(
+    collection: &str,
+    tx: &mut Transaction<'_, Postgres>,
+) -> sqlx::Result<bool> {
+    let count = sqlx::query_scalar!(
+        "SELECT count(1) FROM nft_collection WHERE address = $1",
+        collection
+    )
+    .fetch_one(tx)
+    .await?
+    .unwrap_or_default();
+
+    Ok(count > 0)
+}
+
 pub async fn upsert_collection(
     collection: &NftCollection,
     tx: &mut Transaction<'_, Postgres>,
     nft_created_at: Option<NaiveDateTime>,
 ) -> Result<PgQueryResult, sqlx::Error> {
-
-
     let owners_count = get_owners_count(&collection.address, tx).await;
     let (total_price, max_price) = get_prices(&collection.address, tx).await?;
 
