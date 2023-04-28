@@ -299,26 +299,6 @@
     },
     "query": "\n        select address as \"address!: Address\", collection as \"collection?: Address\", owner as \"owner?: Address\", \n            manager as \"manager?: Address\", name as \"name?\", description as \"description?\", burned as \"burned!\", \n            updated as \"updated!\", owner_update_lt as \"owner_update_lt!\", manager_update_lt as \"manager_update_lt!\"\n        from nft where address = $1\n        "
   },
-  "6fe319264ecda6c8d2f2dfb2c9c545e44feacdd06d9c966a25681ea62c4cbbb3": {
-    "describe": {
-      "columns": [
-        {
-          "name": "address",
-          "ordinal": 0,
-          "type_info": "Varchar"
-        }
-      ],
-      "nullable": [
-        false
-      ],
-      "parameters": {
-        "Left": [
-          "Text"
-        ]
-      }
-    },
-    "query": "\n        select address from nft where collection = $1\n        "
-  },
   "74cde259acad5d78d6ec5e83afcabc1080bc7e418cfe47f92f4ec4402857ce66": {
     "describe": {
       "columns": [],
@@ -926,6 +906,26 @@
       }
     },
     "query": "\n            update nft\n            set name = $1, description = $2, updated = $3\n            where address = $4\n        "
+  },
+  "ec02d0ffac54d694237861ece7384a220356d12a0fe0d1f76b19b86a717b1715": {
+    "describe": {
+      "columns": [
+        {
+          "name": "address",
+          "ordinal": 0,
+          "type_info": "Varchar"
+        }
+      ],
+      "nullable": [
+        false
+      ],
+      "parameters": {
+        "Left": [
+          "Text"
+        ]
+      }
+    },
+    "query": "\n        select address from nft where collection = $1 and name is null\n        "
   },
   "ed5271faa0edea5031ec0f7204eabc4cad00034df488e6fec8fbc04a5d94081e": {
     "describe": {

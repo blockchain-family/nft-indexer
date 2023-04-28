@@ -737,7 +737,7 @@ pub async fn get_nfts_by_collection(
     let nfts: Vec<NftRecord> = sqlx::query_as!(
         NftRecord,
         r#"
-        select address from nft where collection = $1
+        select address from nft where collection = $1 and name is null
         "#,
         collection
     )
