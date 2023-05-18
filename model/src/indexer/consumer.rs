@@ -44,6 +44,8 @@ pub async fn serve(pool: PgPool, consumer: Arc<TransactionConsumer>, config: Con
         indexer_routine(tx, pool.clone(), consumer.clone(), permit);
     }
 
+    log::info!("offsets {offsets:?}");
+
     let mut stream = consumer
         .stream_transactions(StreamFrom::Offsets(offsets))
         .await?;
