@@ -3041,32 +3041,32 @@ impl ContractEvent for NftCreated {
     }
 
     async fn update_dependent_tables(&mut self) -> Result<()> {
-        let collections_whitelist = vec![
-            "0:ec0ab798c85aa7256865221bacd4f3df220cf60277a2b79b3091b76c265d1cd7",
-            "0:33a630f9c54fc4092f43ab978f3fd65964bb0d775553c16953aa1568eb63ab0f",
-            "0:d62691c79f447f512d7ad235a291435a8a886debff1b72dfc3ff5e486798d96e",
-            "0:7eb6488246ba08f88fe8779e9257ca9ebc7d2f82f6111ce6747abda368e3c7a8",
-            "0:3edef5a608cf6627edf41f0cd019e9a5c2baf955f80952dff0d8b034e7d1f808",
-            "0:180742c2f9cfeeb2dbf50c01785d01f59224381deb1d04f0f00f0a4413503377"
-        ];
+        // let collections_whitelist = vec![
+        //     "0:ec0ab798c85aa7256865221bacd4f3df220cf60277a2b79b3091b76c265d1cd7",
+        //     "0:33a630f9c54fc4092f43ab978f3fd65964bb0d775553c16953aa1568eb63ab0f",
+        //     "0:d62691c79f447f512d7ad235a291435a8a886debff1b72dfc3ff5e486798d96e",
+        //     "0:7eb6488246ba08f88fe8779e9257ca9ebc7d2f82f6111ce6747abda368e3c7a8",
+        //     "0:3edef5a608cf6627edf41f0cd019e9a5c2baf955f80952dff0d8b034e7d1f808",
+        //     "0:180742c2f9cfeeb2dbf50c01785d01f59224381deb1d04f0f00f0a4413503377"
+        // ];
 
-        if let Some(event_collection) = &self.event_collection {
-            let mut is_in_whitelist = false;
-            for collection in &collections_whitelist {
-                if event_collection.0.as_str() == *collection {
-                    is_in_whitelist = true;
-                    break;
-                }
-            }
-            if !is_in_whitelist {
-                log::debug!(
-                    "Skip nft {} for collection {}",
-                    self.address.0.as_str(),
-                    event_collection.0.as_str()
-                );
-                return Ok(());
-            }
-        }
+        // if let Some(event_collection) = &self.event_collection {
+        //     let mut is_in_whitelist = false;
+        //     for collection in &collections_whitelist {
+        //         if event_collection.0.as_str() == *collection {
+        //             is_in_whitelist = true;
+        //             break;
+        //         }
+        //     }
+        //     if !is_in_whitelist {
+        //         log::debug!(
+        //             "Skip nft {} for collection {}",
+        //             self.address.0.as_str(),
+        //             event_collection.0.as_str()
+        //         );
+        //         return Ok(());
+        //     }
+        // }
         // let meta = fetch_metadata(
         //     MsgAddressInt::from_str(self.nft.0.as_str())?,
         //     &self.consumer,
