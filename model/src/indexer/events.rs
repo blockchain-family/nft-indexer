@@ -3046,6 +3046,8 @@ impl ContractEvent for NftCreated {
             "0:33a630f9c54fc4092f43ab978f3fd65964bb0d775553c16953aa1568eb63ab0f",
             "0:d62691c79f447f512d7ad235a291435a8a886debff1b72dfc3ff5e486798d96e",
             "0:7eb6488246ba08f88fe8779e9257ca9ebc7d2f82f6111ce6747abda368e3c7a8",
+            "0:3edef5a608cf6627edf41f0cd019e9a5c2baf955f80952dff0d8b034e7d1f808",
+            "0:180742c2f9cfeeb2dbf50c01785d01f59224381deb1d04f0f00f0a4413503377"
         ];
 
         if let Some(event_collection) = &self.event_collection {
