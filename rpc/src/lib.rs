@@ -3,18 +3,18 @@ use nekoton_abi::{num_bigint::BigUint, FunctionBuilder, FunctionExt, UnpackFirst
 use nekoton_contracts::tip4_1::nft_contract::GetInfoOutputs;
 use nekoton_utils::SimpleClock;
 use sqlx::types::BigDecimal;
-use std::{str::FromStr, sync::Arc};
+use std::str::FromStr;
 use ton_block::{MsgAddrStd, MsgAddressInt};
-use transaction_consumer::TransactionConsumer;
+use transaction_consumer::JrpcClient;
 
 pub mod retrier;
 
 pub async fn get_json(
     address: MsgAddressInt,
-    consumer: Arc<TransactionConsumer>,
+    jrpc_client: JrpcClient,
 ) -> Result<serde_json::Value> {
     log::debug!("metadata 1");
-    let contract = consumer
+    let contract = jrpc_client
         .get_contract_state(&address)
         .await?
         .ok_or_else(|| anyhow!("Contract state is none!"))?;
@@ -31,11 +31,8 @@ pub async fn get_json(
     )?)
 }
 
-pub async fn get_info(
-    nft: MsgAddressInt,
-    consumer: Arc<TransactionConsumer>,
-) -> Result<GetInfoOutputs> {
-    let contract = consumer
+pub async fn get_info(nft: MsgAddressInt, jrpc_client: JrpcClient) -> Result<GetInfoOutputs> {
+    let contract = jrpc_client
         .get_contract_state(&nft)
         .await?
         .ok_or_else(|| anyhow!("Contract state is none!"))?;
@@ -62,11 +59,8 @@ fn get_next_bid_value_function() -> ton_abi::Function {
         .build()
 }
 
-pub async fn owner(
-    collection: MsgAddressInt,
-    consumer: Arc<TransactionConsumer>,
-) -> Result<String> {
-    let contract = consumer
+pub async fn owner(collection: MsgAddressInt, jrpc_client: JrpcClient) -> Result<String> {
+    let contract = jrpc_client
         .get_contract_state(&collection)
         .await?
         .ok_or_else(|| anyhow!("Contract state is none!"))?;
@@ -82,11 +76,8 @@ pub async fn owner(
             .as_hex_string())
 }
 
-pub async fn next_bid_value(
-    auction: MsgAddressInt,
-    consumer: Arc<TransactionConsumer>,
-) -> Result<BigDecimal> {
-    let contract = consumer
+pub async fn next_bid_value(auction: MsgAddressInt, jrpc_client: JrpcClient) -> Result<BigDecimal> {
+    let contract = jrpc_client
         .get_contract_state(&auction)
         .await?
         .ok_or_else(|| anyhow!("Contract state is none!"))?;
@@ -108,9 +99,9 @@ pub async fn token_to_usd(token: &str) -> Result<BigDecimal> {
         let request = client.post(format!("https://api.flatqube.io/v1/currencies/{token}"));
         Box::pin(request.send())
     })
-    .attempts(3)
-    .backoff(10)
-    .factor(2)
+    .attempts(1)
+    //.backoff(10)
+    //.factor(2)
     .trace_id(format!("usd price for {}", token))
     .run()
     .await?;

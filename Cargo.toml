@@ -1,8 +1,7 @@
 [workspace]
 
 members = [
-    "model",
+    "indexer",
     "rpc",
-    "storage",
-    "traits_derive"
+    "indexer-repo"
 ]

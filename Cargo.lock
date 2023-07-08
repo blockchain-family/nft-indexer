@@ -70,7 +70,7 @@ dependencies = [
  "tokio",
  "tokio-util",
  "tracing",
- "zstd 0.12.3+zstd.1.5.2",
+ "zstd",
 ]
 
 [[package]]
@@ -910,7 +910,7 @@ checksum = "0206175f82b8d6bf6652ff7d71a1e27fd2e4efde587fd368662814d6ec1d9ce0"
 [[package]]
 name = "everscale-jrpc-client"
 version = "0.5.0"
-source = "git+https://github.com/broxus/everscale-jrpc.git#8d1fe4e34556da74dd411c4c7913edd0db6e5e5d"
+source = "git+https://github.com/broxus/everscale-jrpc.git#5c59e69eaacf6e82e1677dcf499c8945eb34913a"
 dependencies = [
  "anyhow",
  "base64 0.13.1",
@@ -938,7 +938,7 @@ dependencies = [
 [[package]]
 name = "everscale-jrpc-models"
 version = "0.1.0"
-source = "git+https://github.com/broxus/everscale-jrpc.git#8d1fe4e34556da74dd411c4c7913edd0db6e5e5d"
+source = "git+https://github.com/broxus/everscale-jrpc.git#5c59e69eaacf6e82e1677dcf499c8945eb34913a"
 dependencies = [
  "nekoton-abi",
  "nekoton-utils",
@@ -1347,6 +1347,63 @@ dependencies = [
 ]
 
 [[package]]
+name = "indexer"
+version = "0.1.0"
+dependencies = [
+ "actix-cors",
+ "actix-web",
+ "anyhow",
+ "async-trait",
+ "bigdecimal",
+ "chrono",
+ "config",
+ "dotenv",
+ "env_logger",
+ "futures",
+ "indexer_repo",
+ "log",
+ "nekoton-abi",
+ "nekoton-contracts",
+ "nekoton-utils",
+ "num",
+ "num-derive",
+ "num-traits",
+ "once_cell",
+ "rpc",
+ "serde",
+ "serde_json",
+ "sqlx",
+ "stackdriver_logger",
+ "tokio",
+ "ton_abi",
+ "ton_block",
+ "ton_types",
+ "transaction-buffer",
+ "transaction-consumer",
+ "url",
+]
+
+[[package]]
+name = "indexer_repo"
+version = "0.1.0"
+dependencies = [
+ "anyhow",
+ "async-trait",
+ "chrono",
+ "log",
+ "nekoton-abi",
+ "opg",
+ "rpc",
+ "serde",
+ "serde_json",
+ "sqlx",
+ "tokio",
+ "ton_abi",
+ "ton_block",
+ "transaction-consumer",
+]
+
+[[package]]
 name = "indexmap"
 version = "1.9.2"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -1640,39 +1697,6 @@ dependencies = [
 ]
 
 [[package]]
-name = "model"
-version = "0.1.0"
-dependencies = [
- "actix-cors",
- "actix-web",
- "anyhow",
- "async-trait",
- "bigdecimal",
- "chrono",
- "config",
- "dotenv",
- "env_logger",
- "futures",
- "log",
- "nekoton-abi",
- "nekoton-contracts",
- "nekoton-utils",
- "once_cell",
- "rpc",
- "serde",
- "serde_json",
- "sqlx",
- "stackdriver_logger",
- "storage",
- "tokio",
- "ton_abi",
- "ton_block",
- "traits_derive",
- "transaction-consumer",
- "url",
-]
-
-[[package]]
 name = "native-tls"
 version = "0.2.11"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -1692,8 +1716,8 @@ dependencies = [
 
 [[package]]
 name = "nekoton"
-version = "0.11.0"
-source = "git+https://github.com/broxus/nekoton.git#568476ee0bad6a48e20e5386847ad079b1b495fd"
+version = "0.13.0"
+source = "git+https://github.com/broxus/nekoton.git#25ebe307c51f54b68c2be48ea8c9ba8f95a1ec54"
 dependencies = [
  "anyhow",
  "async-trait",
@@ -1734,8 +1758,8 @@ dependencies = [
 
 [[package]]
 name = "nekoton-abi"
-version = "0.11.0"
-source = "git+https://github.com/broxus/nekoton.git#568476ee0bad6a48e20e5386847ad079b1b495fd"
+version = "0.13.0"
+source = "git+https://github.com/broxus/nekoton.git#25ebe307c51f54b68c2be48ea8c9ba8f95a1ec54"
 dependencies = [
  "anyhow",
  "base64 0.13.1",
@@ -1746,6 +1770,7 @@ dependencies = [
  "nekoton-utils",
  "num-bigint",
  "num-traits",
+ "once_cell",
  "rustc-hash",
  "serde",
  "serde_json",
@@ -1760,8 +1785,8 @@ dependencies = [
 
 [[package]]
 name = "nekoton-contracts"
-version = "0.11.0"
-source = "git+https://github.com/broxus/nekoton.git#568476ee0bad6a48e20e5386847ad079b1b495fd"
+version = "0.13.0"
+source = "git+https://github.com/broxus/nekoton.git#25ebe307c51f54b68c2be48ea8c9ba8f95a1ec54"
 dependencies = [
  "anyhow",
  "nekoton-abi",
@@ -1774,8 +1799,8 @@ dependencies = [
 
 [[package]]
 name = "nekoton-derive"
-version = "0.11.0"
-source = "git+https://github.com/broxus/nekoton.git#568476ee0bad6a48e20e5386847ad079b1b495fd"
+version = "0.13.0"
+source = "git+https://github.com/broxus/nekoton.git#25ebe307c51f54b68c2be48ea8c9ba8f95a1ec54"
 dependencies = [
  "either",
  "proc-macro2",
@@ -1785,8 +1810,8 @@ dependencies = [
 
 [[package]]
 name = "nekoton-utils"
-version = "0.11.0"
-source = "git+https://github.com/broxus/nekoton.git#568476ee0bad6a48e20e5386847ad079b1b495fd"
+version = "0.13.0"
+source = "git+https://github.com/broxus/nekoton.git#25ebe307c51f54b68c2be48ea8c9ba8f95a1ec54"
 dependencies = [
  "anyhow",
  "base64 0.13.1",
@@ -2002,7 +2027,7 @@ dependencies = [
  "http",
  "opg_derive",
  "serde",
- "uuid",
+ "uuid 0.8.2",
 ]
 
 [[package]]
@@ -2716,6 +2741,7 @@ dependencies = [
  "thiserror",
  "tokio-stream",
  "url",
+ "uuid 1.3.4",
  "whoami",
 ]
 
@@ -2764,26 +2790,6 @@ dependencies = [
  "log",
  "serde_json",
  "toml",
-]
-
-[[package]]
-name = "storage"
-version = "0.1.0"
-dependencies = [
- "anyhow",
- "async-trait",
- "chrono",
- "log",
- "nekoton-abi",
- "opg",
- "rpc",
- "serde",
- "serde_json",
- "sqlx",
- "tokio",
- "ton_abi",
- "ton_block",
- "transaction-consumer",
 ]
 
 [[package]]
@@ -3050,16 +3056,16 @@ dependencies = [
 [[package]]
 name = "ton-block-compressor"
 version = "0.1.0"
-source = "git+https://github.com/broxus/ton-block-compressor#a970caf3b06b3ff00d29b0c30e59cf12c0a7270d"
+source = "git+https://github.com/broxus/ton-block-compressor#625ba4b40aeb80d04d45f72cce4835ae4fc1b560"
 dependencies = [
  "anyhow",
- "zstd 0.11.2+zstd.1.5.2",
+ "zstd",
 ]
 
 [[package]]
 name = "ton_abi"
 version = "2.1.0"
-source = "git+https://github.com/broxus/ton-labs-abi#7c0c82f65d94e6fff8ea5822808cbc0ffeb1d0d7"
+source = "git+https://github.com/broxus/ton-labs-abi#b8834529ef8fa121d534fca6554c0e95d4019998"
 dependencies = [
  "anyhow",
  "base64 0.13.1",
@@ -3080,8 +3086,8 @@ dependencies = [
 
 [[package]]
 name = "ton_block"
-version = "1.7.14"
-source = "git+https://github.com/broxus/ton-labs-block#bf7a53587cc98da4b51b58f3c4160e8f85985159"
+version = "1.9.73"
+source = "git+https://github.com/broxus/ton-labs-block#66b3ccb8e6187e6d9f611f6541c0f59d3eb77cbf"
 dependencies = [
  "anyhow",
  "base64 0.13.1",
@@ -3103,7 +3109,7 @@ dependencies = [
 [[package]]
 name = "ton_executor"
 version = "1.15.54"
-source = "git+https://github.com/broxus/ton-labs-executor.git#d8e8fed291948ff66e9d1f6d8f44f37f1cf0de6f"
+source = "git+https://github.com/broxus/ton-labs-executor.git#01f7a017c25fed1413863c2dac570553fa000bdd"
 dependencies = [
  "anyhow",
  "log",
@@ -3116,7 +3122,7 @@ dependencies = [
 [[package]]
 name = "ton_types"
 version = "1.10.2"
-source = "git+https://github.com/broxus/ton-labs-types.git#dea1147b9fa25153e20dc79d9f0141f325f3921a"
+source = "git+https://github.com/broxus/ton-labs-types.git#3324562d7ff1ebec66d996128573966c1b53862b"
 dependencies = [
  "anyhow",
  "base64 0.13.1",
@@ -3138,7 +3144,7 @@ dependencies = [
 [[package]]
 name = "ton_vm"
 version = "1.8.29"
-source = "git+https://github.com/broxus/ton-labs-vm.git#72059801850016bad0a2b909600a043e0694feda"
+source = "git+https://github.com/broxus/ton-labs-vm.git#497865fb3aabf02afea610f9c16f265b492c23a6"
 dependencies = [
  "anyhow",
  "ed25519",
@@ -3196,19 +3202,28 @@ dependencies = [
 ]
 
 [[package]]
-name = "traits_derive"
-version = "0.1.0"
+name = "transaction-buffer"
+version = "0.2.0"
+source = "git+https://github.com/broxus/transaction-buffer.git#36e201962d92381e2d1fd769fbbe8893f0a89a50"
 dependencies = [
- "proc-macro2",
- "quote",
- "storage",
- "syn",
+ "anyhow",
+ "chrono",
+ "futures",
+ "itertools",
+ "log",
+ "nekoton-abi",
+ "sqlx",
+ "tokio",
+ "ton_abi",
+ "ton_block",
+ "ton_types",
+ "transaction-consumer",
 ]
 
 [[package]]
 name = "transaction-consumer"
-version = "0.15.0"
-source = "git+https://github.com/broxus/transaction-consumer.git#710a137d5de004a7e27f91db3683888a33f5e511"
+version = "0.16.0"
+source = "git+https://github.com/broxus/transaction-consumer#5036301164fa9ee76199064b9b35bbb11e4d453f"
 dependencies = [
  "anyhow",
  "everscale-jrpc-client",
@@ -3315,6 +3330,12 @@ name = "uuid"
 version = "0.8.2"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "bc5cf98d8186244414c848017f0e2676b3fcb46807f6668a97dfe67359a3c4b7"
+
+[[package]]
+name = "uuid"
+version = "1.3.4"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "0fa2982af2eec27de306107c027578ff7f423d65f7250e40ce0fea8f45248b81"
 
 [[package]]
 name = "vcpkg"
@@ -3598,30 +3619,11 @@ dependencies = [
 
 [[package]]
 name = "zstd"
-version = "0.11.2+zstd.1.5.2"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "20cc960326ece64f010d2d2107537f26dc589a6573a316bd5b1dba685fa5fde4"
-dependencies = [
- "zstd-safe 5.0.2+zstd.1.5.2",
-]
-
-[[package]]
-name = "zstd"
 version = "0.12.3+zstd.1.5.2"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "76eea132fb024e0e13fd9c2f5d5d595d8a967aa72382ac2f9d39fcc95afd0806"
 dependencies = [
- "zstd-safe 6.0.4+zstd.1.5.4",
-]
-
-[[package]]
-name = "zstd-safe"
-version = "5.0.2+zstd.1.5.2"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "1d2a5585e04f9eea4b2a3d1eca508c4dee9592a89ef6f450c11719da0726f4db"
-dependencies = [
- "libc",
- "zstd-sys",
+ "zstd-safe",
 ]
 
 [[package]]
