@@ -1347,43 +1347,6 @@ dependencies = [
 ]
 
 [[package]]
-name = "indexer"
-version = "0.1.0"
-dependencies = [
- "actix-cors",
- "actix-web",
- "anyhow",
- "async-trait",
- "bigdecimal",
- "chrono",
- "config",
- "dotenv",
- "env_logger",
- "futures",
- "indexer_repo",
- "log",
- "nekoton-abi",
- "nekoton-contracts",
- "nekoton-utils",
- "num",
- "num-derive",
- "num-traits",
- "once_cell",
- "rpc",
- "serde",
- "serde_json",
- "sqlx",
- "stackdriver_logger",
- "tokio",
- "ton_abi",
- "ton_block",
- "ton_types",
- "transaction-buffer",
- "transaction-consumer",
- "url",
-]
-
-[[package]]
 name = "indexer_repo"
 version = "0.1.0"
 dependencies = [
@@ -1694,6 +1657,43 @@ dependencies = [
  "log",
  "wasi 0.11.0+wasi-snapshot-preview1",
  "windows-sys 0.45.0",
+]
+
+[[package]]
+name = "model"
+version = "0.1.0"
+dependencies = [
+ "actix-cors",
+ "actix-web",
+ "anyhow",
+ "async-trait",
+ "bigdecimal",
+ "chrono",
+ "config",
+ "dotenv",
+ "env_logger",
+ "futures",
+ "indexer_repo",
+ "log",
+ "nekoton-abi",
+ "nekoton-contracts",
+ "nekoton-utils",
+ "num",
+ "num-derive",
+ "num-traits",
+ "once_cell",
+ "rpc",
+ "serde",
+ "serde_json",
+ "sqlx",
+ "stackdriver_logger",
+ "tokio",
+ "ton_abi",
+ "ton_block",
+ "ton_types",
+ "transaction-buffer",
+ "transaction-consumer",
+ "url",
 ]
 
 [[package]]
