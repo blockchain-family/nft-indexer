@@ -20,5 +20,6 @@ env:
   TRUSTED_DIRECT_SELL_FACTORIES: 0:4bb449f175b2f52793a4fbbb5bbb14a1f819d0167c8a1a9c88847c808eb7faef
   SERVER_API_URL: 0.0.0.0:3001
   RESET: false
-  
+  JRPC_REQ_LATENCY_MILLIS: 0 
+
 controller: deployment
