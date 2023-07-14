@@ -3,6 +3,9 @@ name = "model"
 version = "0.1.0"
 edition = "2021"
 
+[dependencies.meta_reader]
+path = "../meta-reader"
+
 [dependencies]
 actix-cors = "0.6.4"
 actix-web = "4.3.1"

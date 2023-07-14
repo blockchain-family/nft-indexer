@@ -43,6 +43,19 @@
     },
     "query": "\n        update nft_direct_sell set state = $1\n        where expired_at != $2 and expired_at < $3 and nft_direct_sell.state = $4\n        "
   },
+  "1068960c3648fcc7976b1db18efa700c069bb3e54ee1a50631221f3dbb51d9ec": {
+    "describe": {
+      "columns": [],
+      "nullable": [],
+      "parameters": {
+        "Left": [
+          "Varchar",
+          "Text"
+        ]
+      }
+    },
+    "query": "\n                update nft\n                set name = $1\n                where address = $2\n            "
+  },
   "1d6d71b88118bde0d59239a95f8b7fbf4600da3ed10cee43bff1d139a5ef1ff4": {
     "describe": {
       "columns": [],
@@ -448,6 +461,27 @@
     },
     "query": "\n        insert into nft_direct_buy (address, nft, collection, price_token, price, buy_price_usd, buyer, finished_at,\n            expired_at, state, created, updated, tx_lt)    \n        values ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13)\n        on conflict (address) where tx_lt <= $13 do update\n        set collection = $3, price = $5, buy_price_usd = coalesce($6, nft_direct_buy.buy_price_usd), finished_at = $8,\n            expired_at = $9, state = $10, created = $11, updated = $12, tx_lt = $13\n        "
   },
+  "8a642dcdfc996e0f497d5f513de2c10b51dab1884214351ab467e9f09979e531": {
+    "describe": {
+      "columns": [],
+      "nullable": [],
+      "parameters": {
+        "Left": [
+          {
+            "Custom": {
+              "kind": {
+                "Domain": "Varchar"
+              },
+              "name": "t_address"
+            }
+          },
+          "Jsonb",
+          "Timestamp"
+        ]
+      }
+    },
+    "query": "\n                insert into nft_metadata (nft, meta, updated)\n                values ($1, $2, $3)\n                on conflict (nft) where updated < $3 do update\n                set meta = coalesce($2, nft_metadata.meta), updated = $3\n            "
+  },
   "8ecdb525bc647d2cee353ceae65cc873c93b531296da06233d2f779d9b3c091c": {
     "describe": {
       "columns": [
@@ -524,6 +558,36 @@
     },
     "query": "\n            insert into nft_attributes (nft, collection, raw, trait_type, value)\n            values ($1, $2, $3, $4, $5)\n            "
   },
+  "aaf93547db178572807ccc14aa43553f65b9509c3238b9412d5e68b404f91c7d": {
+    "describe": {
+      "columns": [],
+      "nullable": [],
+      "parameters": {
+        "Left": [
+          {
+            "Custom": {
+              "kind": {
+                "Domain": "Varchar"
+              },
+              "name": "t_address"
+            }
+          },
+          {
+            "Custom": {
+              "kind": {
+                "Domain": "Varchar"
+              },
+              "name": "t_address"
+            }
+          },
+          "Jsonb",
+          "Varchar",
+          "Jsonb"
+        ]
+      }
+    },
+    "query": "\n                    insert into nft_attributes (nft, collection, raw, trait_type, value)\n                    values ($1, $2, $3, $4, $5)\n                "
+  },
   "b4684896963b00890592ed4979819d2b4a367ab59a679ea3bc8bfc7b697a0cc3": {
     "describe": {
       "columns": [
@@ -543,6 +607,25 @@
       }
     },
     "query": "\n        select count(distinct owner) as owners\n        from nft\n        where collection = $1\n        "
+  },
+  "b4d4a99bcd2e853f6e643f4de18b21ae1777a79baf4b0271ab4afe2e27e2171f": {
+    "describe": {
+      "columns": [],
+      "nullable": [],
+      "parameters": {
+        "Left": [
+          {
+            "Custom": {
+              "kind": {
+                "Domain": "Varchar"
+              },
+              "name": "t_address"
+            }
+          }
+        ]
+      }
+    },
+    "query": "\n                insert into handled_nft (address)\n                values ($1)\n                on conflict do nothing\n            "
   },
   "b808a83b7b32970f4a83cf042616ecefb4db0522b0e9d568444996918ae92943": {
     "describe": {
@@ -743,6 +826,46 @@
       }
     },
     "query": "\n        select sum(ag.price)  as \"price!: BigDecimal\", ag.price_token as \"price_token!: String\" from (\n                            select price, price_token\n                            from nft\n                                     inner join nft_direct_sell as direct_sell\n                                                on nft.address = direct_sell.nft\n                            where nft.collection = $1\n                              and direct_sell.state = 'active'\n                            union\n                            select price as \"price!: BigDecimal\", price_token as \"price_token!: String\"\n                            from nft\n                                     inner join nft_auction as auction\n                                                on nft.address = auction.nft\n                                     inner join nft_auction_bid as bid\n                                                on auction.address = bid.auction\n                            where nft.collection = $1\n                              and auction.status = 'active'\n                        ) ag\n        group by ag.price_token\n        "
+  },
+  "d217cc75431bc07f6d73cc321622078a260f0d1d330a2b244f07f2802708e486": {
+    "describe": {
+      "columns": [],
+      "nullable": [],
+      "parameters": {
+        "Left": [
+          "Text",
+          "Text"
+        ]
+      }
+    },
+    "query": "\n                update nft\n                set description = $1\n                where address = $2\n            "
+  },
+  "d7601068e3f571fd85f8fea506fae77158e0069cbed9191d957cdb9cbc6be7a1": {
+    "describe": {
+      "columns": [
+        {
+          "name": "address",
+          "ordinal": 0,
+          "type_info": "Varchar"
+        },
+        {
+          "name": "collection",
+          "ordinal": 1,
+          "type_info": "Varchar"
+        }
+      ],
+      "nullable": [
+        false,
+        true
+      ],
+      "parameters": {
+        "Left": [
+          "Int8",
+          "Int8"
+        ]
+      }
+    },
+    "query": "\n            select \n                n.address,\n                n.collection\n            from nft n\n            left join handled_nft hn on hn.address = n.address\n            where hn.address is null\n            limit $1 offset $2\n        "
   },
   "db9147b6e9cbefc50b732ac9e6f16852f9f8e89c774357b158aefd62a0683031": {
     "describe": {

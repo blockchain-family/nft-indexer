@@ -1,6 +1,7 @@
 use crate::server::run_api;
 use crate::{settings::config::Config, state_updater::run_updater};
 use anyhow::Result;
+use meta_reader::MetaReaderContext;
 use std::net::SocketAddr;
 use std::str::FromStr;
 
@@ -60,6 +61,12 @@ async fn main() -> Result<()> {
     let jrpc_client = settings::get_jrpc_client(&config).await?;
     log::info!("Connected to jrpc endpoint");
 
+    let meta_reader_context = MetaReaderContext {
+        jrpc_client: jrpc_client.clone(),
+        pool: pg_pool.clone(),
+    };
+
+    tokio::spawn(meta_reader::run_meta_reader(meta_reader_context));
     tokio::spawn(parser::start_parsing(
         config.clone(),
         pg_pool.clone(),
