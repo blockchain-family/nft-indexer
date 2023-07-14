@@ -64,6 +64,7 @@ async fn main() -> Result<()> {
     let meta_reader_context = MetaReaderContext {
         jrpc_client: jrpc_client.clone(),
         pool: pg_pool.clone(),
+        jrpc_req_latency_millis: config.jrpc_req_latency_millis,
     };
 
     tokio::spawn(meta_reader::run_meta_reader(meta_reader_context));

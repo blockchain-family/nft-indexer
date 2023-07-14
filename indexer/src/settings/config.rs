@@ -17,6 +17,7 @@ pub struct Config {
     pub trusted_direct_sell_factories: Vec<String>,
     pub server_api_url: String,
     pub terminate_open_connections: Option<bool>,
+    pub jrpc_req_latency_millis: u64,
 }
 
 impl Default for Config {

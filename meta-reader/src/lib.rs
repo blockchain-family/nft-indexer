@@ -15,6 +15,7 @@ const IDLE_TIME_AFTER_FINISH_SEC: u64 = 60;
 pub struct MetaReaderContext {
     pub jrpc_client: JrpcClient,
     pub pool: PgPool,
+    pub jrpc_req_latency_millis: u64,
 }
 
 pub async fn run_meta_reader(context: MetaReaderContext) -> Result<()> {
@@ -125,6 +126,8 @@ pub async fn run_meta_reader(context: MetaReaderContext) -> Result<()> {
                     e
                 );
             };
+
+            tokio::time::sleep(Duration::from_millis(context.jrpc_req_latency_millis)).await;
         }
 
         page += 1;
