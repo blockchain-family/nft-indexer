@@ -9,7 +9,7 @@ use transaction_consumer::JrpcClient;
 
 mod service;
 
-const NFT_PER_ITERATION: i64 = 1;
+const NFT_PER_ITERATION: i64 = 100;
 const IDLE_TIME_AFTER_FINISH_SEC: u64 = 60;
 
 pub struct MetaReaderContext {
@@ -22,16 +22,16 @@ pub async fn run_meta_reader(context: MetaReaderContext) -> Result<()> {
     log::info!("Run metadata reader");
     let meta_jrpc_service = MetadataJrpcService::new(context.jrpc_client);
     let meta_model_service = NftMetadataModelService::new(context.pool);
-    let mut page = 0i64;
 
     loop {
         let addresses = meta_model_service
-            .get_nft_addresses_without_meta(page, NFT_PER_ITERATION)
+            .get_nft_addresses_without_meta(NFT_PER_ITERATION)
             .await?;
         if addresses.is_empty() {
             log::info!("Finished updating metadata work. Idling");
-            page = 0;
             tokio::time::sleep(Duration::from_secs(IDLE_TIME_AFTER_FINISH_SEC)).await;
+
+            continue;
         }
 
         for address in addresses {
@@ -40,7 +40,12 @@ pub async fn run_meta_reader(context: MetaReaderContext) -> Result<()> {
                 continue;
             };
 
-            let meta = meta_jrpc_service.fetch_metadata(nft_address).await;
+            let Ok(meta) = meta_jrpc_service.fetch_metadata(&nft_address).await else {
+                log::error!("Error while reading nft meta. Skipping ${}", address.nft);
+
+                continue;
+            };
+
             let Ok(mut tx) = meta_model_service.start_transaction().await else {
                 log::error!("Cant start transaction for saving metadata");
                 continue;
@@ -71,20 +76,16 @@ pub async fn run_meta_reader(context: MetaReaderContext) -> Result<()> {
             let attr = meta
                 .get("attributes")
                 .and_then(|d| d.as_array())
+                .and_then(|d| d.is_empty().then(|| d))
                 .and_then(|d| {
-                    if d.is_empty() {
-                        None
-                    } else {
-                        Some(
-                            d.iter()
-                                .map(|e| NftMetaAttribute::new(e, &address))
-                                .collect::<Vec<_>>(),
-                        )
-                    }
+                    Some(
+                        d.iter()
+                            .map(|e| NftMetaAttribute::new(e, &address))
+                            .collect::<Vec<_>>(),
+                    )
                 });
 
-            if attr.is_some() {
-                let attr = attr.unwrap();
+            if let Some(attr) = attr {
                 if let Err(e) = tx.update_nft_attributes(&attr[..]).await {
                     log::error!(
                         "Nft address: {}, error while updating attributes: {:#?}",
@@ -129,8 +130,6 @@ pub async fn run_meta_reader(context: MetaReaderContext) -> Result<()> {
 
             tokio::time::sleep(Duration::from_millis(context.jrpc_req_latency_millis)).await;
         }
-
-        page += 1;
     }
 }
 

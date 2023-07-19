@@ -840,7 +840,7 @@
     },
     "query": "\n                update nft\n                set description = $1\n                where address = $2\n            "
   },
-  "d7601068e3f571fd85f8fea506fae77158e0069cbed9191d957cdb9cbc6be7a1": {
+  "d7c41aa5b5a713ec12741e95640220f7f7da2d3a50a0b996ea59bd0aafb0c528": {
     "describe": {
       "columns": [
         {
@@ -860,12 +860,11 @@
       ],
       "parameters": {
         "Left": [
-          "Int8",
           "Int8"
         ]
       }
     },
-    "query": "\n            select \n                n.address,\n                n.collection\n            from nft n\n            left join handled_nft hn on hn.address = n.address\n            where hn.address is null\n            limit $1 offset $2\n        "
+    "query": "\n            select \n                n.address,\n                n.collection\n            from nft n\n            left join handled_nft hn on hn.address = n.address\n            where hn.address is null\n            limit $1\n        "
   },
   "db9147b6e9cbefc50b732ac9e6f16852f9f8e89c774357b158aefd62a0683031": {
     "describe": {

@@ -1,3 +1,4 @@
+use anyhow::Result;
 use ton_block::MsgAddressInt;
 use transaction_consumer::JrpcClient;
 
@@ -10,8 +11,8 @@ impl MetadataJrpcService {
         Self { jrpc_client }
     }
 
-    pub async fn fetch_metadata(&self, address: MsgAddressInt) -> serde_json::Value {
-        match rpc::retrier::Retrier::new(|| {
+    pub async fn fetch_metadata(&self, address: &MsgAddressInt) -> Result<serde_json::Value> {
+        rpc::retrier::Retrier::new(|| {
             Box::pin(rpc::get_json(address.clone(), self.jrpc_client.clone()))
         })
         .attempts(1)
@@ -21,13 +22,5 @@ impl MetadataJrpcService {
         ))
         .run()
         .await
-        {
-            Ok(meta) => meta,
-
-            Err(e) => {
-                log::error!("Error fetching metadata for {address}: {e:#?}");
-                serde_json::Value::default()
-            }
-        }
     }
 }

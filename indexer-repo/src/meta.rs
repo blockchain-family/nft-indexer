@@ -50,7 +50,6 @@ impl NftMetadataModelService {
 
     pub async fn get_nft_addresses_without_meta(
         &self,
-        page: i64,
         items_per_page: i64,
     ) -> Result<Vec<NftAddressData>> {
         struct Row {
@@ -76,10 +75,9 @@ impl NftMetadataModelService {
             from nft n
             left join handled_nft hn on hn.address = n.address
             where hn.address is null
-            limit $1 offset $2
+            limit $1
         "#,
             items_per_page,
-            page
         )
         .fetch_all(&self.pool)
         .await
