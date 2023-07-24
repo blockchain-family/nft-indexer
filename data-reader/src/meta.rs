@@ -1,21 +1,19 @@
 use std::{str::FromStr, time::Duration};
 
+use crate::service::MetadataJrpcService;
 use anyhow::Result;
 use indexer_repo::meta::{NftMeta, NftMetaAttribute, NftMetadataModelService};
-use service::MetadataJrpcService;
 use sqlx::{types::chrono, PgPool};
 use ton_block::MsgAddressInt;
 use transaction_consumer::JrpcClient;
 
-mod service;
-
 const NFT_PER_ITERATION: i64 = 100;
-const IDLE_TIME_AFTER_FINISH_SEC: u64 = 60;
 
 pub struct MetaReaderContext {
     pub jrpc_client: JrpcClient,
     pub pool: PgPool,
     pub jrpc_req_latency_millis: u64,
+    pub idle_after_loop: u64,
 }
 
 pub async fn run_meta_reader(context: MetaReaderContext) -> Result<()> {
@@ -29,7 +27,7 @@ pub async fn run_meta_reader(context: MetaReaderContext) -> Result<()> {
             .await?;
         if addresses.is_empty() {
             log::info!("Finished updating metadata work. Idling");
-            tokio::time::sleep(Duration::from_secs(IDLE_TIME_AFTER_FINISH_SEC)).await;
+            tokio::time::sleep(Duration::from_secs(context.idle_after_loop)).await;
 
             continue;
         }

@@ -56,6 +56,19 @@
     },
     "query": "\n                update nft\n                set name = $1\n                where address = $2\n            "
   },
+  "18ebdcb5f9674c7b0a6bf99a5f42978a53dae62cd6aafed3f88c99f4d5c218f5": {
+    "describe": {
+      "columns": [],
+      "nullable": [],
+      "parameters": {
+        "Left": [
+          "Numeric",
+          "Text"
+        ]
+      }
+    },
+    "query": "\n                update nft_auction\n                set closing_price_usd = $1\n                where address = $2\n            "
+  },
   "1d6d71b88118bde0d59239a95f8b7fbf4600da3ed10cee43bff1d139a5ef1ff4": {
     "describe": {
       "columns": [],
@@ -128,6 +141,46 @@
       }
     },
     "query": "\n        insert into nft_direct_sell (address, nft, collection, price_token, price, sell_price_usd, seller, finished_at,\n            expired_at, state, created, updated, tx_lt)\n        values ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13)\n        on conflict (address) where tx_lt <= $13 do update\n        set collection = $3, price = $5, sell_price_usd = coalesce($6, nft_direct_sell.sell_price_usd),\n            finished_at = $8, expired_at = $9, state = $10, created = $11, updated = $12, tx_lt = $13\n        "
+  },
+  "26a933a554da5ddb6363466dab92a0f5fd54779903c2869a6370adb4983fd233": {
+    "describe": {
+      "columns": [
+        {
+          "name": "id",
+          "ordinal": 0,
+          "type_info": "Varchar"
+        },
+        {
+          "name": "token_addr!",
+          "ordinal": 1,
+          "type_info": "Varchar"
+        },
+        {
+          "name": "token_amount!",
+          "ordinal": 2,
+          "type_info": "Numeric"
+        },
+        {
+          "name": "created_at!",
+          "ordinal": 3,
+          "type_info": "Timestamp"
+        }
+      ],
+      "nullable": [
+        false,
+        true,
+        true,
+        true
+      ],
+      "parameters": {
+        "Left": [
+          "Timestamp",
+          "Timestamp",
+          "Int8"
+        ]
+      }
+    },
+    "query": "\n                select \n                    address as id,\n                    price_token as \"token_addr!\",\n                    min_bid as \"token_amount!\",\n                    created_at as \"created_at!\"\n                from nft_auction\n                where closing_price_usd is null\n                and created_at is not null\n                and min_bid is not null\n                and price_token is not null\n                and created_at <= $1\n                and created_at != $2 \n                and status = 'completed'\n                limit $3\n            "
   },
   "29880310b99a218f5203b6f22452cf99d225f34d4d03479e8fd6b4f569df9e84": {
     "describe": {
@@ -256,6 +309,19 @@
       }
     },
     "query": "\n        insert into nft_auction_bid (auction, buyer, price, next_bid_value, declined, created_at, tx_lt)\n        values ($1, $2, $3, $4, $5, $6, $7)\n        "
+  },
+  "5a254f39cdadfa8c4af29faaf92e64800cb9320c690bb4ac6407cd15592bd472": {
+    "describe": {
+      "columns": [],
+      "nullable": [],
+      "parameters": {
+        "Left": [
+          "Numeric",
+          "Text"
+        ]
+      }
+    },
+    "query": "\n                update nft_direct_buy\n                set buy_price_usd = $1\n                where address = $2\n            "
   },
   "6c10a5a32f49012764b2bd52fd3698dcc9db0266740953ae0fecdcea3c63812a": {
     "describe": {
@@ -401,6 +467,59 @@
       }
     },
     "query": "\n        insert into nft_price_history (source, source_type, ts, price, price_token, nft, collection)\n        values ($1, $2, $3, $4, $5, $6, $7)\n        "
+  },
+  "774439e45ec6b7d5827c0d03f330ffb6af0f5c13dcd0fe53156a8a18215d922f": {
+    "describe": {
+      "columns": [
+        {
+          "name": "id",
+          "ordinal": 0,
+          "type_info": "Varchar"
+        },
+        {
+          "name": "token_addr",
+          "ordinal": 1,
+          "type_info": "Varchar"
+        },
+        {
+          "name": "token_amount",
+          "ordinal": 2,
+          "type_info": "Numeric"
+        },
+        {
+          "name": "created_at",
+          "ordinal": 3,
+          "type_info": "Timestamp"
+        }
+      ],
+      "nullable": [
+        false,
+        false,
+        false,
+        false
+      ],
+      "parameters": {
+        "Left": [
+          "Timestamp",
+          "Timestamp",
+          "Int8"
+        ]
+      }
+    },
+    "query": "\n                select \n                    address as id,\n                    price_token as token_addr,\n                    price as token_amount,\n                    created as created_at\n                from nft_direct_buy\n                where buy_price_usd is null\n                and created <= $1\n                and created != $2 \n                and state = 'filled'\n                limit $3\n            "
+  },
+  "7d4403637b37255b2c03f7f57458c91759aa006ae110b7dfebd499dd5ca41f4f": {
+    "describe": {
+      "columns": [],
+      "nullable": [],
+      "parameters": {
+        "Left": [
+          "Numeric",
+          "Text"
+        ]
+      }
+    },
+    "query": "\n                update nft_direct_sell\n                set sell_price_usd = $1\n                where address = $2\n            "
   },
   "858d7c5eb1da83dfcd37cb46be06a826be6a873d514a804ad97e4d542196eb23": {
     "describe": {
@@ -1084,6 +1203,49 @@
     },
     "query": "\n        select address from nft where collection = $1 and name is null\n        "
   },
+  "f5d588a0d28c4e9446b5ca4d7ea99ec0ad88afb1d7f48e71be86457eb9f9329a": {
+    "describe": {
+      "columns": [
+        {
+          "name": "address",
+          "ordinal": 0,
+          "type_info": "Varchar"
+        },
+        {
+          "name": "is_l2r",
+          "ordinal": 1,
+          "type_info": "Bool"
+        },
+        {
+          "name": "decimals",
+          "ordinal": 2,
+          "type_info": "Int4"
+        }
+      ],
+      "nullable": [
+        false,
+        false,
+        false
+      ],
+      "parameters": {
+        "Left": [
+          "Text",
+          {
+            "Custom": {
+              "kind": {
+                "Enum": [
+                  "everscale",
+                  "venom"
+                ]
+              },
+              "name": "bc_name"
+            }
+          }
+        ]
+      }
+    },
+    "query": "\n                select \n                    pair as address,\n                    is_l2r,\n                    decimals\n                from token_to_dex\n                where token = $1 and source = $2\n            "
+  },
   "f699134fe7d894bf64369bd3daacda950cfd08b328af8c3bc482dff074ddb74a": {
     "describe": {
       "columns": [],
@@ -1132,6 +1294,46 @@
       }
     },
     "query": "\n        insert into nft_metadata (nft, meta, updated)\n        values ($1, $2, $3)\n        on conflict (nft) where updated < $3 do update\n        set meta = coalesce($2, nft_metadata.meta), updated = $3\n        "
+  },
+  "fc19916b9a9ca377455e1b9746fdfca4af4359ca9fb2a3029edfedcfb771ac67": {
+    "describe": {
+      "columns": [
+        {
+          "name": "id",
+          "ordinal": 0,
+          "type_info": "Varchar"
+        },
+        {
+          "name": "token_addr",
+          "ordinal": 1,
+          "type_info": "Varchar"
+        },
+        {
+          "name": "token_amount",
+          "ordinal": 2,
+          "type_info": "Numeric"
+        },
+        {
+          "name": "created_at",
+          "ordinal": 3,
+          "type_info": "Timestamp"
+        }
+      ],
+      "nullable": [
+        false,
+        false,
+        false,
+        false
+      ],
+      "parameters": {
+        "Left": [
+          "Timestamp",
+          "Timestamp",
+          "Int8"
+        ]
+      }
+    },
+    "query": "\n                select \n                    address as id,\n                    price_token as token_addr,\n                    price as token_amount,\n                    created as created_at\n                from nft_direct_sell\n                where sell_price_usd is null\n                and created <= $1\n                and created != $2 \n                and state = 'filled'\n                limit $3\n            "
   },
   "ff8c08cffde20cb62f7bccf368e9bbdd7dda5f400b04d7948814622364ee9321": {
     "describe": {

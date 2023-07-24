@@ -328,3 +328,10 @@ pub struct EventRecord {
 
     pub raw_data: serde_json::Value,
 }
+
+#[derive(Debug, sqlx::Type, Deserialize, Clone, Copy)]
+#[sqlx(type_name = "bc_name", rename_all = "snake_case")]
+pub enum BcName {
+    Everscale,
+    Venom,
+}

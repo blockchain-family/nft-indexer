@@ -1,7 +1,7 @@
 use crate::server::run_api;
 use crate::{settings::config::Config, state_updater::run_updater};
 use anyhow::Result;
-use meta_reader::MetaReaderContext;
+use data_reader::{MetaReaderContext, PriceReaderContext};
 use std::net::SocketAddr;
 use std::str::FromStr;
 
@@ -65,10 +65,19 @@ async fn main() -> Result<()> {
         jrpc_client: jrpc_client.clone(),
         pool: pg_pool.clone(),
         jrpc_req_latency_millis: config.jrpc_req_latency_millis,
+        idle_after_loop: config.idle_after_meta_loop_sec,
     };
 
-    tokio::spawn(meta_reader::run_meta_reader(meta_reader_context));
+    tokio::spawn(data_reader::run_meta_reader(meta_reader_context));
     tokio::spawn(parser::start_parsing(config.clone(), pg_pool.clone()));
+
+    let ctx = PriceReaderContext {
+        pool: pg_pool.clone(),
+        bc: config.bc_name,
+        idle_after_loop: config.idle_after_price_loop_sec,
+    };
+
+    tokio::spawn(data_reader::run_price_reader(ctx));
 
     let socket_addr: SocketAddr =
         SocketAddr::from_str(&config.server_api_url).expect("Invalid socket addr");

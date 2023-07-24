@@ -1,3 +1,4 @@
+use indexer_repo::types::BcName;
 use serde::Deserialize;
 use std::collections::HashMap;
 use url::Url;
@@ -18,6 +19,9 @@ pub struct Config {
     pub server_api_url: String,
     pub terminate_open_connections: Option<bool>,
     pub jrpc_req_latency_millis: u64,
+    pub bc_name: BcName,
+    pub idle_after_price_loop_sec: u64,
+    pub idle_after_meta_loop_sec: u64,
 }
 
 impl Default for Config {
