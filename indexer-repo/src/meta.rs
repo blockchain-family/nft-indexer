@@ -97,6 +97,24 @@ pub struct NftMetadataModelTransaction<'a> {
 }
 
 impl<'a> NftMetadataModelTransaction<'a> {
+    pub async fn update_name_desc(&mut self, name: &str, desc: &str, addr: &str) -> Result<()> {
+        sqlx::query!(
+            r#"
+                update nft
+                set name = $1,
+                    description = $2
+                where address = $3
+            "#,
+            name,
+            desc,
+            addr
+        )
+        .execute(&mut self.tx)
+        .await
+        .map(|_| ())
+        .map_err(|e| anyhow!(e))
+    }
+
     pub async fn update_name(&mut self, name: &str, addr: &str) -> Result<()> {
         sqlx::query!(
             r#"

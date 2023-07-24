@@ -331,6 +331,20 @@
     },
     "query": "\n        select address as \"address!: Address\", collection as \"collection?: Address\", owner as \"owner?: Address\", \n            manager as \"manager?: Address\", name as \"name?\", description as \"description?\", burned as \"burned!\", \n            updated as \"updated!\", owner_update_lt as \"owner_update_lt!\", manager_update_lt as \"manager_update_lt!\"\n        from nft where address = $1\n        "
   },
+  "6f0fa608f7d0b847580fae9efb25389e76c11f42489f5220447c4caa845430a5": {
+    "describe": {
+      "columns": [],
+      "nullable": [],
+      "parameters": {
+        "Left": [
+          "Varchar",
+          "Text",
+          "Text"
+        ]
+      }
+    },
+    "query": "\n                update nft\n                set name = $1,\n                    description = $2\n                where address = $3\n            "
+  },
   "74cde259acad5d78d6ec5e83afcabc1080bc7e418cfe47f92f4ec4402857ce66": {
     "describe": {
       "columns": [],

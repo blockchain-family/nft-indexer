@@ -51,27 +51,23 @@ pub async fn run_meta_reader(context: MetaReaderContext) -> Result<()> {
                 continue;
             };
 
-            if let Some(name) = extract_name_from_meta(&meta) {
-                if let Err(e) = tx.update_name(name, &address.nft).await {
-                    log::error!(
-                        "Nft address: {}, error while updating name: {:#?}",
-                        address.nft,
-                        e
-                    );
-                    continue;
-                }
-            }
+            if let Err(e) = match (
+                extract_name_from_meta(&meta),
+                extract_description_from_meta(&meta),
+            ) {
+                (Some(name), Some(desc)) => tx.update_name_desc(name, desc, &address.nft).await,
+                (None, Some(desc)) => tx.update_desc(desc, &address.nft).await,
+                (Some(name), None) => tx.update_name(name, &address.nft).await,
+                (None, None) => Ok(()),
+            } {
+                log::error!(
+                    "Nft address: {}, error while updating name and/or description: {:#?}",
+                    address.nft,
+                    e
+                );
 
-            if let Some(desc) = extract_description_from_meta(&meta) {
-                if let Err(e) = tx.update_desc(desc, &address.nft).await {
-                    log::error!(
-                        "Nft address: {}, error while updating description: {:#?}",
-                        &address.nft,
-                        e
-                    );
-                    continue;
-                }
-            }
+                continue;
+            };
 
             let attr = meta
                 .get("attributes")
