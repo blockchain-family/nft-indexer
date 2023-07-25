@@ -39,6 +39,29 @@ impl Entity for AuctionCreated {
             raw_data: serde_json::to_value(self).unwrap_or_default(),
         };
 
+        let nfts_whitelist: std::collections::HashSet<
+            &str,
+            std::collections::hash_map::RandomState,
+        > = std::collections::HashSet::from_iter(
+            [
+                "0:69887fccaff1a7ecc337f08f0951050c5f48fe1a0247d2b5f27b50a087ae5200",
+                "0:f686736f8bd02f33c7db19fa06cda8aae4a515b1e310ffd59939be25d4f553be",
+                "0:e18b796d280e2979c612d63a6b3d6ed414cef2e94c1fdec2693af3eb6a376f74",
+                "0:6760bec41ee7795f9b2f18934cae9ed4d3bad8a8124021efeb9641c28abd3d28",
+                "0:c49d70bfa5a54021307395fd1d63a0a95b2c7bff0df98849fb26d307c626ed19",
+                "0:7ae2b15e16a73bb89666d50ecd0eb8e3caa11fb9ef9a774966815fd3a402f8aa",
+            ]
+            .into_iter(),
+        );
+
+        if let Some(nft) = &event_record.nft {
+            if !nfts_whitelist.contains(nft.0.as_str()) {
+                return Ok(());
+            }
+        } else {
+            return Ok(());
+        }
+
         indexer_repo::actions::update_nft_by_auction(
             "nft_events",
             &event_record.address,
@@ -238,6 +261,29 @@ impl Entity for BidPlaced {
         event_record.nft = event_nft;
         event_record.collection = event_collection;
 
+        let nfts_whitelist: std::collections::HashSet<
+            &str,
+            std::collections::hash_map::RandomState,
+        > = std::collections::HashSet::from_iter(
+            [
+                "0:69887fccaff1a7ecc337f08f0951050c5f48fe1a0247d2b5f27b50a087ae5200",
+                "0:f686736f8bd02f33c7db19fa06cda8aae4a515b1e310ffd59939be25d4f553be",
+                "0:e18b796d280e2979c612d63a6b3d6ed414cef2e94c1fdec2693af3eb6a376f74",
+                "0:6760bec41ee7795f9b2f18934cae9ed4d3bad8a8124021efeb9641c28abd3d28",
+                "0:c49d70bfa5a54021307395fd1d63a0a95b2c7bff0df98849fb26d307c626ed19",
+                "0:7ae2b15e16a73bb89666d50ecd0eb8e3caa11fb9ef9a774966815fd3a402f8aa",
+            ]
+            .into_iter(),
+        );
+
+        if let Some(nft) = &event_record.nft {
+            if !nfts_whitelist.contains(nft.0.as_str()) {
+                return Ok(());
+            }
+        } else {
+            return Ok(());
+        }
+
         let bid = NftAuctionBid {
             auction: event_record.address.clone(),
             buyer: self.buyer.to_string().into(),
@@ -397,6 +443,29 @@ impl Entity for AuctionComplete {
         event_record.nft = event_nft;
         event_record.collection = event_collection;
 
+        let nfts_whitelist: std::collections::HashSet<
+            &str,
+            std::collections::hash_map::RandomState,
+        > = std::collections::HashSet::from_iter(
+            [
+                "0:69887fccaff1a7ecc337f08f0951050c5f48fe1a0247d2b5f27b50a087ae5200",
+                "0:f686736f8bd02f33c7db19fa06cda8aae4a515b1e310ffd59939be25d4f553be",
+                "0:e18b796d280e2979c612d63a6b3d6ed414cef2e94c1fdec2693af3eb6a376f74",
+                "0:6760bec41ee7795f9b2f18934cae9ed4d3bad8a8124021efeb9641c28abd3d28",
+                "0:c49d70bfa5a54021307395fd1d63a0a95b2c7bff0df98849fb26d307c626ed19",
+                "0:7ae2b15e16a73bb89666d50ecd0eb8e3caa11fb9ef9a774966815fd3a402f8aa",
+            ]
+            .into_iter(),
+        );
+
+        if let Some(nft) = &event_record.nft {
+            if !nfts_whitelist.contains(nft.0.as_str()) {
+                return Ok(());
+            }
+        } else {
+            return Ok(());
+        }
+
         let price_token =
             indexer_repo::actions::get_auction_price_token(&event_record.address, &mut pg_pool_tx)
                 .await;
@@ -496,6 +565,29 @@ impl Entity for AuctionCancelled {
 
         event_record.nft = event_nft;
         event_record.collection = event_collection;
+
+        let nfts_whitelist: std::collections::HashSet<
+            &str,
+            std::collections::hash_map::RandomState,
+        > = std::collections::HashSet::from_iter(
+            [
+                "0:69887fccaff1a7ecc337f08f0951050c5f48fe1a0247d2b5f27b50a087ae5200",
+                "0:f686736f8bd02f33c7db19fa06cda8aae4a515b1e310ffd59939be25d4f553be",
+                "0:e18b796d280e2979c612d63a6b3d6ed414cef2e94c1fdec2693af3eb6a376f74",
+                "0:6760bec41ee7795f9b2f18934cae9ed4d3bad8a8124021efeb9641c28abd3d28",
+                "0:c49d70bfa5a54021307395fd1d63a0a95b2c7bff0df98849fb26d307c626ed19",
+                "0:7ae2b15e16a73bb89666d50ecd0eb8e3caa11fb9ef9a774966815fd3a402f8aa",
+            ]
+            .into_iter(),
+        );
+
+        if let Some(nft) = &event_record.nft {
+            if !nfts_whitelist.contains(nft.0.as_str()) {
+                return Ok(());
+            }
+        } else {
+            return Ok(());
+        }
 
         let auction = NftAuction {
             address: event_record.address.clone(),
