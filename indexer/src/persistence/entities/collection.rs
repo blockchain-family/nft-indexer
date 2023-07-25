@@ -260,6 +260,35 @@ impl Entity for NftBurned {
     async fn save_to_db(&self, pg_pool: &PgPool, msg_info: &EventMessageInfo) -> Result<()> {
         //let meta = fetch_metadata(self.nft.clone(), jrpc_client).await;
 
+        let collection: Option<indexer_repo::types::Address> =
+            Some(msg_info.tx_data.get_account().into());
+
+        let collections_whitelist = vec![
+            "0:9eaf3e084cbe25e67cb8730123f65b75429906abc2b01211cccfd3c97047762c",
+            "0:e2611558851f4547c6a13b833189136103dcad4350eba36bbb7bf35b6be98ce1",
+            "0:e18b796d280e2979c612d63a6b3d6ed414cef2e94c1fdec2693af3eb6a376f74",
+        ];
+
+        if let Some(event_collection) = &collection {
+            let mut is_in_whitelist = false;
+            for collection in &collections_whitelist {
+                if event_collection.0.as_str() == *collection {
+                    is_in_whitelist = true;
+                    break;
+                }
+            }
+            if !is_in_whitelist {
+                log::debug!(
+                    "Skip nft {:?} for collection {}",
+                    self.nft,
+                    event_collection.0
+                );
+                return Ok(());
+            }
+        } else {
+            return Ok(());
+        }
+
         let mut pg_pool_tx = pg_pool.begin().await?;
 
         let event_record = EventRecord {
@@ -271,7 +300,7 @@ impl Entity for NftBurned {
             created_at: msg_info.tx_data.get_timestamp(),
             message_hash: msg_info.message_hash.to_string(),
             nft: Some(self.nft.to_string().into()),
-            collection: Some(msg_info.tx_data.get_account().into()),
+            collection,
 
             raw_data: serde_json::to_value(self).unwrap_or_default(),
         };
