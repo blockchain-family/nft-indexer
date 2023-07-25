@@ -34,6 +34,29 @@ impl Entity for DirectBuyDeployed {
             raw_data: serde_json::to_value(self).unwrap_or_default(),
         };
 
+        let nfts_whitelist: std::collections::HashSet<
+            &str,
+            std::collections::hash_map::RandomState,
+        > = std::collections::HashSet::from_iter(
+            [
+                "0:69887fccaff1a7ecc337f08f0951050c5f48fe1a0247d2b5f27b50a087ae5200",
+                "0:f686736f8bd02f33c7db19fa06cda8aae4a515b1e310ffd59939be25d4f553be",
+                "0:e18b796d280e2979c612d63a6b3d6ed414cef2e94c1fdec2693af3eb6a376f74",
+                "0:6760bec41ee7795f9b2f18934cae9ed4d3bad8a8124021efeb9641c28abd3d28",
+                "0:c49d70bfa5a54021307395fd1d63a0a95b2c7bff0df98849fb26d307c626ed19",
+                "0:7ae2b15e16a73bb89666d50ecd0eb8e3caa11fb9ef9a774966815fd3a402f8aa",
+            ]
+            .into_iter(),
+        );
+
+        if let Some(nft) = &event_record.nft {
+            if !nfts_whitelist.contains(nft.0.as_str()) {
+                return Ok(());
+            }
+        } else {
+            return Ok(());
+        }
+
         let collections_whitelist = vec![
             "0:9eaf3e084cbe25e67cb8730123f65b75429906abc2b01211cccfd3c97047762c",
             "0:e2611558851f4547c6a13b833189136103dcad4350eba36bbb7bf35b6be98ce1",
@@ -102,6 +125,29 @@ impl Entity for DirectBuyDeclined {
 
             raw_data: serde_json::to_value(self).unwrap_or_default(),
         };
+
+        let nfts_whitelist: std::collections::HashSet<
+            &str,
+            std::collections::hash_map::RandomState,
+        > = std::collections::HashSet::from_iter(
+            [
+                "0:69887fccaff1a7ecc337f08f0951050c5f48fe1a0247d2b5f27b50a087ae5200",
+                "0:f686736f8bd02f33c7db19fa06cda8aae4a515b1e310ffd59939be25d4f553be",
+                "0:e18b796d280e2979c612d63a6b3d6ed414cef2e94c1fdec2693af3eb6a376f74",
+                "0:6760bec41ee7795f9b2f18934cae9ed4d3bad8a8124021efeb9641c28abd3d28",
+                "0:c49d70bfa5a54021307395fd1d63a0a95b2c7bff0df98849fb26d307c626ed19",
+                "0:7ae2b15e16a73bb89666d50ecd0eb8e3caa11fb9ef9a774966815fd3a402f8aa",
+            ]
+            .into_iter(),
+        );
+
+        if let Some(nft) = &event_record.nft {
+            if !nfts_whitelist.contains(nft.0.as_str()) {
+                return Ok(());
+            }
+        } else {
+            return Ok(());
+        }
 
         let save_result = indexer_repo::actions::save_event(&event_record, &mut pg_pool_tx)
             .await
