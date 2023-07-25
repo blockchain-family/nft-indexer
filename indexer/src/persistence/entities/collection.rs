@@ -43,11 +43,11 @@ impl Entity for NftCreated {
         } else {
             return Ok(());
         }
-        let meta = fetch_metadata(
-            MsgAddressInt::from_str(self.nft.0.as_str())?,
-            &self.consumer,
-        )
-        .await;
+        // let meta = fetch_metadata(
+        //     MsgAddressInt::from_str(self.nft.0.as_str())?,
+        //     &self.consumer,
+        // )
+        // .await;
 
         let mut pg_pool_tx = pg_pool.begin().await?;
 
