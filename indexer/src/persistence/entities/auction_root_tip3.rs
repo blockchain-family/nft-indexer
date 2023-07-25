@@ -52,6 +52,8 @@ impl Entity for AuctionDeployed {
                 // );
                 return Ok(());
             }
+        } else {
+            return Ok(());
         }
 
         if TRUSTED_ADDRESSES.get().unwrap()[&OfferRootType::AuctionRoot]

@@ -62,6 +62,8 @@ impl Entity for OwnerChanged {
                 // );
                 return Ok(());
             }
+        } else {
+            return Ok(());
         }
 
         // if let Some(attributes) = meta.get("attributes").and_then(|v| v.as_array()) {

@@ -105,6 +105,8 @@ impl Entity for AuctionActive {
                 // );
                 return Ok(());
             }
+        } else {
+            return Ok(());
         }
 
         let auction = NftAuction {

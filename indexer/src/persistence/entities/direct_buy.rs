@@ -59,6 +59,8 @@ impl Entity for DirectBuyStateChanged {
                 // );
                 return Ok(());
             }
+        } else {
+            return Ok(());
         }
 
         let state = self.to.into();

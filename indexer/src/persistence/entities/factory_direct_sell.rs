@@ -56,6 +56,8 @@ impl Entity for DirectSellDeployed {
                 // );
                 return Ok(());
             }
+        } else {
+            return Ok(());
         }
 
         if TRUSTED_ADDRESSES.get().unwrap()[&OfferRootType::FactoryDirectSell]
