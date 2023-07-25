@@ -43,7 +43,7 @@ impl Entity for OwnerChanged {
         let collections_whitelist = vec![
             "0:9eaf3e084cbe25e67cb8730123f65b75429906abc2b01211cccfd3c97047762c",
             "0:e2611558851f4547c6a13b833189136103dcad4350eba36bbb7bf35b6be98ce1",
-            "0:e18b796d280e2979c612d63a6b3d6ed414cef2e94c1fdec2693af3eb6a376f74",
+            "0:48400246d51dd380ad49261f5e6f026347d3a5be5614d82bd655dcb57819e4bf",
         ];
 
         if let Some(event_collection) = &event_record.collection {
@@ -167,6 +167,32 @@ impl Entity for ManagerChanged {
 
             raw_data: serde_json::to_value(self).unwrap_or_default(),
         };
+
+        let collections_whitelist = vec![
+            "0:9eaf3e084cbe25e67cb8730123f65b75429906abc2b01211cccfd3c97047762c",
+            "0:e2611558851f4547c6a13b833189136103dcad4350eba36bbb7bf35b6be98ce1",
+            "0:48400246d51dd380ad49261f5e6f026347d3a5be5614d82bd655dcb57819e4bf",
+        ];
+
+        if let Some(event_collection) = &event_record.collection {
+            let mut is_in_whitelist = false;
+            for collection in &collections_whitelist {
+                if event_collection.0.as_str() == *collection {
+                    is_in_whitelist = true;
+                    break;
+                }
+            }
+            if !is_in_whitelist {
+                // log::debug!(
+                //     "Skip nft {:?} for collection {}",
+                //     self.nft,
+                //     event_collection.0
+                // );
+                return Ok(());
+            }
+        } else {
+            return Ok(());
+        }
 
         // if let Some(attributes) = meta.get("attributes").and_then(|v| v.as_array()) {
         //     let nft_attributes: Vec<NftAttribute> = attributes
