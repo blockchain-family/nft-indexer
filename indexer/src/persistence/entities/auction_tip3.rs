@@ -1,18 +1,13 @@
-use std::str::FromStr;
-
 use anyhow::Result;
 use async_trait::async_trait;
 use chrono::NaiveDateTime;
 use indexer_repo::types::{
-    AuctionStatus, EventCategory, EventRecord, EventType, NftAuction, NftAuctionBid,
+    AuctionStatus, EventCategory, EventRecord, EventType, NftAuction, NftAuctionBid, NftCollection,
     NftPriceHistory, NftPriceSource,
 };
 use sqlx::PgPool;
-use ton_block::MsgAddressInt;
-use transaction_consumer::JrpcClient;
 
 use crate::{
-    metadata::service::get_collection_data,
     models::events::{
         AuctionActive, AuctionCancelled, AuctionComplete, AuctionCreated, BidDeclined, BidPlaced,
     },
@@ -23,12 +18,7 @@ use super::Entity;
 
 #[async_trait]
 impl Entity for AuctionCreated {
-    async fn save_to_db(
-        &self,
-        pg_pool: &PgPool,
-        msg_info: &EventMessageInfo,
-        _jrpc_client: &JrpcClient,
-    ) -> Result<()> {
+    async fn save_to_db(&self, pg_pool: &PgPool, msg_info: &EventMessageInfo) -> Result<()> {
         let mut pg_pool_tx = pg_pool.begin().await?;
 
         let event_record = EventRecord {
@@ -72,12 +62,7 @@ impl Entity for AuctionCreated {
 
 #[async_trait]
 impl Entity for AuctionActive {
-    async fn save_to_db(
-        &self,
-        pg_pool: &PgPool,
-        msg_info: &EventMessageInfo,
-        jrpc_client: &JrpcClient,
-    ) -> Result<()> {
+    async fn save_to_db(&self, pg_pool: &PgPool, msg_info: &EventMessageInfo) -> Result<()> {
         let mut pg_pool_tx = pg_pool.begin().await?;
 
         let event_record = EventRecord {
@@ -131,11 +116,19 @@ impl Entity for AuctionActive {
             .await
             .expect("Failed to check collection exists for collection {collection:?}");
             if !exists {
-                let collection = get_collection_data(
-                    MsgAddressInt::from_str(collection.0.as_str())?,
-                    jrpc_client,
-                )
-                .await;
+                let now = chrono::Utc::now().naive_utc();
+
+                let collection = NftCollection {
+                    address: collection.clone(),
+                    owner: "".into(),
+                    name: None,
+                    description: None,
+                    created: now,
+                    updated: now,
+                    logo: None,
+                    wallpaper: None,
+                };
+
                 indexer_repo::actions::upsert_collection(&collection, &mut pg_pool_tx, None)
                     .await?;
             }
@@ -169,12 +162,7 @@ impl Entity for AuctionActive {
 
 #[async_trait]
 impl Entity for BidPlaced {
-    async fn save_to_db(
-        &self,
-        pg_pool: &PgPool,
-        msg_info: &EventMessageInfo,
-        jrpc_client: &JrpcClient,
-    ) -> Result<()> {
+    async fn save_to_db(&self, pg_pool: &PgPool, msg_info: &EventMessageInfo) -> Result<()> {
         let mut pg_pool_tx = pg_pool.begin().await?;
 
         let mut event_record = EventRecord {
@@ -254,11 +242,18 @@ impl Entity for BidPlaced {
             .await
             .expect("Failed to check collection exists for collection {collection:?}");
             if !exists {
-                let collection = get_collection_data(
-                    MsgAddressInt::from_str(collection.0.as_str())?,
-                    jrpc_client,
-                )
-                .await;
+                let now = chrono::Utc::now().naive_utc();
+
+                let collection = NftCollection {
+                    address: collection.clone(),
+                    owner: "".into(),
+                    name: None,
+                    description: None,
+                    created: now,
+                    updated: now,
+                    logo: None,
+                    wallpaper: None,
+                };
 
                 indexer_repo::actions::upsert_collection(&collection, &mut pg_pool_tx, None)
                     .await?;
@@ -280,12 +275,7 @@ impl Entity for BidPlaced {
 
 #[async_trait]
 impl Entity for BidDeclined {
-    async fn save_to_db(
-        &self,
-        pg_pool: &PgPool,
-        msg_info: &EventMessageInfo,
-        _jrpc_client: &JrpcClient,
-    ) -> Result<()> {
+    async fn save_to_db(&self, pg_pool: &PgPool, msg_info: &EventMessageInfo) -> Result<()> {
         let mut pg_pool_tx = pg_pool.begin().await?;
 
         let event_record = EventRecord {
@@ -331,12 +321,7 @@ impl Entity for BidDeclined {
 
 #[async_trait]
 impl Entity for AuctionComplete {
-    async fn save_to_db(
-        &self,
-        pg_pool: &PgPool,
-        msg_info: &EventMessageInfo,
-        jrpc_client: &JrpcClient,
-    ) -> Result<()> {
+    async fn save_to_db(&self, pg_pool: &PgPool, msg_info: &EventMessageInfo) -> Result<()> {
         let mut pg_pool_tx = pg_pool.begin().await?;
 
         let mut event_record = EventRecord {
@@ -367,14 +352,15 @@ impl Entity for AuctionComplete {
             indexer_repo::actions::get_auction_price_token(&event_record.address, &mut pg_pool_tx)
                 .await;
         // HACK: turn off the usd price request
-        let closing_price_usd = if price_token.is_some() && false {
-            let usd_price = rpc::token_to_usd(&price_token.as_ref().unwrap().0)
-                .await
-                .unwrap_or_default();
-            Some(usd_price * u128_to_bigdecimal(self.value))
-        } else {
-            None
-        };
+        let closing_price_usd = None;
+        // if price_token.is_some() && false {
+        //     let usd_price = rpc::token_to_usd(&price_token.as_ref().unwrap().0)
+        //         .await
+        //         .unwrap_or_default();
+        //     Some(usd_price * u128_to_bigdecimal(self.value))
+        // } else {
+        //     None
+        // };
 
         let auction = NftAuction {
             address: event_record.address.clone(),
@@ -401,11 +387,18 @@ impl Entity for AuctionComplete {
             .await
             .expect("Failed to check collection exists for collection {collection:?}");
             if !exists {
-                let collection = get_collection_data(
-                    MsgAddressInt::from_str(collection.0.as_str())?,
-                    jrpc_client,
-                )
-                .await;
+                let now = chrono::Utc::now().naive_utc();
+
+                let collection = NftCollection {
+                    address: collection.clone(),
+                    owner: "".into(),
+                    name: None,
+                    description: None,
+                    created: now,
+                    updated: now,
+                    logo: None,
+                    wallpaper: None,
+                };
 
                 indexer_repo::actions::upsert_collection(&collection, &mut pg_pool_tx, None)
                     .await?;
@@ -428,12 +421,7 @@ impl Entity for AuctionComplete {
 
 #[async_trait]
 impl Entity for AuctionCancelled {
-    async fn save_to_db(
-        &self,
-        pg_pool: &PgPool,
-        msg_info: &EventMessageInfo,
-        jrpc_client: &JrpcClient,
-    ) -> Result<()> {
+    async fn save_to_db(&self, pg_pool: &PgPool, msg_info: &EventMessageInfo) -> Result<()> {
         let mut pg_pool_tx = pg_pool.begin().await?;
 
         let mut event_record = EventRecord {
@@ -485,11 +473,18 @@ impl Entity for AuctionCancelled {
             .await
             .expect("Failed to check collection exists for collection {collection:?}");
             if !exists {
-                let collection = get_collection_data(
-                    MsgAddressInt::from_str(collection.0.as_str())?,
-                    jrpc_client,
-                )
-                .await;
+                let now = chrono::Utc::now().naive_utc();
+
+                let collection = NftCollection {
+                    address: collection.clone(),
+                    owner: "".into(),
+                    name: None,
+                    description: None,
+                    created: now,
+                    updated: now,
+                    logo: None,
+                    wallpaper: None,
+                };
 
                 indexer_repo::actions::upsert_collection(&collection, &mut pg_pool_tx, None)
                     .await?;

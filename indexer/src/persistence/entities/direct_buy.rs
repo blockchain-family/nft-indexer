@@ -6,7 +6,6 @@ use indexer_repo::types::{
     NftPriceSource,
 };
 use sqlx::PgPool;
-use transaction_consumer::JrpcClient;
 
 use crate::{
     models::events::DirectBuyStateChanged,
@@ -17,12 +16,7 @@ use super::Entity;
 
 #[async_trait]
 impl Entity for DirectBuyStateChanged {
-    async fn save_to_db(
-        &self,
-        pg_pool: &PgPool,
-        msg_info: &EventMessageInfo,
-        _jrpc_client: &JrpcClient,
-    ) -> Result<()> {
+    async fn save_to_db(&self, pg_pool: &PgPool, msg_info: &EventMessageInfo) -> Result<()> {
         let mut pg_pool_tx = pg_pool.begin().await?;
 
         let event_record = EventRecord {
@@ -63,17 +57,18 @@ impl Entity for DirectBuyStateChanged {
         }
 
         // HACK: turn off the usd price request
-        let (buy_price_usd, finished_at) = if state == DirectBuyState::Filled && false {
-            let usd_price = rpc::token_to_usd(&self.value2.spent_token.to_string())
-                .await
-                .unwrap_or_default();
-            (
-                Some(usd_price * u128_to_bigdecimal(self.value2._price)),
-                Some(created_ts),
-            )
-        } else {
-            (None, None)
-        };
+        let (buy_price_usd, finished_at) = (None, None);
+        // if state == DirectBuyState::Filled && false {
+        //     let usd_price = rpc::token_to_usd(&self.value2.spent_token.to_string())
+        //         .await
+        //         .unwrap_or_default();
+        //     (
+        //         Some(usd_price * u128_to_bigdecimal(self.value2._price)),
+        //         Some(created_ts),
+        //     )
+        // } else {
+        //     (None, None)
+        // };
 
         let direct_buy = NftDirectBuy {
             address: event_record.address.clone(),

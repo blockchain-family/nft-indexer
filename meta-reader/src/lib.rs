@@ -72,13 +72,11 @@ pub async fn run_meta_reader(context: MetaReaderContext) -> Result<()> {
             let attr = meta
                 .get("attributes")
                 .and_then(|d| d.as_array())
-                .and_then(|d| d.is_empty().then(|| d))
-                .and_then(|d| {
-                    Some(
-                        d.iter()
-                            .map(|e| NftMetaAttribute::new(e, &address))
-                            .collect::<Vec<_>>(),
-                    )
+                .and_then(|d| d.is_empty().then_some(d))
+                .map(|d| {
+                    d.iter()
+                        .map(|e| NftMetaAttribute::new(e, &address))
+                        .collect::<Vec<_>>()
                 });
 
             if let Some(attr) = attr {

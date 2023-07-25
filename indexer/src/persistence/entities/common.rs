@@ -2,7 +2,6 @@ use anyhow::Result;
 use async_trait::async_trait;
 use indexer_repo::types::{EventCategory, EventRecord, EventType};
 use sqlx::PgPool;
-use transaction_consumer::JrpcClient;
 
 use crate::{
     models::events::{
@@ -16,12 +15,7 @@ use super::Entity;
 
 #[async_trait]
 impl Entity for OwnershipTransferred {
-    async fn save_to_db(
-        &self,
-        pg_pool: &PgPool,
-        msg_info: &EventMessageInfo,
-        _jrpc_client: &JrpcClient,
-    ) -> Result<()> {
+    async fn save_to_db(&self, pg_pool: &PgPool, msg_info: &EventMessageInfo) -> Result<()> {
         let mut pg_pool_tx = pg_pool.begin().await?;
 
         let event_record = EventRecord {
@@ -54,12 +48,7 @@ impl Entity for OwnershipTransferred {
 
 #[async_trait]
 impl Entity for MarketFeeDefaultChanged {
-    async fn save_to_db(
-        &self,
-        pg_pool: &PgPool,
-        msg_info: &EventMessageInfo,
-        _jrpc_client: &JrpcClient,
-    ) -> Result<()> {
+    async fn save_to_db(&self, pg_pool: &PgPool, msg_info: &EventMessageInfo) -> Result<()> {
         let mut pg_pool_tx = pg_pool.begin().await?;
 
         let event_record = EventRecord {
@@ -92,12 +81,7 @@ impl Entity for MarketFeeDefaultChanged {
 
 #[async_trait]
 impl Entity for MarketFeeChanged {
-    async fn save_to_db(
-        &self,
-        pg_pool: &PgPool,
-        msg_info: &EventMessageInfo,
-        _jrpc_client: &JrpcClient,
-    ) -> Result<()> {
+    async fn save_to_db(&self, pg_pool: &PgPool, msg_info: &EventMessageInfo) -> Result<()> {
         let mut pg_pool_tx = pg_pool.begin().await?;
 
         let event_record = EventRecord {
@@ -130,12 +114,7 @@ impl Entity for MarketFeeChanged {
 
 #[async_trait]
 impl Entity for AddCollectionRules {
-    async fn save_to_db(
-        &self,
-        pg_pool: &PgPool,
-        msg_info: &EventMessageInfo,
-        _jrpc_client: &JrpcClient,
-    ) -> Result<()> {
+    async fn save_to_db(&self, pg_pool: &PgPool, msg_info: &EventMessageInfo) -> Result<()> {
         let mut pg_pool_tx = pg_pool.begin().await?;
 
         let event_record = EventRecord {
@@ -176,12 +155,7 @@ impl Entity for AddCollectionRules {
 
 #[async_trait]
 impl Entity for RemoveCollectionRules {
-    async fn save_to_db(
-        &self,
-        pg_pool: &PgPool,
-        msg_info: &EventMessageInfo,
-        _jrpc_client: &JrpcClient,
-    ) -> Result<()> {
+    async fn save_to_db(&self, pg_pool: &PgPool, msg_info: &EventMessageInfo) -> Result<()> {
         let mut pg_pool_tx = pg_pool.begin().await?;
 
         let event_record = EventRecord {

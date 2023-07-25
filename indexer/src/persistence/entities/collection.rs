@@ -1,15 +1,10 @@
-use std::str::FromStr;
-
 use anyhow::Result;
 use async_trait::async_trait;
 use chrono::NaiveDateTime;
-use indexer_repo::types::{EventCategory, EventRecord, EventType, Nft, NftAttribute};
+use indexer_repo::types::{EventCategory, EventRecord, EventType, Nft, NftCollection};
 use sqlx::PgPool;
-use ton_block::MsgAddressInt;
-use transaction_consumer::JrpcClient;
 
 use crate::{
-    metadata::service::{fetch_metadata, get_collection_data},
     models::events::{NftBurned, NftCreated},
     utils::{EventMessageInfo, KeyInfo},
 };
@@ -18,12 +13,7 @@ use super::Entity;
 
 #[async_trait]
 impl Entity for NftCreated {
-    async fn save_to_db(
-        &self,
-        pg_pool: &PgPool,
-        msg_info: &EventMessageInfo,
-        jrpc_client: &JrpcClient,
-    ) -> Result<()> {
+    async fn save_to_db(&self, pg_pool: &PgPool, msg_info: &EventMessageInfo) -> Result<()> {
         // let collections_whitelist = vec![
         //     "0:ec0ab798c85aa7256865221bacd4f3df220cf60277a2b79b3091b76c265d1cd7",
         //     "0:33a630f9c54fc4092f43ab978f3fd65964bb0d775553c16953aa1568eb63ab0f",
@@ -183,11 +173,18 @@ impl Entity for NftCreated {
             .await
             .expect("Failed to check collection exists for collection {collection:?}");
             if !exists {
-                let collection = get_collection_data(
-                    MsgAddressInt::from_str(event_record.address.0.as_str())?,
-                    jrpc_client,
-                )
-                .await;
+                let now = chrono::Utc::now().naive_utc();
+
+                let collection = NftCollection {
+                    address: collection.clone(),
+                    owner: "".into(),
+                    name: None,
+                    description: None,
+                    created: now,
+                    updated: now,
+                    logo: None,
+                    wallpaper: None,
+                };
 
                 let nft_created_at_timestamp =
                     NaiveDateTime::from_timestamp_opt(event_record.created_at, 0);
@@ -257,13 +254,8 @@ impl Entity for NftCreated {
 
 #[async_trait]
 impl Entity for NftBurned {
-    async fn save_to_db(
-        &self,
-        pg_pool: &PgPool,
-        msg_info: &EventMessageInfo,
-        jrpc_client: &JrpcClient,
-    ) -> Result<()> {
-        let meta = fetch_metadata(self.nft.clone(), jrpc_client).await;
+    async fn save_to_db(&self, pg_pool: &PgPool, msg_info: &EventMessageInfo) -> Result<()> {
+        //let meta = fetch_metadata(self.nft.clone(), jrpc_client).await;
 
         let mut pg_pool_tx = pg_pool.begin().await?;
 
@@ -281,20 +273,20 @@ impl Entity for NftBurned {
             raw_data: serde_json::to_value(self).unwrap_or_default(),
         };
 
-        if let Some(attributes) = meta.get("attributes").and_then(|v| v.as_array()) {
-            let nft_attributes: Vec<NftAttribute> = attributes
-                .iter()
-                .map(|item| {
-                    NftAttribute::new(
-                        self.nft.to_string().into(),
-                        event_record.collection.clone(),
-                        item.clone(),
-                    )
-                })
-                .collect();
+        // if let Some(attributes) = meta.get("attributes").and_then(|v| v.as_array()) {
+        //     let nft_attributes: Vec<NftAttribute> = attributes
+        //         .iter()
+        //         .map(|item| {
+        //             NftAttribute::new(
+        //                 self.nft.to_string().into(),
+        //                 event_record.collection.clone(),
+        //                 item.clone(),
+        //             )
+        //         })
+        //         .collect();
 
-            indexer_repo::actions::upsert_nft_attributes(&nft_attributes, &mut pg_pool_tx).await?;
-        }
+        //     indexer_repo::actions::upsert_nft_attributes(&nft_attributes, &mut pg_pool_tx).await?;
+        // }
 
         // let nft_meta = NftMeta {
         //     nft: self.nft.clone(),
@@ -328,11 +320,18 @@ impl Entity for NftBurned {
             .await
             .expect("Failed to check collection exists for collection {collection:?}");
             if !exists {
-                let collection = get_collection_data(
-                    MsgAddressInt::from_str(event_record.address.0.as_str())?,
-                    jrpc_client,
-                )
-                .await;
+                let now = chrono::Utc::now().naive_utc();
+
+                let collection = NftCollection {
+                    address: collection.clone(),
+                    owner: "".into(),
+                    name: None,
+                    description: None,
+                    created: now,
+                    updated: now,
+                    logo: None,
+                    wallpaper: None,
+                };
 
                 indexer_repo::actions::upsert_collection(&collection, &mut pg_pool_tx, None)
                     .await?;

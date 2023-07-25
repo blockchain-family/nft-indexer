@@ -2,7 +2,6 @@ use anyhow::Result;
 use async_trait::async_trait;
 use indexer_repo::types::{EventCategory, EventRecord, EventType};
 use sqlx::PgPool;
-use transaction_consumer::JrpcClient;
 
 use crate::{
     models::events::{AuctionDeclined, AuctionDeployed},
@@ -14,12 +13,7 @@ use super::Entity;
 
 #[async_trait]
 impl Entity for AuctionDeployed {
-    async fn save_to_db(
-        &self,
-        pg_pool: &PgPool,
-        msg_info: &EventMessageInfo,
-        _jrpc_client: &JrpcClient,
-    ) -> Result<()> {
+    async fn save_to_db(&self, pg_pool: &PgPool, msg_info: &EventMessageInfo) -> Result<()> {
         let mut pg_pool_tx = pg_pool.begin().await?;
 
         let event_record = EventRecord {
@@ -62,12 +56,7 @@ impl Entity for AuctionDeployed {
 
 #[async_trait]
 impl Entity for AuctionDeclined {
-    async fn save_to_db(
-        &self,
-        pg_pool: &PgPool,
-        msg_info: &EventMessageInfo,
-        _jrpc_client: &JrpcClient,
-    ) -> Result<()> {
+    async fn save_to_db(&self, pg_pool: &PgPool, msg_info: &EventMessageInfo) -> Result<()> {
         let mut pg_pool_tx = pg_pool.begin().await?;
 
         let event_record = EventRecord {

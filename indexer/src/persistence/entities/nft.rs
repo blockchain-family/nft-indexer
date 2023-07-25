@@ -3,7 +3,6 @@ use async_trait::async_trait;
 use chrono::NaiveDateTime;
 use indexer_repo::types::{EventCategory, EventRecord, EventType, Nft};
 use sqlx::PgPool;
-use transaction_consumer::JrpcClient;
 
 use crate::{
     models::events::{ManagerChanged, OwnerChanged},
@@ -14,12 +13,7 @@ use super::Entity;
 
 #[async_trait]
 impl Entity for OwnerChanged {
-    async fn save_to_db(
-        &self,
-        pg_pool: &PgPool,
-        msg_info: &EventMessageInfo,
-        _jrpc_client: &JrpcClient,
-    ) -> Result<()> {
+    async fn save_to_db(&self, pg_pool: &PgPool, msg_info: &EventMessageInfo) -> Result<()> {
         // let meta = fetch_metadata(
         //     MsgAddressInt::from_str(self.address.0.as_str())?,
         //     &self.consumer,
@@ -121,12 +115,7 @@ impl Entity for OwnerChanged {
 
 #[async_trait]
 impl Entity for ManagerChanged {
-    async fn save_to_db(
-        &self,
-        pg_pool: &PgPool,
-        msg_info: &EventMessageInfo,
-        _jrpc_client: &JrpcClient,
-    ) -> Result<()> {
+    async fn save_to_db(&self, pg_pool: &PgPool, msg_info: &EventMessageInfo) -> Result<()> {
         // let meta = fetch_metadata(
         //     MsgAddressInt::from_str(self.address.0.as_str())?,
         //     &self.consumer,

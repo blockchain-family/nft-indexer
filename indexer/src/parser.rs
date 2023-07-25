@@ -12,13 +12,8 @@ use sqlx::PgPool;
 use ton_block::GetRepresentationHash;
 use ton_types::UInt256;
 use transaction_buffer::models::{BufferedConsumerChannels, RawTransaction};
-use transaction_consumer::JrpcClient;
 
-pub async fn start_parsing(
-    config: settings::config::Config,
-    pg_pool: PgPool,
-    jrpc_client: JrpcClient,
-) -> Result<()> {
+pub async fn start_parsing(config: settings::config::Config, pg_pool: PgPool) -> Result<()> {
     let BufferedConsumerChannels {
         rx_parsed_events,
         tx_commit,
@@ -27,12 +22,7 @@ pub async fn start_parsing(
 
     log::info!("Connected to kafka");
 
-    tokio::spawn(run_nft_indexer(
-        rx_parsed_events,
-        tx_commit,
-        pg_pool,
-        jrpc_client,
-    ));
+    tokio::spawn(run_nft_indexer(rx_parsed_events, tx_commit, pg_pool));
 
     notify_for_services.notified().await;
 
@@ -43,7 +33,6 @@ pub async fn run_nft_indexer(
     mut rx_raw_transactions: Receiver<Vec<(Vec<ExtractedOwned>, RawTransaction)>>,
     mut tx_commit: Sender<()>,
     pool: PgPool,
-    jrpc_client: JrpcClient,
 ) {
     log::info!("Start nft indexer...");
 
@@ -71,7 +60,7 @@ pub async fn run_nft_indexer(
             };
 
             for event in events {
-                if let Err(e) = process_event(event, &mut msg_info, &pool, &jrpc_client).await {
+                if let Err(e) = process_event(event, &mut msg_info, &pool).await {
                     log::error!("Error processing event: {:#?}", e);
                 }
             }
@@ -86,7 +75,6 @@ async fn process_event(
     event: ExtractedOwned,
     msg_info: &mut EventMessageInfo,
     pool: &PgPool,
-    jrpc_client: &JrpcClient,
 ) -> Result<()> {
     if let Some((entity, message_hash)) = unpack_entity(&event)? {
         msg_info.message_hash = message_hash;
@@ -96,7 +84,7 @@ async fn process_event(
             msg_info.tx_data.hash().unwrap_or_default(),
             NaiveDateTime::from_timestamp_opt(msg_info.tx_data.now as i64, 0).unwrap_or_default()
         );
-        entity.save_to_db(pool, msg_info, jrpc_client).await?;
+        entity.save_to_db(pool, msg_info).await?;
     }
 
     Ok(())

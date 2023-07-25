@@ -1,6 +1,5 @@
 use anyhow::Result;
 use sqlx::PgPool;
-use transaction_consumer::JrpcClient;
 
 use crate::utils::EventMessageInfo;
 
@@ -26,10 +25,5 @@ pub use nft::*;
 
 #[async_trait::async_trait]
 pub trait Entity: Sync + Send {
-    async fn save_to_db(
-        &self,
-        pg_pool: &PgPool,
-        msg_info: &EventMessageInfo,
-        jrpc_client: &JrpcClient,
-    ) -> Result<()>;
+    async fn save_to_db(&self, pg_pool: &PgPool, msg_info: &EventMessageInfo) -> Result<()>;
 }

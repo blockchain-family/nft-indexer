@@ -1,18 +1,13 @@
-use std::str::FromStr;
-
 use anyhow::Result;
 use async_trait::async_trait;
 use chrono::NaiveDateTime;
 use indexer_repo::types::{
-    DirectSellState, EventCategory, EventRecord, EventType, NftDirectSell, NftPriceHistory,
-    NftPriceSource,
+    DirectSellState, EventCategory, EventRecord, EventType, NftCollection, NftDirectSell,
+    NftPriceHistory, NftPriceSource,
 };
 use sqlx::PgPool;
-use ton_block::MsgAddressInt;
-use transaction_consumer::JrpcClient;
 
 use crate::{
-    metadata::service::get_collection_data,
     models::events::DirectSellStateChanged,
     utils::{u128_to_bigdecimal, EventMessageInfo, KeyInfo},
 };
@@ -21,12 +16,7 @@ use super::Entity;
 
 #[async_trait]
 impl Entity for DirectSellStateChanged {
-    async fn save_to_db(
-        &self,
-        pg_pool: &PgPool,
-        msg_info: &EventMessageInfo,
-        jrpc_client: &JrpcClient,
-    ) -> Result<()> {
+    async fn save_to_db(&self, pg_pool: &PgPool, msg_info: &EventMessageInfo) -> Result<()> {
         let mut pg_pool_tx = pg_pool.begin().await?;
 
         let event_record = EventRecord {
@@ -68,17 +58,18 @@ impl Entity for DirectSellStateChanged {
         }
 
         // HACK: turn off the usd price request
-        let (sell_price_usd, finished_at) = if state == DirectSellState::Filled && false {
-            let usd_price = rpc::token_to_usd(&self.value2.token.to_string())
-                .await
-                .unwrap_or_default();
-            (
-                Some(usd_price * u128_to_bigdecimal(self.value2._price)),
-                Some(created_ts),
-            )
-        } else {
-            (None, None)
-        };
+        let (sell_price_usd, finished_at) = (None, None);
+        // if state == DirectSellState::Filled && false {
+        //     let usd_price = rpc::token_to_usd(&self.value2.token.to_string())
+        //         .await
+        //         .unwrap_or_default();
+        //     (
+        //         Some(usd_price * u128_to_bigdecimal(self.value2._price)),
+        //         Some(created_ts),
+        //     )
+        // } else {
+        //     (None, None)
+        // };
 
         let direct_sell = NftDirectSell {
             address: event_record.address.clone(),
@@ -108,11 +99,19 @@ impl Entity for DirectSellStateChanged {
             .await
             .expect("Failed to check collection exists for collection {collection:?}");
             if !exists {
-                let collection = get_collection_data(
-                    MsgAddressInt::from_str(collection.0.as_str())?,
-                    jrpc_client,
-                )
-                .await;
+                let now = chrono::Utc::now().naive_utc();
+
+                let collection = NftCollection {
+                    address: collection.clone(),
+                    owner: "".into(),
+                    name: None,
+                    description: None,
+                    created: now,
+                    updated: now,
+                    logo: None,
+                    wallpaper: None,
+                };
+
                 indexer_repo::actions::upsert_collection(&collection, &mut pg_pool_tx, None)
                     .await?;
             }

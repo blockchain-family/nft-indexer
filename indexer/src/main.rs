@@ -68,11 +68,7 @@ async fn main() -> Result<()> {
     };
 
     tokio::spawn(meta_reader::run_meta_reader(meta_reader_context));
-    tokio::spawn(parser::start_parsing(
-        config.clone(),
-        pg_pool.clone(),
-        jrpc_client.clone(),
-    ));
+    tokio::spawn(parser::start_parsing(config.clone(), pg_pool.clone()));
 
     let socket_addr: SocketAddr =
         SocketAddr::from_str(&config.server_api_url).expect("Invalid socket addr");
