@@ -31,41 +31,46 @@ pub async fn start_parsing(config: settings::config::Config, pg_pool: PgPool) ->
 
 pub async fn run_nft_indexer(
     mut rx_raw_transactions: Receiver<Vec<(Vec<ExtractedOwned>, RawTransaction)>>,
-    mut tx_commit: Sender<()>,
+    tx_commit: Sender<()>,
     pool: PgPool,
 ) {
     log::info!("Start nft indexer...");
 
     while let Some(message) = rx_raw_transactions.next().await {
-        for (out, tx) in message {
-            let mut events = Vec::new();
-            let mut function_inputs = Vec::new();
+        let mut tx_commit = tx_commit.clone();
+        let pool = pool.clone();
+        tokio::spawn(async move {
+            for (out, tx) in message {
+                let mut events = Vec::new();
+                let mut function_inputs = Vec::new();
 
-            for extractable in out {
-                match extractable.parsed_type {
-                    ParsedType::Event => {
-                        events.push(extractable);
+                for extractable in out {
+                    match extractable.parsed_type {
+                        ParsedType::Event => {
+                            events.push(extractable);
+                        }
+                        ParsedType::FunctionInput => {
+                            function_inputs.extend(extractable.tokens.into_iter());
+                        }
+                        _ => {}
                     }
-                    ParsedType::FunctionInput => {
-                        function_inputs.extend(extractable.tokens.into_iter());
+                }
+
+                let mut msg_info = EventMessageInfo {
+                    tx_data: tx.data,
+                    function_inputs,
+                    message_hash: UInt256::default(),
+                };
+
+                for event in events {
+                    if let Err(e) = process_event(event, &mut msg_info, &pool).await {
+                        // TODO: check error kind; exit if critical
+                        log::error!("Error processing event: {:#?}. Exiting.", e);
                     }
-                    _ => {}
                 }
             }
-
-            let mut msg_info = EventMessageInfo {
-                tx_data: tx.data,
-                function_inputs,
-                message_hash: UInt256::default(),
-            };
-
-            for event in events {
-                if let Err(e) = process_event(event, &mut msg_info, &pool).await {
-                    log::error!("Error processing event: {:#?}", e);
-                }
-            }
-        }
-        tx_commit.send(()).await.expect("dead commit sender");
+            tx_commit.send(()).await.expect("dead commit sender");
+        });
     }
 
     panic!("rip kafka consumer");
