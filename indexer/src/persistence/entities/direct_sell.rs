@@ -78,29 +78,16 @@ impl Entity for DirectSellStateChanged {
         indexer_repo::actions::upsert_direct_sell(&direct_sell, &mut pg_pool_tx).await?;
 
         if let Some(collection) = event_record.collection.as_ref() {
-            let exists = indexer_repo::actions::check_collection_exists(
-                collection.0.as_str(),
-                &mut pg_pool_tx,
-            )
-            .await
-            .expect("Failed to check collection exists for collection {collection:?}");
-            if !exists {
-                let now = chrono::Utc::now().naive_utc();
+            let now = chrono::Utc::now().naive_utc();
 
-                let collection = NftCollection {
-                    address: collection.clone(),
-                    owner: "".into(),
-                    name: None,
-                    description: None,
-                    created: now,
-                    updated: now,
-                    logo: None,
-                    wallpaper: None,
-                };
+            let collection = NftCollection {
+                address: collection.clone(),
+                created: now,
+                updated: now,
+                ..Default::default()
+            };
 
-                indexer_repo::actions::upsert_collection(&collection, &mut pg_pool_tx, None)
-                    .await?;
-            }
+            indexer_repo::actions::upsert_collection(&collection, &mut pg_pool_tx, None).await?;
         }
 
         let save_result = indexer_repo::actions::save_event(&event_record, &mut pg_pool_tx)

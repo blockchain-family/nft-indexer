@@ -174,7 +174,7 @@ impl From<u8> for AuctionStatus {
     }
 }
 
-#[derive(Clone, Debug)]
+#[derive(Default, Clone, Debug)]
 pub struct Nft {
     pub address: Address,
     pub collection: Option<Address>,
@@ -207,7 +207,7 @@ pub struct NftCollection {
     pub wallpaper: Option<Uri>,
 }
 
-#[derive(Clone, Debug)]
+#[derive(Default, Clone, Debug)]
 pub struct NftAuction {
     pub address: Address,
     pub nft: Option<Address>,
@@ -223,7 +223,7 @@ pub struct NftAuction {
     pub tx_lt: i64,
 }
 
-#[derive(Clone, Debug)]
+#[derive(Default, Clone, Debug)]
 pub struct NftAuctionBid {
     pub auction: Address,
     pub buyer: Address,

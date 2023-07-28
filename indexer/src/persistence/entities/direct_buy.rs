@@ -2,8 +2,8 @@ use anyhow::Result;
 use async_trait::async_trait;
 use chrono::NaiveDateTime;
 use indexer_repo::types::{
-    DirectBuyState, EventCategory, EventRecord, EventType, NftDirectBuy, NftPriceHistory,
-    NftPriceSource,
+    DirectBuyState, EventCategory, EventRecord, EventType, NftCollection, NftDirectBuy,
+    NftPriceHistory, NftPriceSource,
 };
 use sqlx::PgPool;
 
@@ -76,20 +76,16 @@ impl Entity for DirectBuyStateChanged {
         indexer_repo::actions::upsert_direct_buy(&direct_buy, &mut pg_pool_tx).await?;
 
         if let Some(collection) = event_record.collection.as_ref() {
-            let exists = indexer_repo::actions::check_collection_exists(
-                collection.0.as_str(),
-                &mut pg_pool_tx,
-            )
-            .await
-            .expect("Failed to check collection exists for collection {collection:?}");
-            if !exists {
-                // let collection = get_collection_data(
-                //     MsgAddressInt::from_str(collection.0.as_str())?,
-                //     &self.consumer,
-                // )
-                // .await;
-                //     actions::upsert_collection(&collection, &mut tx, None).await?;
-            }
+            let now = chrono::Utc::now().naive_utc();
+
+            let collection = NftCollection {
+                address: collection.clone(),
+                created: now,
+                updated: now,
+                ..Default::default()
+            };
+
+            indexer_repo::actions::upsert_collection(&collection, &mut pg_pool_tx, None).await?;
         }
 
         let save_result = indexer_repo::actions::save_event(&event_record, &mut pg_pool_tx)

@@ -38,14 +38,11 @@ impl Entity for OwnerChanged {
             address: event_record.address.clone(),
             collection: event_record.collection.clone(),
             owner: Some(self.new_owner.to_string().into()),
-            manager: None,
-            name: None,
-            description: None,
             burned: false,
             updated: NaiveDateTime::from_timestamp_opt(event_record.created_at, 0)
                 .unwrap_or_default(),
             owner_update_lt: event_record.created_lt,
-            manager_update_lt: 0,
+            ..Default::default()
         };
 
         indexer_repo::actions::upsert_nft(&nft, &mut pg_pool_tx).await?;
@@ -98,15 +95,12 @@ impl Entity for ManagerChanged {
         let nft = Nft {
             address: event_record.address.clone(),
             collection: event_record.collection.clone(),
-            owner: None,
             manager: Some(self.new_manager.to_string().into()),
-            name: None,
-            description: None,
             burned: false,
             updated: NaiveDateTime::from_timestamp_opt(event_record.created_at, 0)
                 .unwrap_or_default(),
-            owner_update_lt: 0,
             manager_update_lt: event_record.created_lt,
+            ..Default::default()
         };
 
         indexer_repo::actions::upsert_nft(&nft, &mut pg_pool_tx).await?;

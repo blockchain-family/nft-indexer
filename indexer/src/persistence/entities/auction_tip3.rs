@@ -46,6 +46,7 @@ impl Entity for AuctionCreated {
             &mut pg_pool_tx,
         )
         .await?;
+
         let save_result = indexer_repo::actions::save_event(&event_record, &mut pg_pool_tx)
             .await
             .expect("Failed to save AuctionCreated event");
@@ -89,13 +90,12 @@ impl Entity for AuctionActive {
             wallet_for_bids: Some(self.value0.wallet_for_bids.to_string().into()),
             price_token: Some(self.value0._payment_token.to_string().into()),
             start_price: Some(u128_to_bigdecimal(self.value0._price)),
-            closing_price_usd: None,
             min_bid: Some(u128_to_bigdecimal(self.value0._price)),
-            max_bid: None,
             status: Some(AuctionStatus::Active),
             created_at: NaiveDateTime::from_timestamp_opt(self.value0.start_time as i64, 0),
             finished_at: NaiveDateTime::from_timestamp_opt(self.value0.finish_time as i64, 0),
             tx_lt: event_record.created_lt,
+            ..Default::default()
         };
 
         indexer_repo::actions::upsert_auction(&auction, &mut pg_pool_tx).await?;
@@ -109,25 +109,16 @@ impl Entity for AuctionActive {
         .await?;
 
         if let Some(collection) = event_record.collection.as_ref() {
-            let exists = indexer_repo::actions::check_collection_exists(
-                collection.0.as_str(),
-                &mut pg_pool_tx,
-            )
-            .await
-            .expect("Failed to check collection exists for collection {collection:?}");
-            if !exists {
-                let now = chrono::Utc::now().naive_utc();
+            let now = chrono::Utc::now().naive_utc();
 
-                let collection = NftCollection {
-                    address: collection.clone(),
-                    created: now,
-                    updated: now,
-                    ..Default::default()
-                };
+            let collection = NftCollection {
+                address: collection.clone(),
+                created: now,
+                updated: now,
+                ..Default::default()
+            };
 
-                indexer_repo::actions::upsert_collection(&collection, &mut pg_pool_tx, None)
-                    .await?;
-            }
+            indexer_repo::actions::upsert_collection(&collection, &mut pg_pool_tx, None).await?;
         }
 
         let price_history = NftPriceHistory {
@@ -203,16 +194,10 @@ impl Entity for BidPlaced {
         let auction = NftAuction {
             address: event_record.address.clone(),
             nft: event_record.nft.clone(),
-            wallet_for_bids: None,
-            price_token: None,
-            start_price: None,
-            closing_price_usd: None,
             min_bid,
             max_bid: Some(u128_to_bigdecimal(self.value)),
-            status: None,
-            created_at: None,
-            finished_at: None,
             tx_lt: event_record.created_lt,
+            ..Default::default()
         };
 
         indexer_repo::actions::upsert_auction(&auction, &mut pg_pool_tx).await?;
@@ -231,30 +216,18 @@ impl Entity for BidPlaced {
         indexer_repo::actions::upsert_nft_price_history(&price_history, &mut pg_pool_tx).await?;
 
         if let Some(collection) = event_record.collection.as_ref() {
-            let exists = indexer_repo::actions::check_collection_exists(
-                collection.0.as_str(),
-                &mut pg_pool_tx,
-            )
-            .await
-            .expect("Failed to check collection exists for collection {collection:?}");
-            if !exists {
-                let now = chrono::Utc::now().naive_utc();
+            let now = chrono::Utc::now().naive_utc();
 
-                let collection = NftCollection {
-                    address: collection.clone(),
-                    owner: "".into(),
-                    name: None,
-                    description: None,
-                    created: now,
-                    updated: now,
-                    logo: None,
-                    wallpaper: None,
-                };
+            let collection = NftCollection {
+                address: collection.clone(),
+                created: now,
+                updated: now,
+                ..Default::default()
+            };
 
-                indexer_repo::actions::upsert_collection(&collection, &mut pg_pool_tx, None)
-                    .await?;
-            }
+            indexer_repo::actions::upsert_collection(&collection, &mut pg_pool_tx, None).await?;
         }
+
         let save_result = indexer_repo::actions::save_event(&event_record, &mut pg_pool_tx)
             .await
             .expect("Failed to save AuctionBid event");
@@ -292,11 +265,11 @@ impl Entity for BidDeclined {
             auction: event_record.address.clone(),
             buyer: self.buyer.to_string().into(),
             price: u128_to_bigdecimal(self.value),
-            next_bid_value: None,
             declined: true,
             created_at: NaiveDateTime::from_timestamp_opt(event_record.created_at, 0)
                 .unwrap_or_default(),
             tx_lt: event_record.created_lt,
+            ..Default::default()
         };
 
         indexer_repo::actions::insert_auction_bid(&bid, &mut pg_pool_tx).await?;
@@ -351,44 +324,26 @@ impl Entity for AuctionComplete {
         let auction = NftAuction {
             address: event_record.address.clone(),
             nft: event_record.nft.clone(),
-            wallet_for_bids: None,
             price_token,
-            start_price: None,
-            closing_price_usd: None,
-            min_bid: None,
             max_bid: Some(u128_to_bigdecimal(self.value)),
             status: Some(AuctionStatus::Completed),
-            created_at: None,
-            finished_at: None,
             tx_lt: event_record.created_lt,
+            ..Default::default()
         };
 
         indexer_repo::actions::upsert_auction(&auction, &mut pg_pool_tx).await?;
 
         if let Some(collection) = event_record.collection.as_ref() {
-            let exists = indexer_repo::actions::check_collection_exists(
-                collection.0.as_str(),
-                &mut pg_pool_tx,
-            )
-            .await
-            .expect("Failed to check collection exists for collection {collection:?}");
-            if !exists {
-                let now = chrono::Utc::now().naive_utc();
+            let now = chrono::Utc::now().naive_utc();
 
-                let collection = NftCollection {
-                    address: collection.clone(),
-                    owner: "".into(),
-                    name: None,
-                    description: None,
-                    created: now,
-                    updated: now,
-                    logo: None,
-                    wallpaper: None,
-                };
+            let collection = NftCollection {
+                address: collection.clone(),
+                created: now,
+                updated: now,
+                ..Default::default()
+            };
 
-                indexer_repo::actions::upsert_collection(&collection, &mut pg_pool_tx, None)
-                    .await?;
-            }
+            indexer_repo::actions::upsert_collection(&collection, &mut pg_pool_tx, None).await?;
         }
 
         let save_result = indexer_repo::actions::save_event(&event_record, &mut pg_pool_tx)
@@ -437,44 +392,24 @@ impl Entity for AuctionCancelled {
         let auction = NftAuction {
             address: event_record.address.clone(),
             nft: event_record.nft.clone(),
-            wallet_for_bids: None,
-            price_token: None,
-            start_price: None,
-            closing_price_usd: None,
-            min_bid: None,
-            max_bid: None,
             status: Some(AuctionStatus::Cancelled),
-            created_at: None,
-            finished_at: None,
             tx_lt: event_record.created_lt,
+            ..Default::default()
         };
 
         indexer_repo::actions::upsert_auction(&auction, &mut pg_pool_tx).await?;
 
         if let Some(collection) = event_record.collection.as_ref() {
-            let exists = indexer_repo::actions::check_collection_exists(
-                collection.0.as_str(),
-                &mut pg_pool_tx,
-            )
-            .await
-            .expect("Failed to check collection exists for collection {collection:?}");
-            if !exists {
-                let now = chrono::Utc::now().naive_utc();
+            let now = chrono::Utc::now().naive_utc();
 
-                let collection = NftCollection {
-                    address: collection.clone(),
-                    owner: "".into(),
-                    name: None,
-                    description: None,
-                    created: now,
-                    updated: now,
-                    logo: None,
-                    wallpaper: None,
-                };
+            let collection = NftCollection {
+                address: collection.clone(),
+                created: now,
+                updated: now,
+                ..Default::default()
+            };
 
-                indexer_repo::actions::upsert_collection(&collection, &mut pg_pool_tx, None)
-                    .await?;
-            }
+            indexer_repo::actions::upsert_collection(&collection, &mut pg_pool_tx, None).await?;
         }
 
         let save_result = indexer_repo::actions::save_event(&event_record, &mut pg_pool_tx)
