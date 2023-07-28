@@ -3,7 +3,7 @@ use serde::{Deserialize, Serialize};
 use sqlx::types::BigDecimal;
 use std::str::FromStr;
 
-#[derive(Clone, Debug, Hash, PartialEq, Eq, Serialize, Deserialize, sqlx::Type)]
+#[derive(Default, Clone, Debug, Hash, PartialEq, Eq, Serialize, Deserialize, sqlx::Type)]
 #[sqlx(type_name = "t_address")]
 pub struct Address(pub String);
 
@@ -195,7 +195,7 @@ pub struct NftMeta {
     pub updated: NaiveDateTime,
 }
 
-#[derive(Clone, Debug)]
+#[derive(Default, Clone, Debug)]
 pub struct NftCollection {
     pub address: Address,
     pub owner: Address,

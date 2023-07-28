@@ -28,7 +28,7 @@ impl KeyInfo for ton_block::Transaction {
     }
 
     fn get_timestamp(&self) -> i64 {
-        self.now as i64 * 1000
+        self.now as i64
     }
 }
 

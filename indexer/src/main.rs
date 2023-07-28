@@ -19,11 +19,6 @@ mod utils;
 extern crate num;
 extern crate num_derive;
 
-// TODO: вынести все получения меты в отдельный сервис (крейт)
-// TODO: убрать JrpcClient из параметров save_to_db
-// TODO: вынести Api в отдельный крейт
-// TODO: отрефакторить indexer-repo
-
 #[tokio::main(worker_threads = 16)]
 async fn main() -> Result<()> {
     dotenv::dotenv().ok();
@@ -40,15 +35,6 @@ async fn main() -> Result<()> {
     .await
     .expect("Postgres connection failed");
 
-    // TODO: make script for re-indexing
-    /*
-       0. Delete, if exists, database <db_name>_dump
-       1. Make dump of the existing database (that is, rename <db_name> to <db_name>_dump)
-       2. Create new database <db_name>
-       3. Migrate
-
-       Или убрать параметр RESET из конфига (потому что сейчас бесполезен)
-    */
     sqlx::migrate!("../indexer-repo/migrations")
         .run(&pg_pool)
         .await?;
