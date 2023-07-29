@@ -32,10 +32,6 @@ impl KeyInfo for ton_block::Transaction {
     }
 }
 
-pub fn _get_default_address() -> String {
-    MsgAddressInt::default().to_string()
-}
-
 pub struct EventMessageInfo {
     pub tx_data: ton_block::Transaction,
     pub function_inputs: Vec<ton_abi::Token>,
@@ -53,7 +49,7 @@ pub fn serialize_uint256<S>(v: &UInt256, s: S) -> Result<S::Ok, S::Error>
 where
     S: Serializer,
 {
-    s.serialize_str(&v.to_string())
+    s.serialize_str(&v.as_hex_string())
 }
 
 pub fn u128_to_bigdecimal(i: u128) -> BigDecimal {

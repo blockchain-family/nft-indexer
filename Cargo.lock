@@ -3242,7 +3242,7 @@ dependencies = [
 [[package]]
 name = "transaction-consumer"
 version = "0.16.0"
-source = "git+https://github.com/broxus/transaction-consumer#5036301164fa9ee76199064b9b35bbb11e4d453f"
+source = "git+https://github.com/broxus/transaction-consumer.git#5036301164fa9ee76199064b9b35bbb11e4d453f"
 dependencies = [
  "anyhow",
  "everscale-jrpc-client",

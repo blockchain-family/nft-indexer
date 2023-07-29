@@ -12,8 +12,22 @@ pub async fn save_event(
     );
     let response = sqlx::query!(
         r#"
-        insert into nft_events (event_cat, event_type, address, nft, collection, created_lt, created_at, args, message_hash)
-        values ($1, $2, $3, $4, $5, $6, $7, $8, $9)
+        insert into nft_events (
+            event_cat,  event_type, 
+            address, 
+            nft,        collection, 
+            created_lt, created_at, 
+            args, 
+            message_hash
+        )
+        values (
+            $1,         $2, 
+            $3, 
+            $4,         $5, 
+            $6,         $7, 
+            $8, 
+            $9
+        )
         on conflict (message_hash) do nothing
         "#,
         record.event_category as _,
@@ -46,11 +60,14 @@ pub async fn get_owners_count(
 ) -> Option<i64> {
     sqlx::query_scalar!(
         r#"
-        select count(distinct owner) as owners
-        from nft
-        where collection = $1
+        select 
+            count(distinct owner) as owners
+        from 
+            nft
+        where 
+            collection = $1
         "#,
-        collection as &Address,
+        collection as _,
     )
     .fetch_one(tx)
     .await
@@ -88,7 +105,7 @@ pub async fn get_prices(
                         ) ag
         group by ag.price_token
         "#,
-        collection as &Address,
+        collection as _,
     )
     .fetch_all(tx)
     .await?;
@@ -106,21 +123,6 @@ pub async fn get_prices(
     Ok((total_price, max_price))
 }
 
-pub async fn check_collection_exists(
-    collection: &str,
-    tx: &mut Transaction<'_, Postgres>,
-) -> sqlx::Result<bool> {
-    let count = sqlx::query_scalar!(
-        "SELECT count(1) FROM nft_collection WHERE address = $1",
-        collection
-    )
-    .fetch_one(tx)
-    .await?
-    .unwrap_or_default();
-
-    Ok(count > 0)
-}
-
 pub async fn upsert_collection(
     collection: &NftCollection,
     tx: &mut Transaction<'_, Postgres>,
@@ -131,27 +133,51 @@ pub async fn upsert_collection(
 
     sqlx::query!(
         r#"
-        insert into nft_collection (address, owner, name, description, created, updated, logo, wallpaper,
-            total_price, max_price, owners_count, first_mint)
-        values ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12)
+        insert into nft_collection (
+            address, 
+            owner, 
+            name,         description, 
+            created,      updated, 
+            logo,         wallpaper,
+            total_price,  max_price, 
+            owners_count, 
+            first_mint
+        )
+        values (
+            $1, 
+            $2, 
+            $3,           $4, 
+            $5,           $6, 
+            $7,           $8, 
+            $9,           $10, 
+            $11, 
+            $12
+        )
         on conflict (address) do update
-        set owner = $2, name = coalesce($3, nft_collection.name), 
-            description = coalesce($4, nft_collection.description), 
-            created = case when nft_collection.created < $5 then nft_collection.created else $5 end, updated = $6,
-            logo = coalesce($7, nft_collection.logo), wallpaper = coalesce($8, nft_collection.wallpaper), total_price = $9,
-            max_price = $10, owners_count = $11, first_mint = least($12, nft_collection.first_mint)
+        set 
+            owner        = $2, 
+            name         = coalesce($3, nft_collection.name),
+            description  = coalesce($4, nft_collection.description), 
+            created      = case when nft_collection.created < $5 then nft_collection.created else $5 end, 
+            updated      = $6,
+            logo         = coalesce($7, nft_collection.logo),
+            wallpaper    = coalesce($8, nft_collection.wallpaper), 
+            total_price  = $9,
+            max_price    = $10, 
+            owners_count = $11, 
+            first_mint   = least($12, nft_collection.first_mint)
         "#,
-        &collection.address as &Address,
-        &collection.owner as &Address,
+        &collection.address as _,
+        &collection.owner as _,
         collection.name,
         collection.description,
         collection.created,
         collection.updated,
-        &collection.logo as &Option<Uri>,
-        &collection.wallpaper as &Option<Uri>,
+        &collection.logo as _,
+        &collection.wallpaper as _,
         total_price,
         max_price,
-        owners_count.unwrap_or_default() as i32,
+        owners_count.unwrap_or_default() as _,
         nft_created_at
     )
     .execute(tx)
@@ -169,8 +195,8 @@ pub async fn refresh_collection_owners_count(
         set owners_count = $2
         where address = $1
         "#,
-        address as &Address,
-        owners_count.unwrap_or_default() as i32,
+        address as _,
+        owners_count.unwrap_or_default() as _,
     )
     .execute(tx)
     .await
@@ -182,12 +208,22 @@ pub async fn upsert_nft_meta(
 ) -> Result<PgQueryResult, sqlx::Error> {
     sqlx::query!(
         r#"
-        insert into nft_metadata (nft, meta, updated)
-        values ($1, $2, $3)
+        insert into nft_metadata (
+            nft, 
+            meta, 
+            updated
+        )
+        values (
+            $1, 
+            $2, 
+            $3
+        )
         on conflict (nft) where updated < $3 do update
-        set meta = coalesce($2, nft_metadata.meta), updated = $3
+        set 
+            meta    = coalesce($2, nft_metadata.meta), 
+            updated = $3
         "#,
-        &nft_meta.nft as &Address,
+        &nft_meta.nft as _,
         nft_meta.meta,
         nft_meta.updated
     )
@@ -205,7 +241,10 @@ pub async fn upsert_nft_meta_columns(
     sqlx::query!(
         r#"
             update nft
-            set name = $1, description = $2, updated = $3
+            set 
+                name        = $1, 
+                description = $2, 
+                updated     = $3
             where address = $4
         "#,
         name,
@@ -224,11 +263,21 @@ pub async fn upsert_nft_attributes(
     for nft_attribute in nft_attributes.iter() {
         sqlx::query!(
             r#"
-            insert into nft_attributes (nft, collection, raw, trait_type, value)
-            values ($1, $2, $3, $4, $5)
+            insert into nft_attributes (
+                nft,        collection, 
+                raw, 
+                trait_type, 
+                value
+            )
+            values (
+                $1,         $2, 
+                $3, 
+                $4, 
+                $5
+            )
             "#,
-            &nft_attribute.nft as &Address,
-            &nft_attribute.collection as &Option<Address>,
+            &nft_attribute.nft as _,
+            &nft_attribute.collection as _,
             nft_attribute.raw,
             nft_attribute.trait_type,
             nft_attribute.value,
@@ -249,12 +298,14 @@ pub async fn upsert_nft_info(
     sqlx::query!(
         r#"
             update nft
-            set owner = $1, manager = $2
+            set 
+                owner = $1, 
+                manager = $2
             where address = $3
         "#,
-        owner as &Address,
-        manager as &Address,
-        nft as &Address,
+        owner as _,
+        manager as _,
+        nft as _,
     )
     .execute(&mut *tx)
     .await?;
@@ -270,7 +321,9 @@ pub async fn update_collection_by_nft(
 ) -> Result<PgQueryResult, sqlx::Error> {
     let query = format!(
         r#"
-        update {table_name} set collection = '{}' where nft = '{}'
+        update {table_name} 
+        set collection = '{}' 
+        where nft = '{}'
         "#,
         collection.0, nft.0,
     );
@@ -286,7 +339,9 @@ pub async fn update_nft_by_auction(
 ) -> Result<PgQueryResult, sqlx::Error> {
     let query = format!(
         r#"
-        update {table_name} set nft = '{}' where address = '{}'
+        update {table_name} 
+        set nft = '{}' 
+        where address = '{}'
         "#,
         nft.0, auction.0,
     );
@@ -298,63 +353,65 @@ pub async fn upsert_nft(
     nft: &Nft,
     tx: &mut Transaction<'_, Postgres>,
 ) -> Result<PgQueryResult, sqlx::Error> {
-    let nft = if let Some(mut saved_nft) = sqlx::query_as!(
-        Nft,
-        r#"
-        select address as "address!: Address", collection as "collection?: Address", owner as "owner?: Address", 
-            manager as "manager?: Address", name as "name?", description as "description?", burned as "burned!", 
-            updated as "updated!", owner_update_lt as "owner_update_lt!", manager_update_lt as "manager_update_lt!"
-        from nft where address = $1
-        "#,
-        &nft.address as &Address
-    )
-    .fetch_optional(&mut *tx)
-    .await?
-    {
-        if saved_nft.owner.is_none() || (saved_nft.owner_update_lt <= nft.owner_update_lt && nft.owner.is_some()) {
-            saved_nft.owner = nft.owner.clone();
-            saved_nft.owner_update_lt = nft.owner_update_lt;
-        }
-
-        if saved_nft.manager.is_none() || (saved_nft.manager_update_lt <= nft.manager_update_lt && nft.manager.is_some()) {
-            saved_nft.manager = nft.manager.clone();
-            saved_nft.manager_update_lt = nft.manager_update_lt;
-        }
-
-        if nft.collection.is_some() {
-            saved_nft.collection = nft.collection.clone();
-        }
-
-        if nft.name.is_some() {
-            saved_nft.name = nft.name.clone();
-        }
-
-        if nft.description.is_some() {
-            saved_nft.description = nft.description.clone();
-        }
-
-        saved_nft.burned |= nft.burned;
-        saved_nft.updated = nft.updated;
-
-        saved_nft
-    } else {
-        nft.clone()
-    };
-
     sqlx::query!(
         r#"
-        insert into nft (address, collection, owner, manager, name, description, burned, updated, owner_update_lt,
-            manager_update_lt)
-        values ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10)
+        insert into nft (
+            address, 
+            collection, 
+            owner,           manager, 
+            name,            description, 
+            burned, 
+            updated, 
+            owner_update_lt, manager_update_lt
+        )
+        values (
+            $1, 
+            $2, 
+            $3,             $4, 
+            $5,             $6, 
+            $7, 
+            $8, 
+            $9,             $10)
         on conflict (address) do update
-        set collection = coalesce($2, nft.collection), owner = $3, manager = $4, name = coalesce($5, nft.name),
-            description = coalesce($6, nft.description), burned = nft.burned or $7, updated = $8, owner_update_lt = $9,
-            manager_update_lt = $10
+        set 
+            collection        = coalesce($2, nft.collection), 
+            owner             = case when 
+                                         (nft.owner is null) or ((nft.owner_update_lt <= $9) and ($3 is not null))
+                                     then 
+                                         $3
+                                     else 
+                                         nft.owner 
+                                     end,
+                manager       = case when 
+                                         (nft.manager is null) or ((nft.manager_update_lt <= $10) and ($4 is not null))
+                                     then 
+                                         $4
+                                     else 
+                                         nft.owner 
+                                     end, 
+            name              = coalesce($5, nft.name),
+            description       = coalesce($6, nft.description), 
+            burned            = nft.burned or $7, 
+            updated           = $8, 
+            owner_update_lt   = case when 
+                                         (nft.owner is null) or ((nft.owner_update_lt <= $9) and ($3 is not null))
+                                     then 
+                                         $9
+                                     else 
+                                         nft.owner_update_lt 
+                                     end,
+            manager_update_lt = case when 
+                                         (nft.manager is null) or ((nft.manager_update_lt <= $10) and ($4 is not null))
+                                     then 
+                                         $10
+                                     else 
+                                         nft.manager_update_lt 
+                                     end
         "#,
-        nft.address as Address,
-        nft.collection as Option<Address>,
-        nft.owner as Option<Address>,
-        nft.manager as Option<Address>,
+        &nft.address as _,
+        &nft.collection as _,
+        &nft.owner as _,
+        &nft.manager as _,
         nft.name,
         nft.description,
         nft.burned,
@@ -370,92 +427,75 @@ pub async fn upsert_auction(
     auction: &NftAuction,
     tx: &mut Transaction<'_, Postgres>,
 ) -> Result<PgQueryResult, sqlx::Error> {
-    let auction = if let Some(mut saved_auction) = sqlx::query_as!(
-        NftAuction,
-        r#"
-        select address as "address!: Address", nft as "nft?: Address", wallet_for_bids as "wallet_for_bids?: Address",
-            price_token as "price_token?: Address", start_price as "start_price?", 
-            closing_price_usd as "closing_price_usd?", min_bid as "min_bid?", max_bid as "max_bid?",
-            status as "status?: AuctionStatus", created_at as "created_at?", finished_at as "finished_at?",
-            tx_lt as "tx_lt!"
-        from nft_auction where address = $1
-        "#,
-        &auction.address as &Address
-        )
-        .fetch_optional(&mut *tx)
-        .await?
-        {
-            if saved_auction.nft.is_none() {
-                saved_auction.nft = auction.nft.clone();
-            }
-
-            if saved_auction.wallet_for_bids.is_none() {
-                saved_auction.wallet_for_bids = auction.wallet_for_bids.clone();
-            }
-
-            if saved_auction.price_token.is_none() {
-                saved_auction.price_token = auction.price_token.clone();
-            }
-
-            if saved_auction.start_price.is_none() {
-                saved_auction.start_price = auction.start_price.clone();
-            }
-
-            if saved_auction.closing_price_usd.is_none() {
-                saved_auction.closing_price_usd = auction.closing_price_usd.clone();
-            }
-
-            if saved_auction.min_bid.is_none() || (saved_auction.tx_lt <= auction.tx_lt && auction.min_bid.is_some()) {
-                saved_auction.min_bid = auction.min_bid.clone();
-            }
-
-            if saved_auction.max_bid.is_none() || (saved_auction.tx_lt <= auction.tx_lt && auction.max_bid.is_some()) {
-                saved_auction.max_bid = auction.max_bid.clone();
-            }
-
-            if saved_auction.status.is_none() || (saved_auction.tx_lt <= auction.tx_lt && auction.status.is_some()) {
-                saved_auction.status = auction.status.clone();
-            }
-
-            if saved_auction.created_at.is_none() {
-                saved_auction.created_at = auction.created_at;
-            }
-
-            if saved_auction.finished_at.is_none() {
-                saved_auction.finished_at = auction.finished_at;
-            }
-
-            saved_auction.tx_lt = std::cmp::max(saved_auction.tx_lt, auction.tx_lt);
-
-            saved_auction
-        } else {
-            auction.clone()
-        };
-
     sqlx::query!(
         r#"
-        insert into nft_auction (address, nft, wallet_for_bids, price_token, start_price, closing_price_usd, min_bid,
-            max_bid, status, created_at, finished_at, tx_lt)
-        values ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12)
+        insert into nft_auction (
+            address, 
+            nft, 
+            wallet_for_bids, 
+            price_token,     start_price, closing_price_usd, 
+            min_bid,         max_bid, 
+            status, 
+            created_at,      finished_at, 
+            tx_lt
+        )
+        values (
+            $1, 
+            $2, 
+            $3, 
+            $4,              $5,          $6, 
+            $7,              $8, 
+            $9, 
+            $10,             $11, 
+            $12
+        )
         on conflict (address) do update
-        set nft = $2, wallet_for_bids = $3, price_token = $4, start_price = $5, closing_price_usd = $6, min_bid = $7,
-            max_bid = $8, status = $9, created_at = $10, finished_at = $11, tx_lt = $12
+        set 
+            nft = coalesce($2, nft_auction.nft), 
+            wallet_for_bids   = coalesce($3, nft_auction.wallet_for_bids), 
+            price_token       = coalesce($4, nft_auction.price_token), 
+            start_price       = coalesce($5, nft_auction.start_price), 
+            closing_price_usd = coalesce($6, nft_auction.closing_price_usd),
+            min_bid           = case when 
+                                    (nft_auction.min_bid is null) or ((nft_auction.tx_lt <= $12) and ($7 is not null))
+                                then 
+                                    $7
+                                else 
+                                    nft_auction.min_bid 
+                                end,
+            max_bid           = case when 
+                                    (nft_auction.max_bid is null) or ((nft_auction.tx_lt <= $12) and ($8 is not null))
+                                then 
+                                    $8
+                                else 
+                                    nft_auction.max_bid 
+                                end, 
+            status            = case when 
+                                    (nft_auction.status is null) or ((nft_auction.tx_lt <= $12) and ($9 is not null))
+                                then 
+                                    $9
+                                else 
+                                    nft_auction.status 
+                                end,
+            created_at        = coalesce($10, nft_auction.created_at), 
+            finished_at       = coalesce($11, nft_auction.finished_at), 
+            tx_lt             = greatest($12, nft_auction.tx_lt)
         "#,
-        &auction.address as &Address,
-        &auction.nft as &Option<Address>,
-        &auction.wallet_for_bids as &Option<Address>,
-        &auction.price_token as &Option<Address>,
+        &auction.address as _,
+        &auction.nft as _,
+        &auction.wallet_for_bids as _,
+        &auction.price_token as _,
         auction.start_price,
         auction.closing_price_usd,
         auction.min_bid,
         auction.max_bid,
-        &auction.status as &Option<AuctionStatus>,
+        &auction.status as _,
         auction.created_at,
         auction.finished_at,
         auction.tx_lt,
-        )
-        .execute(tx)
-        .await
+    )
+    .execute(tx)
+    .await
 }
 
 pub async fn insert_auction_bid(
@@ -464,11 +504,25 @@ pub async fn insert_auction_bid(
 ) -> Result<PgQueryResult, sqlx::Error> {
     sqlx::query!(
         r#"
-        insert into nft_auction_bid (auction, buyer, price, next_bid_value, declined, created_at, tx_lt)
-        values ($1, $2, $3, $4, $5, $6, $7)
+        insert into nft_auction_bid (
+            auction,
+            buyer,
+            price,      next_bid_value, 
+            declined, 
+            created_at,
+            tx_lt
+        )
+        values (
+            $1, 
+            $2, 
+            $3,         $4, 
+            $5, 
+            $6, 
+            $7
+        )
         "#,
-        &bid.auction as &Address,
-        &bid.buyer as &Address,
+        &bid.auction as _,
+        &bid.buyer as _,
         bid.price,
         bid.next_bid_value,
         bid.declined,
@@ -488,12 +542,14 @@ pub async fn update_collection_fee(
     sqlx::query!(
         r#"
         update nft_collection
-        set fee_numerator = $1, fee_denominator = $2
+        set 
+            fee_numerator   = $1, 
+            fee_denominator = $2
         where address = $3
         "#,
         numerator,
         denominator,
-        collection_address as &Address
+        collection_address as _
     )
     .execute(tx)
     .await
@@ -505,23 +561,48 @@ pub async fn upsert_direct_sell(
 ) -> Result<PgQueryResult, sqlx::Error> {
     sqlx::query!(
         r#"
-        insert into nft_direct_sell (address, nft, collection, price_token, price, sell_price_usd, seller, finished_at,
-            expired_at, state, created, updated, tx_lt)
-        values ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13)
+        insert into nft_direct_sell (
+            address, 
+            nft,         collection, 
+            price_token, price,      sell_price_usd, 
+            seller, 
+            finished_at, expired_at, 
+            state, 
+            created,     updated, 
+            tx_lt
+        )
+        values (
+            $1, 
+            $2,          $3, 
+            $4,          $5,         $6, 
+            $7, 
+            $8,          $9, 
+            $10, 
+            $11,         $12, 
+            $13
+        )
         on conflict (address) where tx_lt <= $13 do update
-        set collection = $3, price = $5, sell_price_usd = coalesce($6, nft_direct_sell.sell_price_usd),
-            finished_at = $8, expired_at = $9, state = $10, created = $11, updated = $12, tx_lt = $13
+        set 
+            collection     = $3, 
+            price          = $5, 
+            sell_price_usd = coalesce($6, nft_direct_sell.sell_price_usd),
+            finished_at    = $8, 
+            expired_at     = $9, 
+            state          = $10, 
+            created        = $11, 
+            updated        = $12, 
+            tx_lt          = $13
         "#,
-        &direct_sell.address as &Address,
-        &direct_sell.nft as &Address,
-        &direct_sell.collection as &Option<Address>,
-        &direct_sell.price_token as &Address,
+        &direct_sell.address as _,
+        &direct_sell.nft as _,
+        &direct_sell.collection as _,
+        &direct_sell.price_token as _,
         direct_sell.price,
         direct_sell.sell_price_usd,
-        &direct_sell.seller as &Address,
+        &direct_sell.seller as _,
         direct_sell.finished_at,
         direct_sell.expired_at,
-        &direct_sell.state as &DirectSellState,
+        &direct_sell.state as _,
         direct_sell.created,
         direct_sell.updated,
         direct_sell.tx_lt,
@@ -536,23 +617,48 @@ pub async fn upsert_direct_buy(
 ) -> Result<PgQueryResult, sqlx::Error> {
     sqlx::query!(
         r#"
-        insert into nft_direct_buy (address, nft, collection, price_token, price, buy_price_usd, buyer, finished_at,
-            expired_at, state, created, updated, tx_lt)    
-        values ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13)
+        insert into nft_direct_buy (
+            address, 
+            nft,         collection, 
+            price_token, price,      buy_price_usd, 
+            buyer, 
+            finished_at, expired_at, 
+            state, 
+            created,     updated, 
+            tx_lt
+        )    
+        values (
+            $1, 
+            $2,          $3, 
+            $4,          $5,         $6, 
+            $7, 
+            $8,          $9, 
+            $10, 
+            $11,         $12, 
+            $13
+        )
         on conflict (address) where tx_lt <= $13 do update
-        set collection = $3, price = $5, buy_price_usd = coalesce($6, nft_direct_buy.buy_price_usd), finished_at = $8,
-            expired_at = $9, state = $10, created = $11, updated = $12, tx_lt = $13
+        set 
+            collection    = $3, 
+            price         = $5, 
+            buy_price_usd = coalesce($6, nft_direct_buy.buy_price_usd), 
+            finished_at   = $8,
+            expired_at    = $9, 
+            state         = $10, 
+            created       = $11, 
+            updated       = $12, 
+            tx_lt         = $13
         "#,
-        &direct_buy.address as &Address,
-        &direct_buy.nft as &Address,
-        &direct_buy.collection as &Option<Address>,
-        &direct_buy.price_token as &Address,
+        &direct_buy.address as _,
+        &direct_buy.nft as _,
+        &direct_buy.collection as _,
+        &direct_buy.price_token as _,
         direct_buy.price,
         direct_buy.buy_price_usd,
-        &direct_buy.buyer as &Address,
+        &direct_buy.buyer as _,
         direct_buy.finished_at,
         direct_buy.expired_at,
-        &direct_buy.state as &DirectBuyState,
+        &direct_buy.state as _,
         direct_buy.created,
         direct_buy.updated,
         direct_buy.tx_lt,
@@ -567,31 +673,44 @@ pub async fn upsert_nft_price_history(
 ) -> Result<PgQueryResult, sqlx::Error> {
     sqlx::query!(
         r#"
-        insert into nft_price_history (source, source_type, ts, price, price_token, nft, collection)
-        values ($1, $2, $3, $4, $5, $6, $7)
+        insert into nft_price_history (
+            source, source_type, 
+            ts, 
+            price,  price_token, 
+            nft,    collection
+        )
+        values (
+            $1,     $2, 
+            $3, 
+            $4,     $5, 
+            $6,     $7
+        )
         "#,
-        &price_history.source as &Address,
-        &price_history.source_type as &NftPriceSource,
+        &price_history.source as _,
+        &price_history.source_type as _,
         price_history.created_at,
         price_history.price,
-        &price_history.price_token as &Option<Address>,
-        &price_history.nft as &Option<Address>,
-        &price_history.collection as &Option<Address>,
+        &price_history.price_token as _,
+        &price_history.nft as _,
+        &price_history.collection as _,
     )
     .execute(&mut *tx)
     .await?;
 
     sqlx::query!(
         r#"
-        update nft_price_history as nph
-        set price_token = coalesce(nph.price_token, $2), nft = coalesce(nph.nft, $3), 
-            collection = coalesce(nph.collection, $4)
+        update 
+            nft_price_history as nph
+        set 
+            price_token = coalesce(nph.price_token, $2), 
+            nft         = coalesce(nph.nft, $3), 
+            collection  = coalesce(nph.collection, $4)
         where source = $1
         "#,
-        &price_history.source as &Address,
-        &price_history.price_token as &Option<Address>,
-        &price_history.nft as &Option<Address>,
-        &price_history.collection as &Option<Address>,
+        &price_history.source as _,
+        &price_history.price_token as _,
+        &price_history.nft as _,
+        &price_history.collection as _,
     )
     .execute(tx)
     .await
@@ -603,10 +722,11 @@ pub async fn get_collection_by_nft(
 ) -> Option<Address> {
     sqlx::query_scalar!(
         r#"
-        select collection as "collection?: Address" from nft
+        select collection as "collection?: Address" 
+        from nft
         where nft.address = $1
         "#,
-        nft as &Address
+        nft as _,
     )
     .fetch_one(tx)
     .await
@@ -627,12 +747,15 @@ pub async fn get_nft_and_collection_by_auction(
     let pair = sqlx::query_as!(
         NftCollectionPair,
         r#"
-        select nft.address as "nft?: Address", collection as "collection?: Address" from nft
+        select 
+            nft.address as "nft?: Address", 
+            collection as "collection?: Address" 
+        from nft
         inner join nft_auction
         on nft_auction.nft = nft.address
         where nft_auction.address = $1
         "#,
-        auction as &Address
+        auction as _,
     )
     .fetch_one(tx)
     .await
@@ -650,10 +773,11 @@ pub async fn get_auction_price_token(
 ) -> Option<Address> {
     sqlx::query_scalar!(
         r#"
-        select price_token as "price_token?: Address" from nft_auction
+        select price_token as "price_token?: Address" 
+        from nft_auction
         where address = $1
         "#,
-        auction as &Address
+        auction as _,
     )
     .fetch_one(tx)
     .await
@@ -671,7 +795,7 @@ pub async fn add_whitelist_address(
         values ($1)
         on conflict (address) do nothing
         "#,
-        address as &Address
+        address as _,
     )
     .execute(tx)
     .await
@@ -685,39 +809,42 @@ pub async fn update_offers_status(pool: &PgPool) -> Result<(), sqlx::Error> {
 
     sqlx::query!(
         r#"
-        update nft_auction set status = $1
+        update nft_auction 
+        set status = $1
         where finished_at != $2 and finished_at < $3 and nft_auction.status = $4
         "#,
-        AuctionStatus::Expired as AuctionStatus,
+        AuctionStatus::Expired as _,
         begin_of_epoch,
         now,
-        AuctionStatus::Active as AuctionStatus,
+        AuctionStatus::Active as _,
     )
     .execute(&mut tx)
     .await?;
 
     sqlx::query!(
         r#"
-        update nft_direct_sell set state = $1
+        update nft_direct_sell 
+        set state = $1
         where expired_at != $2 and expired_at < $3 and nft_direct_sell.state = $4
         "#,
-        DirectSellState::Expired as DirectSellState,
+        DirectSellState::Expired as _,
         begin_of_epoch,
         now,
-        DirectSellState::Active as DirectSellState,
+        DirectSellState::Active as _,
     )
     .execute(&mut tx)
     .await?;
 
     sqlx::query!(
         r#"
-        update nft_direct_buy set state = $1
+        update nft_direct_buy 
+        set state = $1
         where expired_at != $2 and expired_at < $3 and nft_direct_buy.state = $4
         "#,
-        DirectBuyState::Expired as DirectBuyState,
+        DirectBuyState::Expired as _,
         begin_of_epoch,
         now,
-        DirectBuyState::Active as DirectBuyState,
+        DirectBuyState::Active as _,
     )
     .execute(&mut tx)
     .await?;
@@ -737,9 +864,11 @@ pub async fn get_nfts_by_collection(
     let nfts: Vec<NftRecord> = sqlx::query_as!(
         NftRecord,
         r#"
-        select address from nft where collection = $1 and name is null
+        select address 
+        from nft 
+        where collection = $1 and name is null
         "#,
-        collection
+        collection,
     )
     .fetch_all(tx)
     .await?;
