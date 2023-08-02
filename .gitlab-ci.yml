@@ -103,7 +103,7 @@ deploy:venom-develop:
     APP_CONFIG: development
   environment:
     name: stage
-    on_stop: stop:venom-development
+    on_stop: stop:venom-develop
 
 stop:venom-develop:
   only:
