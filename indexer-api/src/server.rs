@@ -2,30 +2,25 @@ use actix_cors::Cors;
 use actix_web::middleware::Logger;
 use actix_web::web::Data;
 use actix_web::{get, App, HttpResponse, HttpServer};
-use sqlx::PgPool;
+use data_reader::{MetaReaderContext, MetadataJrpcService};
+use indexer_repo::meta::MetadataModelService;
 use std::net::SocketAddr;
-use std::sync::Arc;
-use transaction_consumer::JrpcClient;
 
-use crate::{api, metadata::service::MetadataService};
+use crate::api;
 
-pub async fn run_api(
-    address: &SocketAddr,
-    pool: PgPool,
-    jrpc_client: JrpcClient,
-) -> std::io::Result<()> {
+pub async fn run_api(address: &SocketAddr, context: MetaReaderContext) -> std::io::Result<()> {
+    let meta_jrpc_service = MetadataJrpcService::new(context.jrpc_client);
+    let meta_model_service = MetadataModelService::new(context.pool);
+
     HttpServer::new(move || {
-        let metadata_service = Arc::new(MetadataService {
-            jrpc_client: jrpc_client.clone(),
-            pool: pool.clone(),
-        });
         let cors = Cors::permissive();
         App::new()
             .wrap(Logger::default())
             .wrap(cors)
             .service(api::metadata::refresh_metadata_by_nft)
             .service(health)
-            .app_data(Data::new(metadata_service))
+            .app_data(Data::new(meta_jrpc_service.clone()))
+            .app_data(Data::new(meta_model_service.clone()))
     })
     .bind(address)?
     .run()

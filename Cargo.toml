@@ -4,5 +4,6 @@ members = [
     "indexer",
     "rpc",
     "indexer-repo",
-    "data-reader"
+    "data-reader",
+    "indexer-api"
 ]

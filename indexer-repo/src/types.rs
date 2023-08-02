@@ -205,6 +205,8 @@ pub struct NftCollection {
     pub updated: NaiveDateTime,
     pub logo: Option<Uri>,
     pub wallpaper: Option<Uri>,
+    pub total_price: BigDecimal,
+    pub max_price: BigDecimal,
 }
 
 #[derive(Default, Clone, Debug)]

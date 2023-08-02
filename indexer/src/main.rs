@@ -1,17 +1,14 @@
-use crate::server::run_api;
 use crate::{settings::config::Config, state_updater::run_updater};
 use anyhow::Result;
 use data_reader::{MetaReaderContext, PriceReaderContext};
+use indexer_api::run_api;
 use std::net::SocketAddr;
 use std::str::FromStr;
 
 mod abi;
-mod api;
-mod metadata;
 mod models;
 mod parser;
 mod persistence;
-mod server;
 mod settings;
 mod state_updater;
 mod utils;
@@ -54,7 +51,7 @@ async fn main() -> Result<()> {
         idle_after_loop: config.idle_after_meta_loop_sec,
     };
 
-    tokio::spawn(data_reader::run_meta_reader(meta_reader_context));
+    tokio::spawn(data_reader::run_meta_reader(meta_reader_context.clone()));
     tokio::spawn(parser::start_parsing(config.clone(), pg_pool.clone()));
 
     let ctx = PriceReaderContext {
@@ -68,7 +65,7 @@ async fn main() -> Result<()> {
     let socket_addr: SocketAddr =
         SocketAddr::from_str(&config.server_api_url).expect("Invalid socket addr");
 
-    run_api(&socket_addr, pg_pool, jrpc_client)
+    run_api(&socket_addr, meta_reader_context)
         .await
         .expect("Failed to run server");
 

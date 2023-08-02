@@ -2,9 +2,14 @@ use anyhow::{anyhow, Result};
 use chrono::NaiveDateTime;
 use sqlx::{PgPool, Postgres, Transaction};
 
-pub struct NftMetadataModelService {
+use crate::types::NftCollection;
+
+#[derive(Clone)]
+pub struct MetadataModelService {
     pool: PgPool,
 }
+
+const FAILED_META_COOLDOWN_SECS: i64 = 30 * 60;
 
 pub struct NftAddressData {
     pub nft: String,
@@ -24,8 +29,12 @@ pub struct NftMetaAttribute<'a> {
     pub trait_type: &'a str,
     pub value: Option<&'a serde_json::Value>,
 }
+
 impl<'a> NftMetaAttribute<'a> {
-    pub fn new(raw: &'a serde_json::Value, addresses: &'a NftAddressData) -> NftMetaAttribute<'a> {
+    pub fn new(
+        raw: &'a serde_json::Value,
+        address_data: &'a NftAddressData,
+    ) -> NftMetaAttribute<'a> {
         let trait_type = raw
             .get("trait_type")
             .and_then(|e| e.as_str())
@@ -34,8 +43,8 @@ impl<'a> NftMetaAttribute<'a> {
         let value = raw.get("display_value").or_else(|| raw.get("value"));
 
         Self {
-            nft: &addresses.nft,
-            collection: addresses.collection.as_deref(),
+            nft: &address_data.nft,
+            collection: address_data.collection.as_deref(),
             raw,
             trait_type,
             value,
@@ -43,12 +52,33 @@ impl<'a> NftMetaAttribute<'a> {
     }
 }
 
-impl NftMetadataModelService {
+impl MetadataModelService {
     pub fn new(pool: PgPool) -> Self {
         Self { pool }
     }
 
-    pub async fn get_nft_addresses_without_meta(
+    pub async fn get_nfts_by_collection(&self, collection: &str) -> Result<Vec<String>> {
+        #[derive(Default)]
+        struct NftRecord {
+            pub address: String,
+        }
+
+        let nfts: Vec<NftRecord> = sqlx::query_as!(
+            NftRecord,
+            r#"
+            select address 
+            from nft 
+            where collection = $1
+            "#,
+            collection,
+        )
+        .fetch_all(&self.pool)
+        .await?;
+
+        Ok(nfts.into_iter().map(|it| it.address).collect())
+    }
+
+    pub async fn get_nfts_for_meta_update(
         &self,
         items_per_page: i64,
     ) -> Result<Vec<NftAddressData>> {
@@ -69,15 +99,18 @@ impl NftMetadataModelService {
         sqlx::query_as!(
             Row,
             r#"
-            select 
-                n.address,
-                n.collection
-            from nft n
-            left join handled_nft hn on hn.address = n.address
-            where hn.address is null
-            limit $1
-        "#,
+                select 
+                    n.address,
+                    n.collection
+                from nft n
+                left join meta_handled_addresses mha on mha.address = n.address
+                where 
+                    (mha.address is null) or
+                    (extract(epoch from now()) - mha.updated_at > $2 and failed is true)
+                limit $1
+            "#,
             items_per_page,
+            FAILED_META_COOLDOWN_SECS as _,
         )
         .fetch_all(&self.pool)
         .await
@@ -85,18 +118,40 @@ impl NftMetadataModelService {
         .map_err(|e| anyhow!(e))
     }
 
-    pub async fn start_transaction(&self) -> Result<NftMetadataModelTransaction> {
+    pub async fn get_collections_for_meta_update(
+        &self,
+        items_per_page: i64,
+    ) -> Result<Vec<String>> {
+        sqlx::query_scalar!(
+            r#"
+                select c.address
+                from nft_collection c
+                left join meta_handled_addresses mha on mha.address = c.address
+                where 
+                    (mha.address is null) or
+                    (extract(epoch from now()) - mha.updated_at > $2 and failed is true)
+                limit $1
+                "#,
+            items_per_page,
+            FAILED_META_COOLDOWN_SECS as _,
+        )
+        .fetch_all(&self.pool)
+        .await
+        .map_err(|e| anyhow!(e))
+    }
+
+    pub async fn start_transaction(&self) -> Result<MetadataModelTransaction> {
         let tx = self.pool.begin().await?;
 
-        Ok(NftMetadataModelTransaction { tx })
+        Ok(MetadataModelTransaction { tx })
     }
 }
 
-pub struct NftMetadataModelTransaction<'a> {
+pub struct MetadataModelTransaction<'a> {
     tx: Transaction<'a, Postgres>,
 }
 
-impl<'a> NftMetadataModelTransaction<'a> {
+impl<'a> MetadataModelTransaction<'a> {
     pub async fn update_name_desc(&mut self, name: &str, desc: &str, addr: &str) -> Result<()> {
         sqlx::query!(
             r#"
@@ -185,14 +240,38 @@ impl<'a> NftMetadataModelTransaction<'a> {
         .map_err(|e| anyhow!(e))
     }
 
-    pub async fn add_to_proceeded(&mut self, addr: &str) -> Result<()> {
+    pub async fn update_collection(&mut self, collection: &NftCollection) -> Result<()> {
+        crate::actions::upsert_collection(collection, &mut self.tx, None)
+            .await
+            .map(|_| ())
+            .map_err(|e| anyhow!(e))
+    }
+
+    pub async fn add_to_proceeded(&mut self, addr: &str, failed: Option<bool>) -> Result<()> {
+        let failed = failed.unwrap_or(false);
+
+        let now = chrono::Utc::now().naive_utc().timestamp();
+
         sqlx::query!(
             r#"
-                insert into handled_nft (address)
-                values ($1)
-                on conflict do nothing
+                insert into meta_handled_addresses (
+                    address, 
+                    updated_at,
+                    failed
+                )
+                values (
+                    $1, 
+                    $2,
+                    $3
+                )
+                on conflict (address) do update 
+                set
+                    updated_at = $2,
+                    failed = $3
             "#,
-            addr as _
+            addr as _,
+            now as _,
+            failed,
         )
         .execute(&mut self.tx)
         .await

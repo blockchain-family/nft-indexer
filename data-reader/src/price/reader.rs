@@ -14,6 +14,7 @@ use super::price_requester::{request_prices, PriceInfo};
 
 const NFT_PER_ITERATION: i64 = 100;
 
+#[derive(Clone)]
 pub struct PriceReaderContext {
     pub pool: PgPool,
     pub bc: BcName,

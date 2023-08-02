@@ -1,14 +1,19 @@
 use std::{str::FromStr, time::Duration};
 
 use crate::service::MetadataJrpcService;
-use anyhow::Result;
-use indexer_repo::meta::{NftMeta, NftMetaAttribute, NftMetadataModelService};
+use anyhow::{bail, Result};
+use indexer_repo::{
+    meta::{MetadataModelService, NftAddressData, NftMeta, NftMetaAttribute},
+    types::NftCollection,
+};
 use sqlx::{types::chrono, PgPool};
 use ton_block::MsgAddressInt;
 use transaction_consumer::JrpcClient;
 
 const NFT_PER_ITERATION: i64 = 100;
+const COLLECTION_PER_ITERATION: i64 = 100;
 
+#[derive(Clone)]
 pub struct MetaReaderContext {
     pub jrpc_client: JrpcClient,
     pub pool: PgPool,
@@ -19,110 +24,252 @@ pub struct MetaReaderContext {
 pub async fn run_meta_reader(context: MetaReaderContext) -> Result<()> {
     log::info!("Run metadata reader");
     let meta_jrpc_service = MetadataJrpcService::new(context.jrpc_client);
-    let meta_model_service = NftMetadataModelService::new(context.pool);
+    let meta_model_service = MetadataModelService::new(context.pool);
 
     loop {
-        let addresses = meta_model_service
-            .get_nft_addresses_without_meta(NFT_PER_ITERATION)
+        let nft_addresses = meta_model_service
+            .get_nfts_for_meta_update(NFT_PER_ITERATION)
             .await?;
-        if addresses.is_empty() {
+
+        for address_data in nft_addresses.iter() {
+            if let Err(e) =
+                update_nft_meta(address_data, &meta_model_service, &meta_jrpc_service).await
+            {
+                log::error!("{:#?}", e);
+
+                let Ok(mut tx) = meta_model_service.start_transaction().await else {
+                    log::error!("Cant start transaction for saving metadata");
+                    tokio::time::sleep(Duration::from_millis(context.jrpc_req_latency_millis)).await;
+                    continue;
+                };
+
+                if let Err(e) = tx.add_to_proceeded(&address_data.nft, Some(true)).await {
+                    log::error!("Collection address: {}, error while adding to meta_handled_addresses table: {:#?}",
+                        address_data.nft,
+                        e
+                    );
+                }
+            }
+
+            tokio::time::sleep(Duration::from_millis(context.jrpc_req_latency_millis)).await;
+        }
+
+        let collection_addresses = meta_model_service
+            .get_collections_for_meta_update(COLLECTION_PER_ITERATION)
+            .await?;
+
+        for address in collection_addresses.iter() {
+            if let Err(e) =
+                update_collections_meta(address, &meta_model_service, &meta_jrpc_service).await
+            {
+                log::error!("{:#?}", e);
+
+                let Ok(mut tx) = meta_model_service.start_transaction().await else {
+                    log::error!("Cant start transaction for saving metadata");
+                    tokio::time::sleep(Duration::from_millis(context.jrpc_req_latency_millis)).await;
+                    continue;
+                };
+
+                if let Err(e) = tx.add_to_proceeded(address, Some(true)).await {
+                    log::error!("Collection address: {}, error while adding to meta_handled_addresses table: {:#?}",
+                        address,
+                        e
+                    );
+                }
+            }
+
+            tokio::time::sleep(Duration::from_millis(context.jrpc_req_latency_millis)).await;
+        }
+
+        if nft_addresses.is_empty() && collection_addresses.is_empty() {
             log::info!("Finished updating metadata work. Idling");
             tokio::time::sleep(Duration::from_secs(context.idle_after_loop)).await;
 
             continue;
         }
+    }
+}
 
-        for address in addresses {
-            let Ok(nft_address) = MsgAddressInt::from_str(&address.nft) else {
-                log::error!("Error while converting nft address {} to MsgAddressInt", address.nft);
-                continue;
+pub async fn update_collections_meta(
+    address: &str,
+    meta_model_service: &MetadataModelService,
+    meta_jrpc_service: &MetadataJrpcService,
+) -> Result<()> {
+    let Ok(collection_address) = MsgAddressInt::from_str(address) else {
+        bail!("Error while converting collection address {} to MsgAddressInt", address);
+    };
+
+    let Ok(collection_owner) = meta_jrpc_service.get_collection_owner(&collection_address).await else {
+        bail!("Error while reading collection owner. Skipping ${}", address);
+    };
+
+    let Ok(meta) = meta_jrpc_service
+        .fetch_metadata(&collection_address)
+        .await else {
+            bail!("Error while reading collection meta. Skipping ${}", address);
+        };
+
+    let Ok(mut tx) = meta_model_service.start_transaction().await else {
+            bail!("Cant start transaction for saving metadata");
+        };
+
+    let now = chrono::Utc::now().naive_utc();
+
+    let collection = NftCollection {
+        address: address.into(),
+        owner: collection_owner.into(),
+        name: meta
+            .get("name")
+            .cloned()
+            .unwrap_or_default()
+            .as_str()
+            .map(str::to_string),
+        description: meta
+            .get("description")
+            .cloned()
+            .unwrap_or_default()
+            .as_str()
+            .map(str::to_string),
+        created: now,
+        updated: now,
+        logo: meta
+            .get("preview")
+            .cloned()
+            .unwrap_or_default()
+            .get("source")
+            .cloned()
+            .unwrap_or_default()
+            .as_str()
+            .map(|s| s.into()),
+        wallpaper: meta
+            .get("files")
+            .cloned()
+            .unwrap_or_default()
+            .as_array()
+            .cloned()
+            .unwrap_or_default()
+            .first()
+            .cloned()
+            .unwrap_or_default()
+            .get("source")
+            .cloned()
+            .unwrap_or_default()
+            .as_str()
+            .map(|s| s.into()),
+        ..Default::default()
+    };
+
+    if let Err(e) = tx.update_collection(&collection).await {
+        bail!(
+            "Collection address: {}, error while updating collection meta: {:#?}",
+            address,
+            e
+        );
+    };
+
+    if let Err(e) = tx.add_to_proceeded(address, None).await {
+        bail!(
+            "Collection address: {}, error while adding to meta_handled_addresses table: {:#?}",
+            address,
+            e
+        );
+    };
+
+    if let Err(e) = tx.commit().await {
+        bail!(
+            "Collection address: {}, error while commiting transaction: {:#?}",
+            address,
+            e
+        );
+    };
+
+    Ok(())
+}
+
+pub async fn update_nft_meta(
+    address_data: &NftAddressData,
+    meta_model_service: &MetadataModelService,
+    meta_jrpc_service: &MetadataJrpcService,
+) -> Result<()> {
+    let Ok(nft_address) = MsgAddressInt::from_str(&address_data.nft) else {
+                bail!("Error while converting nft address {} to MsgAddressInt", address_data.nft);
             };
 
-            let Ok(meta) = meta_jrpc_service.fetch_metadata(&nft_address).await else {
-                log::error!("Error while reading nft meta. Skipping ${}", address.nft);
-
-                continue;
+    let Ok(meta) = meta_jrpc_service.fetch_metadata(&nft_address).await else {
+                bail!("Error while reading nft meta. Skipping ${}", address_data.nft);
             };
 
-            let Ok(mut tx) = meta_model_service.start_transaction().await else {
-                log::error!("Cant start transaction for saving metadata");
-                continue;
+    let Ok(mut tx) = meta_model_service.start_transaction().await else {
+                bail!("Cant start transaction for saving metadata");
             };
 
-            if let Err(e) = match (
-                extract_name_from_meta(&meta),
-                extract_description_from_meta(&meta),
-            ) {
-                (Some(name), Some(desc)) => tx.update_name_desc(name, desc, &address.nft).await,
-                (None, Some(desc)) => tx.update_desc(desc, &address.nft).await,
-                (Some(name), None) => tx.update_name(name, &address.nft).await,
-                (None, None) => Ok(()),
-            } {
-                log::error!(
-                    "Nft address: {}, error while updating name and/or description: {:#?}",
-                    address.nft,
-                    e
-                );
+    if let Err(e) = match (
+        extract_name_from_meta(&meta),
+        extract_description_from_meta(&meta),
+    ) {
+        (Some(name), Some(desc)) => tx.update_name_desc(name, desc, &address_data.nft).await,
+        (None, Some(desc)) => tx.update_desc(desc, &address_data.nft).await,
+        (Some(name), None) => tx.update_name(name, &address_data.nft).await,
+        (None, None) => Ok(()),
+    } {
+        bail!(
+            "Nft address: {}, error while updating name and/or description: {:#?}",
+            address_data.nft,
+            e
+        );
+    };
 
-                continue;
-            };
+    let attr = meta
+        .get("attributes")
+        .and_then(|d| d.as_array())
+        .and_then(|d| d.is_empty().then_some(d))
+        .map(|d| {
+            d.iter()
+                .map(|e| NftMetaAttribute::new(e, address_data))
+                .collect::<Vec<_>>()
+        });
 
-            let attr = meta
-                .get("attributes")
-                .and_then(|d| d.as_array())
-                .and_then(|d| d.is_empty().then_some(d))
-                .map(|d| {
-                    d.iter()
-                        .map(|e| NftMetaAttribute::new(e, &address))
-                        .collect::<Vec<_>>()
-                });
-
-            if let Some(attr) = attr {
-                if let Err(e) = tx.update_nft_attributes(&attr[..]).await {
-                    log::error!(
-                        "Nft address: {}, error while updating attributes: {:#?}",
-                        &address.nft,
-                        e
-                    );
-                    continue;
-                }
-            }
-
-            let nft_meta = NftMeta {
-                address: &address.nft,
-                meta: &meta,
-                updated: chrono::Utc::now().naive_utc(),
-            };
-
-            if let Err(e) = tx.update_nft_meta(&nft_meta).await {
-                log::error!(
-                    "Nft address: {}, error while updating nft meta: {:#?}",
-                    &address.nft,
-                    e
-                );
-                continue;
-            };
-
-            if let Err(e) = tx.add_to_proceeded(&address.nft).await {
-                log::error!(
-                    "Nft address: {}, error while adding to handled_nft table: {:#?}",
-                    &address.nft,
-                    e
-                );
-                continue;
-            };
-
-            if let Err(e) = tx.commit().await {
-                log::error!(
-                    "Nft address: {}, error while commiting transaction: {:#?}",
-                    &address.nft,
-                    e
-                );
-            };
-
-            tokio::time::sleep(Duration::from_millis(context.jrpc_req_latency_millis)).await;
+    if let Some(attr) = attr {
+        if let Err(e) = tx.update_nft_attributes(&attr[..]).await {
+            bail!(
+                "Nft address: {}, error while updating attributes: {:#?}",
+                &address_data.nft,
+                e
+            );
         }
     }
+
+    let nft_meta = NftMeta {
+        address: &address_data.nft,
+        meta: &meta,
+        updated: chrono::Utc::now().naive_utc(),
+    };
+
+    if let Err(e) = tx.update_nft_meta(&nft_meta).await {
+        bail!(
+            "Nft address: {}, error while updating nft meta: {:#?}",
+            &address_data.nft,
+            e
+        );
+    };
+
+    if let Err(e) = tx.add_to_proceeded(&address_data.nft, None).await {
+        bail!(
+            "Nft address: {}, error while adding to meta_handled_addresses table: {:#?}",
+            &address_data.nft,
+            e
+        );
+    };
+
+    if let Err(e) = tx.commit().await {
+        bail!(
+            "Nft address: {}, error while commiting transaction: {:#?}",
+            &address_data.nft,
+            e
+        );
+    };
+
+    Ok(())
 }
 
 fn extract_name_from_meta(meta: &serde_json::Value) -> Option<&str> {
