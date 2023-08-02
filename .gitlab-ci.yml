@@ -88,6 +88,32 @@ stop:venomstg2:
   environment:
     name: stage
 
+cloudbuild:image:venom-develop:
+  only:
+    - development
+  except:
+    - tags
+  extends: .cloudbuild:common
+
+deploy:venom-develop:
+  only:
+    - development
+  extends: .deploy
+  variables:
+    APP_CONFIG: development
+  environment:
+    name: stage
+    on_stop: stop:venom-development
+
+stop:venom-develop:
+  only:
+    - development
+  extends: .stop
+  variables:
+    APP_CONFIG: development
+  environment:
+    name: stage
+
 deploy:venom-stage:
   only:
     - stage
