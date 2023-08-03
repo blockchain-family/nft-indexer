@@ -3,7 +3,7 @@ env:
   RUST_BACKTRACE: 1
 
   DATABASE_URL: postgresql://$(BACKEND_API_USER):$(BACKEND_API_PASSWORD)@cloudsqlproxy.default:5432/indexer-venom-development
-  DATABASE_MAX_CONNECTIONS: 5
+  DATABASE_MAX_CONNECTIONS: 20
   KAFKA_CONSUMER_GROUP: temp-venom-development-1
   KAFKA_TOPIC: rest-transactions
   STATES_RPC_ENDPOINTS: $(VENOM_RPC_ENDPOINTS)
