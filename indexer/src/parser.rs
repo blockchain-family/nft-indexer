@@ -7,9 +7,9 @@ use futures::channel::mpsc::{Receiver, Sender};
 use futures::{future, SinkExt, StreamExt};
 use nekoton_abi::transaction_parser::{ExtractedOwned, ParsedType};
 use nekoton_abi::UnpackAbiPlain;
-//use sqlx::types::chrono::NaiveDateTime;
+use sqlx::types::chrono::NaiveDateTime;
 use sqlx::PgPool;
-//use ton_block::GetRepresentationHash;
+use ton_block::GetRepresentationHash;
 use ton_types::UInt256;
 use transaction_buffer::models::{BufferedConsumerChannels, RawTransaction};
 
@@ -31,46 +31,51 @@ pub async fn start_parsing(config: settings::config::Config, pg_pool: PgPool) ->
 
 pub async fn run_nft_indexer(
     mut rx_raw_transactions: Receiver<Vec<(Vec<ExtractedOwned>, RawTransaction)>>,
-    tx_commit: Sender<()>,
+    mut tx_commit: Sender<()>,
     pool: PgPool,
 ) {
     log::info!("Start nft indexer...");
 
     while let Some(message) = rx_raw_transactions.next().await {
-        let mut tx_commit = tx_commit.clone();
-        let pool = pool.clone();
-        tokio::spawn(async move {
-            for (out, tx) in message {
-                let mut events = Vec::new();
-                let mut function_inputs = Vec::new();
+        let mut jobs = Vec::with_capacity(1000);
 
-                for extractable in out {
-                    match extractable.parsed_type {
-                        ParsedType::Event => {
-                            events.push(extractable);
-                        }
-                        ParsedType::FunctionInput => {
-                            function_inputs.extend(extractable.tokens.into_iter());
-                        }
-                        _ => {}
+        for (out, tx) in message {
+            let mut events = Vec::new();
+            let mut function_inputs = Vec::new();
+
+            for extractable in out {
+                match extractable.parsed_type {
+                    ParsedType::Event => {
+                        events.push(extractable);
                     }
+                    ParsedType::FunctionInput => {
+                        function_inputs.extend(extractable.tokens.into_iter());
+                    }
+                    _ => {}
                 }
+            }
 
-                let mut msg_info = EventMessageInfo {
-                    tx_data: tx.data,
-                    function_inputs,
-                    message_hash: UInt256::default(),
-                };
+            let msg_info = EventMessageInfo {
+                tx_data: tx.data,
+                function_inputs,
+                message_hash: UInt256::default(),
+            };
 
-                for event in events {
+            for event in events {
+                let mut msg_info = msg_info.clone();
+                let pool = pool.clone();
+                jobs.push(tokio::spawn(async move {
                     if let Err(e) = process_event(event, &mut msg_info, &pool).await {
                         // TODO: check error kind; exit if critical
                         log::error!("Error processing event: {:#?}. Exiting.", e);
                     }
-                }
+                }));
             }
-            tx_commit.send(()).await.expect("dead commit sender");
-        });
+        }
+
+        futures::future::join_all(jobs).await;
+
+        tx_commit.send(()).await.expect("dead commit sender");
     }
 
     panic!("rip kafka consumer");
@@ -83,12 +88,12 @@ async fn process_event(
 ) -> Result<()> {
     if let Some((entity, message_hash)) = unpack_entity(&event)? {
         msg_info.message_hash = message_hash;
-        // log::info!(
-        //     "saving {}, tx hash {:?}, timestamp: {}",
-        //     &event.name,
-        //     msg_info.tx_data.hash().unwrap_or_default(),
-        //     NaiveDateTime::from_timestamp_opt(msg_info.tx_data.now as i64, 0).unwrap_or_default()
-        // );
+        log::info!(
+            "saving {}, tx hash {:?}, timestamp: {}",
+            &event.name,
+            msg_info.tx_data.hash().unwrap_or_default(),
+            NaiveDateTime::from_timestamp_opt(msg_info.tx_data.now as i64, 0).unwrap_or_default()
+        );
         entity.save_to_db(pool, msg_info).await?;
     }
 
