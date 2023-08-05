@@ -73,6 +73,8 @@ pub async fn run_nft_indexer(
             }
         }
 
+        log::debug!("Events in transaction: {}", jobs.len());
+
         futures::future::join_all(jobs).await;
 
         tx_commit.send(()).await.expect("dead commit sender");
