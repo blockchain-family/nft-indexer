@@ -32,7 +32,6 @@ impl KeyInfo for ton_block::Transaction {
     }
 }
 
-#[derive(Clone)]
 pub struct EventMessageInfo {
     pub tx_data: ton_block::Transaction,
     pub function_inputs: Vec<ton_abi::Token>,
