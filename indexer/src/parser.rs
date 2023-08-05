@@ -37,8 +37,9 @@ pub async fn run_nft_indexer(
     log::info!("Start nft indexer...");
 
     while let Some(message) = rx_raw_transactions.next().await {
-        let mut jobs = Vec::with_capacity(1000);
+        let mut jobs = Vec::with_capacity(1500);
 
+        log::debug!("METRIC: transactions in message: {}", message.len());
         for (out, tx) in message {
             let mut events = Vec::new();
             let mut function_inputs = Vec::new();
@@ -61,6 +62,7 @@ pub async fn run_nft_indexer(
                 message_hash: UInt256::default(),
             };
 
+            log::debug!("METRIC: events in transaction: {}", events.len());
             for event in events {
                 let mut msg_info = msg_info.clone();
                 let pool = pool.clone();
@@ -73,7 +75,7 @@ pub async fn run_nft_indexer(
             }
         }
 
-        log::debug!("Events in transaction: {}", jobs.len());
+        log::debug!("METRIC: jobs total: {}", jobs.len());
 
         futures::future::join_all(jobs).await;
 
