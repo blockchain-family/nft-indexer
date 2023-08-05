@@ -37,7 +37,7 @@ pub async fn run_nft_indexer(
     log::info!("Start nft indexer...");
 
     while let Some(message) = rx_raw_transactions.next().await {
-        let mut jobs = Vec::with_capacity(1050);
+        let mut jobs = Vec::with_capacity(1000);
 
         for (out, tx) in message {
             let mut events = Vec::new();
@@ -90,11 +90,18 @@ async fn process_event(
         msg_info.message_hash = message_hash;
         log::info!(
             "saving {}, tx hash {:?}, timestamp: {}",
-            &event.name,
+            event.name,
             msg_info.tx_data.hash().unwrap_or_default(),
             NaiveDateTime::from_timestamp_opt(msg_info.tx_data.now as i64, 0).unwrap_or_default()
         );
+
+        let now = std::time::Instant::now();
         entity.save_to_db(pool, msg_info).await?;
+        log::debug!(
+            "METRIC | Saving {} took {}",
+            event.name,
+            now.elapsed().as_millis()
+        );
     }
 
     Ok(())
