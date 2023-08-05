@@ -97,10 +97,12 @@ async fn process_event(
 
         let now = std::time::Instant::now();
         entity.save_to_db(pool, msg_info).await?;
+        let elapsed = now.elapsed();
         log::debug!(
-            "METRIC | Saving {} took {}",
+            "METRIC | Saving {} took {} ms / {} s",
             event.name,
-            now.elapsed().as_millis()
+            elapsed.as_millis(),
+            elapsed.as_secs_f64(),
         );
     }
 
