@@ -36,7 +36,10 @@ pub async fn run_nft_indexer(
 ) {
     log::info!("Start nft indexer...");
 
+    let mut count = 0;
     while let Some(message) = rx_raw_transactions.next().await {
+        count += 1;
+
         let mut tx_commit = tx_commit.clone();
         let pool = pool.clone();
         tokio::spawn(async move {
@@ -71,6 +74,8 @@ pub async fn run_nft_indexer(
             }
             tx_commit.send(()).await.expect("dead commit sender");
         });
+
+        log::info!("READ {count} MESSAGES FROM CONSUMER BUFFER");
     }
 
     panic!("rip kafka consumer");
