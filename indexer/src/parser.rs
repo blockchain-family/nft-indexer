@@ -7,9 +7,9 @@ use futures::channel::mpsc::{Receiver, Sender};
 use futures::{future, SinkExt, StreamExt};
 use nekoton_abi::transaction_parser::{ExtractedOwned, ParsedType};
 use nekoton_abi::UnpackAbiPlain;
-use sqlx::types::chrono::NaiveDateTime;
+//use sqlx::types::chrono::NaiveDateTime;
 use sqlx::PgPool;
-use ton_block::GetRepresentationHash;
+//use ton_block::GetRepresentationHash;
 use ton_types::UInt256;
 use transaction_buffer::models::{BufferedConsumerChannels, RawTransaction};
 
@@ -36,10 +36,7 @@ pub async fn run_nft_indexer(
 ) {
     log::info!("Start nft indexer...");
 
-    let mut count = 0;
     while let Some(message) = rx_raw_transactions.next().await {
-        count += 1;
-
         let mut tx_commit = tx_commit.clone();
         let pool = pool.clone();
         tokio::spawn(async move {
@@ -74,8 +71,6 @@ pub async fn run_nft_indexer(
             }
             tx_commit.send(()).await.expect("dead commit sender");
         });
-
-        log::info!("READ {count} MESSAGES FROM CONSUMER BUFFER");
     }
 
     panic!("rip kafka consumer");
@@ -88,12 +83,12 @@ async fn process_event(
 ) -> Result<()> {
     if let Some((entity, message_hash)) = unpack_entity(&event)? {
         msg_info.message_hash = message_hash;
-        log::info!(
-            "saving {}, tx hash {:?}, timestamp: {}",
-            &event.name,
-            msg_info.tx_data.hash().unwrap_or_default(),
-            NaiveDateTime::from_timestamp_opt(msg_info.tx_data.now as i64, 0).unwrap_or_default()
-        );
+        // log::info!(
+        //     "saving {}, tx hash {:?}, timestamp: {}",
+        //     &event.name,
+        //     msg_info.tx_data.hash().unwrap_or_default(),
+        //     NaiveDateTime::from_timestamp_opt(msg_info.tx_data.now as i64, 0).unwrap_or_default()
+        // );
         entity.save_to_db(pool, msg_info).await?;
     }
 

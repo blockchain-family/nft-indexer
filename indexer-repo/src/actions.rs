@@ -6,10 +6,6 @@ pub async fn save_event(
     record: &EventRecord,
     tx: &mut Transaction<'_, Postgres>,
 ) -> Result<PgQueryResult, sqlx::Error> {
-    log::debug!(
-        "Trying to save event with message {:?}",
-        record.message_hash
-    );
     let response = sqlx::query!(
         r#"
         insert into nft_events (
