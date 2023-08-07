@@ -31,7 +31,8 @@ impl Entity for DirectBuyDeployed {
             )
             .await,
 
-            raw_data: serde_json::to_value(self).unwrap_or_default(),
+            // raw_data: serde_json::to_value(self).unwrap_or_default(),
+            raw_data: serde_json::Value::default(),
         };
 
         if TRUSTED_ADDRESSES.get().unwrap()[&OfferRootType::FactoryDirectBuy]
@@ -74,7 +75,8 @@ impl Entity for DirectBuyDeclined {
             nft: Some(self.nft.to_string().into()),
             collection: None,
 
-            raw_data: serde_json::to_value(self).unwrap_or_default(),
+            // raw_data: serde_json::to_value(self).unwrap_or_default(),
+            raw_data: serde_json::Value::default(),
         };
 
         let save_result = indexer_repo::actions::save_event(&event_record, &mut pg_pool_tx)

@@ -29,7 +29,8 @@ impl Entity for OwnershipTransferred {
             nft: None,
             collection: None,
 
-            raw_data: serde_json::to_value(self).unwrap_or_default(),
+            // raw_data: serde_json::to_value(self).unwrap_or_default(),
+            raw_data: serde_json::Value::default(),
         };
 
         let save_result = indexer_repo::actions::save_event(&event_record, &mut pg_pool_tx)
@@ -62,7 +63,8 @@ impl Entity for MarketFeeDefaultChanged {
             nft: None,
             collection: None,
 
-            raw_data: serde_json::to_value(self).unwrap_or_default(),
+            // raw_data: serde_json::to_value(self).unwrap_or_default(),
+            raw_data: serde_json::Value::default(),
         };
 
         let save_result = indexer_repo::actions::save_event(&event_record, &mut pg_pool_tx)
@@ -95,7 +97,8 @@ impl Entity for MarketFeeChanged {
             nft: None,
             collection: None,
 
-            raw_data: serde_json::to_value(self).unwrap_or_default(),
+            // raw_data: serde_json::to_value(self).unwrap_or_default(),
+            raw_data: serde_json::Value::default(),
         };
 
         let save_result = indexer_repo::actions::save_event(&event_record, &mut pg_pool_tx)
@@ -128,7 +131,8 @@ impl Entity for AddCollectionRules {
             nft: None,
             collection: Some(self.collection.to_string().into()),
 
-            raw_data: serde_json::to_value(self).unwrap_or_default(),
+            // raw_data: serde_json::to_value(self).unwrap_or_default(),
+            raw_data: serde_json::Value::default(),
         };
 
         indexer_repo::actions::update_collection_fee(
@@ -169,7 +173,8 @@ impl Entity for RemoveCollectionRules {
             nft: None,
             collection: Some(self.collection.to_string().into()),
 
-            raw_data: serde_json::to_value(self).unwrap_or_default(),
+            // raw_data: serde_json::to_value(self).unwrap_or_default(),
+            raw_data: serde_json::Value::default(),
         };
 
         indexer_repo::actions::update_collection_fee(

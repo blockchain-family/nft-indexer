@@ -34,7 +34,8 @@ impl Entity for DirectSellStateChanged {
             )
             .await,
 
-            raw_data: serde_json::to_value(self).unwrap_or_default(),
+            // raw_data: serde_json::to_value(self).unwrap_or_default(),
+            raw_data: serde_json::Value::default(),
         };
 
         let state = self.to.into();

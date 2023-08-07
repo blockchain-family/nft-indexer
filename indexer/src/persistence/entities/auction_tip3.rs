@@ -36,7 +36,8 @@ impl Entity for AuctionCreated {
             )
             .await,
 
-            raw_data: serde_json::to_value(self).unwrap_or_default(),
+            // raw_data: serde_json::to_value(self).unwrap_or_default(),
+            raw_data: serde_json::Value::default(),
         };
 
         indexer_repo::actions::update_nft_by_auction(
@@ -81,7 +82,8 @@ impl Entity for AuctionActive {
             )
             .await,
 
-            raw_data: serde_json::to_value(self).unwrap_or_default(),
+            // raw_data: serde_json::to_value(self).unwrap_or_default(),
+            raw_data: serde_json::Value::default(),
         };
 
         let auction = NftAuction {
@@ -163,7 +165,8 @@ impl Entity for BidPlaced {
             nft: None,
             collection: None,
 
-            raw_data: serde_json::to_value(self).unwrap_or_default(),
+            // raw_data: serde_json::to_value(self).unwrap_or_default(),
+            raw_data: serde_json::Value::default(),
         };
 
         let (event_nft, event_collection) =
@@ -258,7 +261,8 @@ impl Entity for BidDeclined {
             nft: None,
             collection: None,
 
-            raw_data: serde_json::to_value(self).unwrap_or_default(),
+            // raw_data: serde_json::to_value(self).unwrap_or_default(),
+            raw_data: serde_json::Value::default(),
         };
 
         let bid = NftAuctionBid {
@@ -304,7 +308,8 @@ impl Entity for AuctionComplete {
             nft: None,
             collection: None,
 
-            raw_data: serde_json::to_value(self).unwrap_or_default(),
+            // raw_data: serde_json::to_value(self).unwrap_or_default(),
+            raw_data: serde_json::Value::default(),
         };
 
         let (event_nft, event_collection) =
@@ -376,7 +381,8 @@ impl Entity for AuctionCancelled {
             nft: None,
             collection: None,
 
-            raw_data: serde_json::to_value(self).unwrap_or_default(),
+            // raw_data: serde_json::to_value(self).unwrap_or_default(),
+            raw_data: serde_json::Value::default(),
         };
 
         let (event_nft, event_collection) =
