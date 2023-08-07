@@ -37,7 +37,7 @@ pub async fn run_nft_indexer(
     log::info!("Start nft indexer...");
 
     while let Some(message) = rx_raw_transactions.next().await {
-        let mut jobs = Vec::with_capacity(1000);
+        //let mut jobs = Vec::with_capacity(1000);
 
         for (out, tx) in message {
             let mut events = Vec::new();
@@ -63,17 +63,17 @@ pub async fn run_nft_indexer(
 
             let pool = pool.clone();
 
-            jobs.push(tokio::spawn(async move {
-                for event in events {
-                    if let Err(e) = process_event(event, &mut msg_info, &pool).await {
-                        // TODO: check error kind; exit if critical
-                        log::error!("Error processing event: {:#?}. Exiting.", e);
-                    }
+            //jobs.push(tokio::spawn(async move {
+            for event in events {
+                if let Err(e) = process_event(event, &mut msg_info, &pool).await {
+                    // TODO: check error kind; exit if critical
+                    log::error!("Error processing event: {:#?}. Exiting.", e);
                 }
-            }));
+            }
+            //}));
         }
 
-        futures::future::join_all(jobs).await;
+        //futures::future::join_all(jobs).await;
 
         tx_commit.send(()).await.expect("dead commit sender");
     }
