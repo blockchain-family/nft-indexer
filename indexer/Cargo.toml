@@ -40,3 +40,4 @@ ton_abi = { git = "https://github.com/broxus/ton-labs-abi" }
 ton_block = { git = "https://github.com/broxus/ton-labs-block" }
 ton_types = { git = "https://github.com/broxus/ton-labs-types.git" }
 url = { version = "2", features = ["serde"] }
+cpu-time = "1.0.0"
