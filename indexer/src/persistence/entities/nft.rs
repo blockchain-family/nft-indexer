@@ -31,8 +31,7 @@ impl Entity for OwnerChanged {
             )
             .await,
 
-            // raw_data: serde_json::to_value(self).unwrap_or_default(),
-            raw_data: serde_json::Value::default(),
+            raw_data: serde_json::to_value(self).unwrap_or_default(),
         };
 
         let nft = Nft {
@@ -90,8 +89,7 @@ impl Entity for ManagerChanged {
             )
             .await,
 
-            // raw_data: serde_json::to_value(self).unwrap_or_default(),
-            raw_data: serde_json::Value::default(),
+            raw_data: serde_json::to_value(self).unwrap_or_default(),
         };
 
         let nft = Nft {

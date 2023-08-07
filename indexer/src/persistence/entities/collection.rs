@@ -27,8 +27,7 @@ impl Entity for NftCreated {
             nft: Some(self.nft.to_string().into()),
             collection: Some(msg_info.tx_data.get_account().into()),
 
-            // raw_data: serde_json::to_value(self).unwrap_or_default(),
-            raw_data: serde_json::Value::default(),
+            raw_data: serde_json::to_value(self).unwrap_or_default(),
         };
         let nft = Nft {
             address: event_record.nft.clone().unwrap(),
@@ -136,8 +135,7 @@ impl Entity for NftBurned {
             nft: Some(self.nft.to_string().into()),
             collection: Some(msg_info.tx_data.get_account().into()),
 
-            // raw_data: serde_json::to_value(self).unwrap_or_default(),
-            raw_data: serde_json::Value::default(),
+            raw_data: serde_json::to_value(self).unwrap_or_default(),
         };
 
         let nft = Nft {
