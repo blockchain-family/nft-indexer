@@ -105,7 +105,7 @@ async fn process_event(
             event.name,
             elapsed.as_millis(),
             elapsed.as_secs_f64(),
-            cpu_elapsed.as_micros(),
+            cpu_elapsed.as_millis(),
             cpu_elapsed.as_secs_f64(),
         );
     }
