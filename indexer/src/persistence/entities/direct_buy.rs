@@ -1,15 +1,11 @@
 use anyhow::Result;
 use async_trait::async_trait;
-use chrono::NaiveDateTime;
-use indexer_repo::types::{
-    DirectBuyState, EventCategory, EventRecord, EventType, NftCollection, NftDirectBuy,
-    NftPriceHistory, NftPriceSource,
-};
+use indexer_repo::types::{EventCategory, EventRecord, EventType};
 use sqlx::PgPool;
 
 use crate::{
     models::events::DirectBuyStateChanged,
-    utils::{u128_to_bigdecimal, EventMessageInfo, KeyInfo},
+    utils::{EventMessageInfo, KeyInfo},
 };
 
 use super::Entity;
@@ -28,65 +24,64 @@ impl Entity for DirectBuyStateChanged {
             created_at: msg_info.tx_data.get_timestamp(),
             message_hash: msg_info.message_hash.to_string(),
             nft: Some(self.value2.nft.to_string().into()),
-            collection: indexer_repo::actions::get_collection_by_nft(
-                &self.value2.nft.to_string().into(),
-                &mut pg_pool_tx,
-            )
-            .await,
-
+            collection: None, //indexer_repo::actions::get_collection_by_nft(
+            //    &self.value2.nft.to_string().into(),
+            //    &mut pg_pool_tx,
+            //)
+            //.await,
             raw_data: serde_json::to_value(self).unwrap_or_default(),
         };
 
-        let state = self.to.into();
-        let created_ts =
-            NaiveDateTime::from_timestamp_opt(event_record.created_at, 0).unwrap_or_default();
+        // let state = self.to.into();
+        // let created_ts =
+        //     NaiveDateTime::from_timestamp_opt(event_record.created_at, 0).unwrap_or_default();
 
-        if state != DirectBuyState::Create {
-            let price_history = NftPriceHistory {
-                source: event_record.address.clone(),
-                source_type: NftPriceSource::DirectBuy,
-                created_at: NaiveDateTime::from_timestamp_opt(event_record.created_at, 0)
-                    .unwrap_or_default(),
-                price: u128_to_bigdecimal(self.value2._price),
-                price_token: Some(self.value2.spent_token.to_string().into()),
-                nft: event_record.nft.clone(),
-                collection: event_record.collection.clone(),
-            };
-            indexer_repo::actions::upsert_nft_price_history(&price_history, &mut pg_pool_tx)
-                .await?;
-        }
+        // if state != DirectBuyState::Create {
+        //     let price_history = NftPriceHistory {
+        //         source: event_record.address.clone(),
+        //         source_type: NftPriceSource::DirectBuy,
+        //         created_at: NaiveDateTime::from_timestamp_opt(event_record.created_at, 0)
+        //             .unwrap_or_default(),
+        //         price: u128_to_bigdecimal(self.value2._price),
+        //         price_token: Some(self.value2.spent_token.to_string().into()),
+        //         nft: event_record.nft.clone(),
+        //         collection: event_record.collection.clone(),
+        //     };
+        //     indexer_repo::actions::upsert_nft_price_history(&price_history, &mut pg_pool_tx)
+        //         .await?;
+        // }
 
-        let direct_buy = NftDirectBuy {
-            address: event_record.address.clone(),
-            nft: event_record.nft.clone().unwrap(),
-            collection: event_record.collection.clone(),
-            price_token: self.value2.spent_token.to_string().into(),
-            price: u128_to_bigdecimal(self.value2._price),
-            buy_price_usd: None,
-            buyer: self.value2.creator.to_string().into(),
-            finished_at: None,
-            expired_at: NaiveDateTime::from_timestamp_opt(self.value2.end_time_buy as i64, 0)
-                .unwrap_or_default(),
-            state,
-            created: NaiveDateTime::from_timestamp_opt(self.value2.start_time_buy as i64, 0)
-                .unwrap_or_default(),
-            updated: created_ts,
-            tx_lt: event_record.created_lt,
-        };
-        indexer_repo::actions::upsert_direct_buy(&direct_buy, &mut pg_pool_tx).await?;
+        // let direct_buy = NftDirectBuy {
+        //     address: event_record.address.clone(),
+        //     nft: event_record.nft.clone().unwrap(),
+        //     collection: event_record.collection.clone(),
+        //     price_token: self.value2.spent_token.to_string().into(),
+        //     price: u128_to_bigdecimal(self.value2._price),
+        //     buy_price_usd: None,
+        //     buyer: self.value2.creator.to_string().into(),
+        //     finished_at: None,
+        //     expired_at: NaiveDateTime::from_timestamp_opt(self.value2.end_time_buy as i64, 0)
+        //         .unwrap_or_default(),
+        //     state,
+        //     created: NaiveDateTime::from_timestamp_opt(self.value2.start_time_buy as i64, 0)
+        //         .unwrap_or_default(),
+        //     updated: created_ts,
+        //     tx_lt: event_record.created_lt,
+        // };
+        // indexer_repo::actions::upsert_direct_buy(&direct_buy, &mut pg_pool_tx).await?;
 
-        if let Some(collection) = event_record.collection.as_ref() {
-            let now = chrono::Utc::now().naive_utc();
+        // if let Some(collection) = event_record.collection.as_ref() {
+        //     let now = chrono::Utc::now().naive_utc();
 
-            let collection = NftCollection {
-                address: collection.clone(),
-                created: now,
-                updated: now,
-                ..Default::default()
-            };
+        //     let collection = NftCollection {
+        //         address: collection.clone(),
+        //         created: now,
+        //         updated: now,
+        //         ..Default::default()
+        //     };
 
-            indexer_repo::actions::upsert_collection(&collection, &mut pg_pool_tx, None).await?;
-        }
+        //     indexer_repo::actions::upsert_collection(&collection, &mut pg_pool_tx, None).await?;
+        // }
 
         let save_result = indexer_repo::actions::save_event(&event_record, &mut pg_pool_tx)
             .await

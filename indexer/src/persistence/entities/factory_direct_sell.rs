@@ -25,12 +25,11 @@ impl Entity for DirectSellDeployed {
             created_at: msg_info.tx_data.get_timestamp(),
             message_hash: msg_info.message_hash.to_string(),
             nft: Some(self.nft.to_string().into()),
-            collection: indexer_repo::actions::get_collection_by_nft(
-                &self.nft.to_string().into(),
-                &mut pg_pool_tx,
-            )
-            .await,
-
+            collection: None, //indexer_repo::actions::get_collection_by_nft(
+            //    &self.nft.to_string().into(),
+            //    &mut pg_pool_tx,
+            //)
+            //.await,
             raw_data: serde_json::to_value(self).unwrap_or_default(),
         };
 

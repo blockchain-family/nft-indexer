@@ -1,7 +1,6 @@
 use anyhow::Result;
 use async_trait::async_trait;
-use chrono::NaiveDateTime;
-use indexer_repo::types::{EventCategory, EventRecord, EventType, Nft};
+use indexer_repo::types::{EventCategory, EventRecord, EventType};
 use sqlx::PgPool;
 
 use crate::{
@@ -25,35 +24,34 @@ impl Entity for OwnerChanged {
             created_at: msg_info.tx_data.get_timestamp(),
             message_hash: msg_info.message_hash.to_string(),
             nft: Some(msg_info.tx_data.get_account().into()),
-            collection: indexer_repo::actions::get_collection_by_nft(
-                &msg_info.tx_data.get_account().into(),
-                &mut pg_pool_tx,
-            )
-            .await,
-
+            collection: None, //indexer_repo::actions::get_collection_by_nft(
+            //     &msg_info.tx_data.get_account().into(),
+            //     &mut pg_pool_tx,
+            // )
+            // .await,
             raw_data: serde_json::to_value(self).unwrap_or_default(),
         };
 
-        let nft = Nft {
-            address: event_record.address.clone(),
-            collection: event_record.collection.clone(),
-            owner: Some(self.new_owner.to_string().into()),
-            burned: false,
-            updated: NaiveDateTime::from_timestamp_opt(event_record.created_at, 0)
-                .unwrap_or_default(),
-            owner_update_lt: event_record.created_lt,
-            ..Default::default()
-        };
+        // let nft = Nft {
+        //     address: event_record.address.clone(),
+        //     collection: event_record.collection.clone(),
+        //     owner: Some(self.new_owner.to_string().into()),
+        //     burned: false,
+        //     updated: NaiveDateTime::from_timestamp_opt(event_record.created_at, 0)
+        //         .unwrap_or_default(),
+        //     owner_update_lt: event_record.created_lt,
+        //     ..Default::default()
+        // };
 
-        indexer_repo::actions::upsert_nft(&nft, &mut pg_pool_tx).await?;
+        // indexer_repo::actions::upsert_nft(&nft, &mut pg_pool_tx).await?;
 
-        if let Some(event_collection) = &event_record.collection {
-            indexer_repo::actions::refresh_collection_owners_count(
-                event_collection,
-                &mut pg_pool_tx,
-            )
-            .await?;
-        }
+        // if let Some(event_collection) = &event_record.collection {
+        //     indexer_repo::actions::refresh_collection_owners_count(
+        //         event_collection,
+        //         &mut pg_pool_tx,
+        //     )
+        //     .await?;
+        // }
 
         let save_result = indexer_repo::actions::save_event(&event_record, &mut pg_pool_tx)
             .await
@@ -83,35 +81,34 @@ impl Entity for ManagerChanged {
             created_at: msg_info.tx_data.get_timestamp(),
             message_hash: msg_info.message_hash.to_string(),
             nft: Some(msg_info.tx_data.get_account().into()),
-            collection: indexer_repo::actions::get_collection_by_nft(
-                &msg_info.tx_data.get_account().into(),
-                &mut pg_pool_tx,
-            )
-            .await,
-
+            collection: None, //indexer_repo::actions::get_collection_by_nft(
+            //    &msg_info.tx_data.get_account().into(),
+            //    &mut pg_pool_tx,
+            //)
+            //.await,
             raw_data: serde_json::to_value(self).unwrap_or_default(),
         };
 
-        let nft = Nft {
-            address: event_record.address.clone(),
-            collection: event_record.collection.clone(),
-            manager: Some(self.new_manager.to_string().into()),
-            burned: false,
-            updated: NaiveDateTime::from_timestamp_opt(event_record.created_at, 0)
-                .unwrap_or_default(),
-            manager_update_lt: event_record.created_lt,
-            ..Default::default()
-        };
+        // let nft = Nft {
+        //     address: event_record.address.clone(),
+        //     collection: event_record.collection.clone(),
+        //     manager: Some(self.new_manager.to_string().into()),
+        //     burned: false,
+        //     updated: NaiveDateTime::from_timestamp_opt(event_record.created_at, 0)
+        //         .unwrap_or_default(),
+        //     manager_update_lt: event_record.created_lt,
+        //     ..Default::default()
+        // };
 
-        indexer_repo::actions::upsert_nft(&nft, &mut pg_pool_tx).await?;
+        // indexer_repo::actions::upsert_nft(&nft, &mut pg_pool_tx).await?;
 
-        if let Some(event_collection) = &event_record.collection {
-            indexer_repo::actions::refresh_collection_owners_count(
-                event_collection,
-                &mut pg_pool_tx,
-            )
-            .await?;
-        }
+        // if let Some(event_collection) = &event_record.collection {
+        //     indexer_repo::actions::refresh_collection_owners_count(
+        //         event_collection,
+        //         &mut pg_pool_tx,
+        //     )
+        //     .await?;
+        // }
 
         let save_result = indexer_repo::actions::save_event(&event_record, &mut pg_pool_tx)
             .await
