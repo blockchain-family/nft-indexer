@@ -1,8 +1,13 @@
 use anyhow::Result;
 use async_trait::async_trait;
-use indexer_repo::types::{EventCategory, EventRecord, EventType};
+use chrono::NaiveDateTime;
+use indexer_repo::types::{
+    AuctionStatus, EventCategory, EventRecord, EventType, NftAuction, NftAuctionBid, NftCollection,
+    NftPriceHistory, NftPriceSource,
+};
 use sqlx::PgPool;
 
+use crate::utils::u128_to_bigdecimal;
 use crate::{
     models::events::{
         AuctionActive, AuctionCancelled, AuctionComplete, AuctionCreated, BidDeclined, BidPlaced,
@@ -26,21 +31,21 @@ impl Entity for AuctionCreated {
             created_at: msg_info.tx_data.get_timestamp(),
             message_hash: msg_info.message_hash.to_string(),
             nft: Some(self.value0.auction_subject.to_string().into()),
-            collection: None, //indexer_repo::actions::get_collection_by_nft(
-            //&self.value0.auction_subject.to_string().into(),
-            //    &mut pg_pool_tx,
-            //)
-            //.await,
+            collection: indexer_repo::actions::get_collection_by_nft(
+                &self.value0.auction_subject.to_string().into(),
+                &mut pg_pool_tx,
+            )
+            .await,
             raw_data: serde_json::to_value(self).unwrap_or_default(),
         };
 
-        // indexer_repo::actions::update_nft_by_auction(
-        //     "nft_events",
-        //     &event_record.address,
-        //     event_record.nft.as_ref().unwrap(),
-        //     &mut pg_pool_tx,
-        // )
-        // .await?;
+        indexer_repo::actions::update_nft_by_auction(
+            "nft_events",
+            &event_record.address,
+            event_record.nft.as_ref().unwrap(),
+            &mut pg_pool_tx,
+        )
+        .await?;
 
         let save_result = indexer_repo::actions::save_event(&event_record, &mut pg_pool_tx)
             .await
@@ -70,62 +75,62 @@ impl Entity for AuctionActive {
             created_at: msg_info.tx_data.get_timestamp(),
             message_hash: msg_info.message_hash.to_string(),
             nft: Some(self.value0.auction_subject.to_string().into()),
-            collection: None, //indexer_repo::actions::get_collection_by_nft(
-            //&self.value0.auction_subject.to_string().into(),
-            //  &mut pg_pool_tx,
-            //)
-            //.await,
+            collection: indexer_repo::actions::get_collection_by_nft(
+                &self.value0.auction_subject.to_string().into(),
+                &mut pg_pool_tx,
+            )
+            .await,
             raw_data: serde_json::to_value(self).unwrap_or_default(),
         };
 
-        // let auction = NftAuction {
-        //     address: event_record.address.clone(),
-        //     nft: event_record.nft.clone(),
-        //     wallet_for_bids: Some(self.value0.wallet_for_bids.to_string().into()),
-        //     price_token: Some(self.value0._payment_token.to_string().into()),
-        //     start_price: Some(u128_to_bigdecimal(self.value0._price)),
-        //     min_bid: Some(u128_to_bigdecimal(self.value0._price)),
-        //     status: Some(AuctionStatus::Active),
-        //     created_at: NaiveDateTime::from_timestamp_opt(self.value0.start_time as i64, 0),
-        //     finished_at: NaiveDateTime::from_timestamp_opt(self.value0.finish_time as i64, 0),
-        //     tx_lt: event_record.created_lt,
-        //     ..Default::default()
-        // };
+        let auction = NftAuction {
+            address: event_record.address.clone(),
+            nft: event_record.nft.clone(),
+            wallet_for_bids: Some(self.value0.wallet_for_bids.to_string().into()),
+            price_token: Some(self.value0._payment_token.to_string().into()),
+            start_price: Some(u128_to_bigdecimal(self.value0._price)),
+            min_bid: Some(u128_to_bigdecimal(self.value0._price)),
+            status: Some(AuctionStatus::Active),
+            created_at: NaiveDateTime::from_timestamp_opt(self.value0.start_time as i64, 0),
+            finished_at: NaiveDateTime::from_timestamp_opt(self.value0.finish_time as i64, 0),
+            tx_lt: event_record.created_lt,
+            ..Default::default()
+        };
 
-        // indexer_repo::actions::upsert_auction(&auction, &mut pg_pool_tx).await?;
+        indexer_repo::actions::upsert_auction(&auction, &mut pg_pool_tx).await?;
 
-        // indexer_repo::actions::update_nft_by_auction(
-        //     "nft_events",
-        //     &event_record.address,
-        //     event_record.nft.as_ref().unwrap(),
-        //     &mut pg_pool_tx,
-        // )
-        // .await?;
+        indexer_repo::actions::update_nft_by_auction(
+            "nft_events",
+            &event_record.address,
+            event_record.nft.as_ref().unwrap(),
+            &mut pg_pool_tx,
+        )
+        .await?;
 
-        // if let Some(collection) = event_record.collection.as_ref() {
-        //     let now = chrono::Utc::now().naive_utc();
+        if let Some(collection) = event_record.collection.as_ref() {
+            let now = chrono::Utc::now().naive_utc();
 
-        //     let collection = NftCollection {
-        //         address: collection.clone(),
-        //         created: now,
-        //         updated: now,
-        //         ..Default::default()
-        //     };
+            let collection = NftCollection {
+                address: collection.clone(),
+                created: now,
+                updated: now,
+                ..Default::default()
+            };
 
-        //     indexer_repo::actions::upsert_collection(&collection, &mut pg_pool_tx, None).await?;
-        // }
+            indexer_repo::actions::upsert_collection(&collection, &mut pg_pool_tx, None).await?;
+        }
 
-        // let price_history = NftPriceHistory {
-        //     source: event_record.address.clone(),
-        //     source_type: NftPriceSource::AuctionBid,
-        //     created_at: NaiveDateTime::from_timestamp_opt(event_record.created_at, 0)
-        //         .unwrap_or_default(),
-        //     price: u128_to_bigdecimal(self.value0._price),
-        //     price_token: Some(self.value0._payment_token.to_string().into()),
-        //     nft: event_record.nft.clone(),
-        //     collection: event_record.collection.clone(),
-        // };
-        // indexer_repo::actions::upsert_nft_price_history(&price_history, &mut pg_pool_tx).await?;
+        let price_history = NftPriceHistory {
+            source: event_record.address.clone(),
+            source_type: NftPriceSource::AuctionBid,
+            created_at: NaiveDateTime::from_timestamp_opt(event_record.created_at, 0)
+                .unwrap_or_default(),
+            price: u128_to_bigdecimal(self.value0._price),
+            price_token: Some(self.value0._payment_token.to_string().into()),
+            nft: event_record.nft.clone(),
+            collection: event_record.collection.clone(),
+        };
+        indexer_repo::actions::upsert_nft_price_history(&price_history, &mut pg_pool_tx).await?;
 
         let save_result = indexer_repo::actions::save_event(&event_record, &mut pg_pool_tx)
             .await
@@ -146,7 +151,7 @@ impl Entity for BidPlaced {
     async fn save_to_db(&self, pg_pool: &PgPool, msg_info: &EventMessageInfo) -> Result<()> {
         let mut pg_pool_tx = pg_pool.begin().await?;
 
-        let event_record = EventRecord {
+        let mut event_record = EventRecord {
             event_category: EventCategory::Auction,
             event_type: EventType::AuctionBidPlaced,
 
@@ -160,67 +165,67 @@ impl Entity for BidPlaced {
             raw_data: serde_json::to_value(self).unwrap_or_default(),
         };
 
-        // let (event_nft, event_collection) =
-        //     indexer_repo::actions::get_nft_and_collection_by_auction(
-        //         &event_record.address,
-        //         &mut pg_pool_tx,
-        //     )
-        //     .await;
+        let (event_nft, event_collection) =
+            indexer_repo::actions::get_nft_and_collection_by_auction(
+                &event_record.address,
+                &mut pg_pool_tx,
+            )
+            .await;
 
-        // event_record.nft = event_nft;
-        // event_record.collection = event_collection;
+        event_record.nft = event_nft;
+        event_record.collection = event_collection;
 
-        // let bid = NftAuctionBid {
-        //     auction: event_record.address.clone(),
-        //     buyer: self.buyer.to_string().into(),
-        //     price: u128_to_bigdecimal(self.value),
-        //     next_bid_value: Some(u128_to_bigdecimal(self.next_bid_value)),
-        //     declined: false,
-        //     created_at: NaiveDateTime::from_timestamp_opt(event_record.created_at, 0)
-        //         .unwrap_or_default(),
-        //     tx_lt: event_record.created_lt,
-        // };
+        let bid = NftAuctionBid {
+            auction: event_record.address.clone(),
+            buyer: self.buyer.to_string().into(),
+            price: u128_to_bigdecimal(self.value),
+            next_bid_value: Some(u128_to_bigdecimal(self.next_bid_value)),
+            declined: false,
+            created_at: NaiveDateTime::from_timestamp_opt(event_record.created_at, 0)
+                .unwrap_or_default(),
+            tx_lt: event_record.created_lt,
+        };
 
-        // indexer_repo::actions::insert_auction_bid(&bid, &mut pg_pool_tx).await?;
+        indexer_repo::actions::insert_auction_bid(&bid, &mut pg_pool_tx).await?;
 
-        // let min_bid = Some(u128_to_bigdecimal(self.next_bid_value));
+        let min_bid = Some(u128_to_bigdecimal(self.next_bid_value));
 
-        // let auction = NftAuction {
-        //     address: event_record.address.clone(),
-        //     nft: event_record.nft.clone(),
-        //     min_bid,
-        //     max_bid: Some(u128_to_bigdecimal(self.value)),
-        //     tx_lt: event_record.created_lt,
-        //     ..Default::default()
-        // };
+        let auction = NftAuction {
+            address: event_record.address.clone(),
+            nft: event_record.nft.clone(),
+            min_bid,
+            max_bid: Some(u128_to_bigdecimal(self.value)),
+            tx_lt: event_record.created_lt,
+            ..Default::default()
+        };
 
-        // indexer_repo::actions::upsert_auction(&auction, &mut pg_pool_tx).await?;
+        indexer_repo::actions::upsert_auction(&auction, &mut pg_pool_tx).await?;
 
-        // let price_history = NftPriceHistory {
-        //     source: event_record.address.clone(),
-        //     source_type: NftPriceSource::AuctionBid,
-        //     created_at: NaiveDateTime::from_timestamp_opt(event_record.created_at, 0)
-        //         .unwrap_or_default(),
-        //     price: u128_to_bigdecimal(self.value),
-        //     price_token: None,
-        //     nft: event_record.nft.clone(),
-        //     collection: event_record.collection.clone(),
-        // };
+        let price_history = NftPriceHistory {
+            source: event_record.address.clone(),
+            source_type: NftPriceSource::AuctionBid,
+            created_at: NaiveDateTime::from_timestamp_opt(event_record.created_at, 0)
+                .unwrap_or_default(),
+            price: u128_to_bigdecimal(self.value),
+            price_token: None,
+            nft: event_record.nft.clone(),
+            collection: event_record.collection.clone(),
+        };
 
-        // indexer_repo::actions::upsert_nft_price_history(&price_history, &mut pg_pool_tx).await?;
+        indexer_repo::actions::upsert_nft_price_history(&price_history, &mut pg_pool_tx).await?;
 
-        // if let Some(collection) = event_record.collection.as_ref() {
-        //     let now = chrono::Utc::now().naive_utc();
+        if let Some(collection) = event_record.collection.as_ref() {
+            let now = chrono::Utc::now().naive_utc();
 
-        //     let collection = NftCollection {
-        //         address: collection.clone(),
-        //         created: now,
-        //         updated: now,
-        //         ..Default::default()
-        //     };
+            let collection = NftCollection {
+                address: collection.clone(),
+                created: now,
+                updated: now,
+                ..Default::default()
+            };
 
-        //     indexer_repo::actions::upsert_collection(&collection, &mut pg_pool_tx, None).await?;
-        // }
+            indexer_repo::actions::upsert_collection(&collection, &mut pg_pool_tx, None).await?;
+        }
 
         let save_result = indexer_repo::actions::save_event(&event_record, &mut pg_pool_tx)
             .await
@@ -255,18 +260,18 @@ impl Entity for BidDeclined {
             raw_data: serde_json::to_value(self).unwrap_or_default(),
         };
 
-        // let bid = NftAuctionBid {
-        //     auction: event_record.address.clone(),
-        //     buyer: self.buyer.to_string().into(),
-        //     price: u128_to_bigdecimal(self.value),
-        //     declined: true,
-        //     created_at: NaiveDateTime::from_timestamp_opt(event_record.created_at, 0)
-        //         .unwrap_or_default(),
-        //     tx_lt: event_record.created_lt,
-        //     ..Default::default()
-        // };
+        let bid = NftAuctionBid {
+            auction: event_record.address.clone(),
+            buyer: self.buyer.to_string().into(),
+            price: u128_to_bigdecimal(self.value),
+            declined: true,
+            created_at: NaiveDateTime::from_timestamp_opt(event_record.created_at, 0)
+                .unwrap_or_default(),
+            tx_lt: event_record.created_lt,
+            ..Default::default()
+        };
 
-        // indexer_repo::actions::insert_auction_bid(&bid, &mut pg_pool_tx).await?;
+        indexer_repo::actions::insert_auction_bid(&bid, &mut pg_pool_tx).await?;
 
         let save_result = indexer_repo::actions::save_event(&event_record, &mut pg_pool_tx)
             .await
@@ -287,7 +292,7 @@ impl Entity for AuctionComplete {
     async fn save_to_db(&self, pg_pool: &PgPool, msg_info: &EventMessageInfo) -> Result<()> {
         let mut pg_pool_tx = pg_pool.begin().await?;
 
-        let event_record = EventRecord {
+        let mut event_record = EventRecord {
             event_category: EventCategory::Auction,
             event_type: EventType::AuctionComplete,
 
@@ -301,44 +306,44 @@ impl Entity for AuctionComplete {
             raw_data: serde_json::to_value(self).unwrap_or_default(),
         };
 
-        // let (event_nft, event_collection) =
-        //     indexer_repo::actions::get_nft_and_collection_by_auction(
-        //         &event_record.address,
-        //         &mut pg_pool_tx,
-        //     )
-        //     .await;
+        let (event_nft, event_collection) =
+            indexer_repo::actions::get_nft_and_collection_by_auction(
+                &event_record.address,
+                &mut pg_pool_tx,
+            )
+            .await;
 
-        // event_record.nft = event_nft;
-        // event_record.collection = event_collection;
+        event_record.nft = event_nft;
+        event_record.collection = event_collection;
 
-        // let price_token =
-        //     indexer_repo::actions::get_auction_price_token(&event_record.address, &mut pg_pool_tx)
-        //         .await;
+        let price_token =
+            indexer_repo::actions::get_auction_price_token(&event_record.address, &mut pg_pool_tx)
+                .await;
 
-        // let auction = NftAuction {
-        //     address: event_record.address.clone(),
-        //     nft: event_record.nft.clone(),
-        //     price_token,
-        //     max_bid: Some(u128_to_bigdecimal(self.value)),
-        //     status: Some(AuctionStatus::Completed),
-        //     tx_lt: event_record.created_lt,
-        //     ..Default::default()
-        // };
+        let auction = NftAuction {
+            address: event_record.address.clone(),
+            nft: event_record.nft.clone(),
+            price_token,
+            max_bid: Some(u128_to_bigdecimal(self.value)),
+            status: Some(AuctionStatus::Completed),
+            tx_lt: event_record.created_lt,
+            ..Default::default()
+        };
 
-        // indexer_repo::actions::upsert_auction(&auction, &mut pg_pool_tx).await?;
+        indexer_repo::actions::upsert_auction(&auction, &mut pg_pool_tx).await?;
 
-        // if let Some(collection) = event_record.collection.as_ref() {
-        //     let now = chrono::Utc::now().naive_utc();
+        if let Some(collection) = event_record.collection.as_ref() {
+            let now = chrono::Utc::now().naive_utc();
 
-        //     let collection = NftCollection {
-        //         address: collection.clone(),
-        //         created: now,
-        //         updated: now,
-        //         ..Default::default()
-        //     };
+            let collection = NftCollection {
+                address: collection.clone(),
+                created: now,
+                updated: now,
+                ..Default::default()
+            };
 
-        //     indexer_repo::actions::upsert_collection(&collection, &mut pg_pool_tx, None).await?;
-        // }
+            indexer_repo::actions::upsert_collection(&collection, &mut pg_pool_tx, None).await?;
+        }
 
         let save_result = indexer_repo::actions::save_event(&event_record, &mut pg_pool_tx)
             .await
@@ -359,7 +364,7 @@ impl Entity for AuctionCancelled {
     async fn save_to_db(&self, pg_pool: &PgPool, msg_info: &EventMessageInfo) -> Result<()> {
         let mut pg_pool_tx = pg_pool.begin().await?;
 
-        let event_record = EventRecord {
+        let mut event_record = EventRecord {
             event_category: EventCategory::Auction,
             event_type: EventType::AuctionCancelled,
 
@@ -373,38 +378,38 @@ impl Entity for AuctionCancelled {
             raw_data: serde_json::to_value(self).unwrap_or_default(),
         };
 
-        // let (event_nft, event_collection) =
-        //     indexer_repo::actions::get_nft_and_collection_by_auction(
-        //         &event_record.address,
-        //         &mut pg_pool_tx,
-        //     )
-        //     .await;
+        let (event_nft, event_collection) =
+            indexer_repo::actions::get_nft_and_collection_by_auction(
+                &event_record.address,
+                &mut pg_pool_tx,
+            )
+            .await;
 
-        // event_record.nft = event_nft;
-        // event_record.collection = event_collection;
+        event_record.nft = event_nft;
+        event_record.collection = event_collection;
 
-        // let auction = NftAuction {
-        //     address: event_record.address.clone(),
-        //     nft: event_record.nft.clone(),
-        //     status: Some(AuctionStatus::Cancelled),
-        //     tx_lt: event_record.created_lt,
-        //     ..Default::default()
-        // };
+        let auction = NftAuction {
+            address: event_record.address.clone(),
+            nft: event_record.nft.clone(),
+            status: Some(AuctionStatus::Cancelled),
+            tx_lt: event_record.created_lt,
+            ..Default::default()
+        };
 
-        // indexer_repo::actions::upsert_auction(&auction, &mut pg_pool_tx).await?;
+        indexer_repo::actions::upsert_auction(&auction, &mut pg_pool_tx).await?;
 
-        // if let Some(collection) = event_record.collection.as_ref() {
-        //     let now = chrono::Utc::now().naive_utc();
+        if let Some(collection) = event_record.collection.as_ref() {
+            let now = chrono::Utc::now().naive_utc();
 
-        //     let collection = NftCollection {
-        //         address: collection.clone(),
-        //         created: now,
-        //         updated: now,
-        //         ..Default::default()
-        //     };
+            let collection = NftCollection {
+                address: collection.clone(),
+                created: now,
+                updated: now,
+                ..Default::default()
+            };
 
-        //     indexer_repo::actions::upsert_collection(&collection, &mut pg_pool_tx, None).await?;
-        // }
+            indexer_repo::actions::upsert_collection(&collection, &mut pg_pool_tx, None).await?;
+        }
 
         let save_result = indexer_repo::actions::save_event(&event_record, &mut pg_pool_tx)
             .await

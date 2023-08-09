@@ -1,6 +1,7 @@
 use anyhow::Result;
 use async_trait::async_trait;
-use indexer_repo::types::{EventCategory, EventRecord, EventType};
+use chrono::NaiveDateTime;
+use indexer_repo::types::{EventCategory, EventRecord, EventType, Nft, NftCollection};
 use sqlx::PgPool;
 
 use crate::{
@@ -29,41 +30,41 @@ impl Entity for NftCreated {
             raw_data: serde_json::to_value(self).unwrap_or_default(),
         };
 
-        // let nft = Nft {
-        //     address: event_record.nft.clone().unwrap(),
-        //     collection: event_record.collection.clone(),
-        //     owner: Some(self.owner.to_string().into()),
-        //     manager: Some(self.manager.to_string().into()),
-        //     burned: false,
-        //     updated: NaiveDateTime::from_timestamp_opt(event_record.created_at, 0)
-        //         .unwrap_or_default(),
-        //     owner_update_lt: event_record.created_lt,
-        //     manager_update_lt: event_record.created_lt,
-        //     ..Default::default()
-        // };
+        let nft = Nft {
+            address: event_record.nft.clone().unwrap(),
+            collection: event_record.collection.clone(),
+            owner: Some(self.owner.to_string().into()),
+            manager: Some(self.manager.to_string().into()),
+            burned: false,
+            updated: NaiveDateTime::from_timestamp_opt(event_record.created_at, 0)
+                .unwrap_or_default(),
+            owner_update_lt: event_record.created_lt,
+            manager_update_lt: event_record.created_lt,
+            ..Default::default()
+        };
 
-        // indexer_repo::actions::upsert_nft(&nft, &mut pg_pool_tx).await?;
+        indexer_repo::actions::upsert_nft(&nft, &mut pg_pool_tx).await?;
 
-        // if let Some(collection) = event_record.collection.as_ref() {
-        //     let now = chrono::Utc::now().naive_utc();
+        if let Some(collection) = event_record.collection.as_ref() {
+            let now = chrono::Utc::now().naive_utc();
 
-        //     let collection = NftCollection {
-        //         address: collection.clone(),
-        //         created: now,
-        //         updated: now,
-        //         ..Default::default()
-        //     };
+            let collection = NftCollection {
+                address: collection.clone(),
+                created: now,
+                updated: now,
+                ..Default::default()
+            };
 
-        //     let nft_created_at_timestamp =
-        //         NaiveDateTime::from_timestamp_opt(event_record.created_at, 0);
+            let nft_created_at_timestamp =
+                NaiveDateTime::from_timestamp_opt(event_record.created_at, 0);
 
-        //     indexer_repo::actions::upsert_collection(
-        //         &collection,
-        //         &mut pg_pool_tx,
-        //         nft_created_at_timestamp,
-        //     )
-        //     .await?;
-        // }
+            indexer_repo::actions::upsert_collection(
+                &collection,
+                &mut pg_pool_tx,
+                nft_created_at_timestamp,
+            )
+            .await?;
+        }
 
         let save_result = indexer_repo::actions::save_event(&event_record, &mut pg_pool_tx)
             .await
@@ -73,45 +74,45 @@ impl Entity for NftCreated {
             return Ok(());
         }
 
-        // indexer_repo::actions::update_collection_by_nft(
-        //     "nft_events",
-        //     event_record.nft.as_ref().unwrap(),
-        //     &event_record.address,
-        //     &mut pg_pool_tx,
-        // )
-        // .await?;
+        indexer_repo::actions::update_collection_by_nft(
+            "nft_events",
+            event_record.nft.as_ref().unwrap(),
+            &event_record.address,
+            &mut pg_pool_tx,
+        )
+        .await?;
 
-        // indexer_repo::actions::update_collection_by_nft(
-        //     "nft_direct_sell",
-        //     event_record.nft.as_ref().unwrap(),
-        //     &event_record.address,
-        //     &mut pg_pool_tx,
-        // )
-        // .await?;
+        indexer_repo::actions::update_collection_by_nft(
+            "nft_direct_sell",
+            event_record.nft.as_ref().unwrap(),
+            &event_record.address,
+            &mut pg_pool_tx,
+        )
+        .await?;
 
-        // indexer_repo::actions::update_collection_by_nft(
-        //     "nft_direct_buy",
-        //     event_record.nft.as_ref().unwrap(),
-        //     &event_record.address,
-        //     &mut pg_pool_tx,
-        // )
-        // .await?;
+        indexer_repo::actions::update_collection_by_nft(
+            "nft_direct_buy",
+            event_record.nft.as_ref().unwrap(),
+            &event_record.address,
+            &mut pg_pool_tx,
+        )
+        .await?;
 
-        // indexer_repo::actions::update_collection_by_nft(
-        //     "nft_price_history",
-        //     event_record.nft.as_ref().unwrap(),
-        //     &event_record.address,
-        //     &mut pg_pool_tx,
-        // )
-        // .await?;
+        indexer_repo::actions::update_collection_by_nft(
+            "nft_price_history",
+            event_record.nft.as_ref().unwrap(),
+            &event_record.address,
+            &mut pg_pool_tx,
+        )
+        .await?;
 
-        // indexer_repo::actions::update_collection_by_nft(
-        //     "nft_attributes",
-        //     event_record.nft.as_ref().unwrap(),
-        //     &event_record.address,
-        //     &mut pg_pool_tx,
-        // )
-        // .await?;
+        indexer_repo::actions::update_collection_by_nft(
+            "nft_attributes",
+            event_record.nft.as_ref().unwrap(),
+            &event_record.address,
+            &mut pg_pool_tx,
+        )
+        .await?;
 
         pg_pool_tx.commit().await?;
 
@@ -138,33 +139,33 @@ impl Entity for NftBurned {
             raw_data: serde_json::to_value(self).unwrap_or_default(),
         };
 
-        // let nft = Nft {
-        //     address: event_record.nft.clone().unwrap(),
-        //     collection: event_record.collection.clone(),
-        //     owner: Some(self.owner.to_string().into()),
-        //     manager: Some(self.manager.to_string().into()),
-        //     burned: true,
-        //     updated: NaiveDateTime::from_timestamp_opt(event_record.created_at, 0)
-        //         .unwrap_or_default(),
-        //     owner_update_lt: event_record.created_lt,
-        //     manager_update_lt: event_record.created_lt,
-        //     ..Default::default()
-        // };
+        let nft = Nft {
+            address: event_record.nft.clone().unwrap(),
+            collection: event_record.collection.clone(),
+            owner: Some(self.owner.to_string().into()),
+            manager: Some(self.manager.to_string().into()),
+            burned: true,
+            updated: NaiveDateTime::from_timestamp_opt(event_record.created_at, 0)
+                .unwrap_or_default(),
+            owner_update_lt: event_record.created_lt,
+            manager_update_lt: event_record.created_lt,
+            ..Default::default()
+        };
 
-        // indexer_repo::actions::upsert_nft(&nft, &mut pg_pool_tx).await?;
+        indexer_repo::actions::upsert_nft(&nft, &mut pg_pool_tx).await?;
 
-        // if let Some(collection) = event_record.collection.as_ref() {
-        //     let now = chrono::Utc::now().naive_utc();
+        if let Some(collection) = event_record.collection.as_ref() {
+            let now = chrono::Utc::now().naive_utc();
 
-        //     let collection = NftCollection {
-        //         address: collection.clone(),
-        //         created: now,
-        //         updated: now,
-        //         ..Default::default()
-        //     };
+            let collection = NftCollection {
+                address: collection.clone(),
+                created: now,
+                updated: now,
+                ..Default::default()
+            };
 
-        //     indexer_repo::actions::upsert_collection(&collection, &mut pg_pool_tx, None).await?;
-        // }
+            indexer_repo::actions::upsert_collection(&collection, &mut pg_pool_tx, None).await?;
+        }
 
         let save_result = indexer_repo::actions::save_event(&event_record, &mut pg_pool_tx)
             .await
@@ -174,37 +175,37 @@ impl Entity for NftBurned {
             return Ok(());
         }
 
-        // indexer_repo::actions::update_collection_by_nft(
-        //     "nft_events",
-        //     event_record.nft.as_ref().unwrap(),
-        //     &event_record.address,
-        //     &mut pg_pool_tx,
-        // )
-        // .await?;
+        indexer_repo::actions::update_collection_by_nft(
+            "nft_events",
+            event_record.nft.as_ref().unwrap(),
+            &event_record.address,
+            &mut pg_pool_tx,
+        )
+        .await?;
 
-        // indexer_repo::actions::update_collection_by_nft(
-        //     "nft_direct_sell",
-        //     event_record.nft.as_ref().unwrap(),
-        //     &event_record.address,
-        //     &mut pg_pool_tx,
-        // )
-        // .await?;
+        indexer_repo::actions::update_collection_by_nft(
+            "nft_direct_sell",
+            event_record.nft.as_ref().unwrap(),
+            &event_record.address,
+            &mut pg_pool_tx,
+        )
+        .await?;
 
-        // indexer_repo::actions::update_collection_by_nft(
-        //     "nft_direct_buy",
-        //     event_record.nft.as_ref().unwrap(),
-        //     &event_record.address,
-        //     &mut pg_pool_tx,
-        // )
-        // .await?;
+        indexer_repo::actions::update_collection_by_nft(
+            "nft_direct_buy",
+            event_record.nft.as_ref().unwrap(),
+            &event_record.address,
+            &mut pg_pool_tx,
+        )
+        .await?;
 
-        // indexer_repo::actions::update_collection_by_nft(
-        //     "nft_price_history",
-        //     event_record.nft.as_ref().unwrap(),
-        //     &event_record.address,
-        //     &mut pg_pool_tx,
-        // )
-        // .await?;
+        indexer_repo::actions::update_collection_by_nft(
+            "nft_price_history",
+            event_record.nft.as_ref().unwrap(),
+            &event_record.address,
+            &mut pg_pool_tx,
+        )
+        .await?;
 
         pg_pool_tx.commit().await?;
 

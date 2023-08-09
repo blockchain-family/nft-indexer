@@ -131,13 +131,13 @@ impl Entity for AddCollectionRules {
             raw_data: serde_json::to_value(self).unwrap_or_default(),
         };
 
-        // indexer_repo::actions::update_collection_fee(
-        //     Some(self.collection_fee_info.numerator as i32),
-        //     Some(self.collection_fee_info.denominator as i32),
-        //     &event_record.collection.clone().unwrap(),
-        //     &mut pg_pool_tx,
-        // )
-        // .await?;
+        indexer_repo::actions::update_collection_fee(
+            Some(self.collection_fee_info.numerator as i32),
+            Some(self.collection_fee_info.denominator as i32),
+            &event_record.collection.clone().unwrap(),
+            &mut pg_pool_tx,
+        )
+        .await?;
 
         let save_result = indexer_repo::actions::save_event(&event_record, &mut pg_pool_tx)
             .await
@@ -172,13 +172,13 @@ impl Entity for RemoveCollectionRules {
             raw_data: serde_json::to_value(self).unwrap_or_default(),
         };
 
-        // indexer_repo::actions::update_collection_fee(
-        //     None,
-        //     None,
-        //     &event_record.collection.clone().unwrap(),
-        //     &mut pg_pool_tx,
-        // )
-        // .await?;
+        indexer_repo::actions::update_collection_fee(
+            None,
+            None,
+            &event_record.collection.clone().unwrap(),
+            &mut pg_pool_tx,
+        )
+        .await?;
 
         let save_result = indexer_repo::actions::save_event(&event_record, &mut pg_pool_tx)
             .await

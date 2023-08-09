@@ -16,9 +16,7 @@ pub async fn get_json(
         .await?
         .ok_or_else(|| anyhow!("Contract state is none!"))?;
 
-    let metadata = nekoton_contracts::tip4_2::MetadataContract(
-        contract.as_context(&nekoton_utils::SimpleClock),
-    );
+    let metadata = nekoton_contracts::tip4_2::MetadataContract(contract.as_context(&SimpleClock));
 
     Ok(serde_json::from_str::<serde_json::Value>(
         &metadata.get_json()?,
@@ -31,8 +29,7 @@ pub async fn get_info(nft: MsgAddressInt, jrpc_client: JrpcClient) -> Result<Get
         .await?
         .ok_or_else(|| anyhow!("Contract state is none!"))?;
 
-    let nft_contract =
-        nekoton_contracts::tip4_1::NftContract(contract.as_context(&nekoton_utils::SimpleClock));
+    let nft_contract = nekoton_contracts::tip4_1::NftContract(contract.as_context(&SimpleClock));
 
     nft_contract.get_info()
 }

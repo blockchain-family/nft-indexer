@@ -42,7 +42,7 @@ pub enum AuctionStatus {
 impl UnpackAbi<AuctionStatus> for TokenValue {
     fn unpack(self) -> nekoton_abi::UnpackerResult<AuctionStatus> {
         UnpackAbi::<u8>::unpack(self)
-            .map(num::FromPrimitive::from_u8)
+            .map(FromPrimitive::from_u8)
             .transpose()
             .ok_or(UnpackerError::InvalidAbi)?
     }

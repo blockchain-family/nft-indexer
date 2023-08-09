@@ -199,7 +199,7 @@ mod test {
             }
             ParamType::Array(v) => TokenValue::Array((**v).clone(), Vec::default()),
             ParamType::FixedArray(v, size) => {
-                TokenValue::FixedArray((**v).clone(), vec![create_default_token_value(&**v); *size])
+                TokenValue::FixedArray((**v).clone(), vec![create_default_token_value(v); *size])
             }
             ParamType::Cell => TokenValue::Cell(Cell::default()),
             ParamType::Map(k, v) => {
@@ -213,11 +213,10 @@ mod test {
             ParamType::Time => TokenValue::Time(0),
             ParamType::Expire => TokenValue::Expire(0),
             ParamType::PublicKey => TokenValue::PublicKey(None),
-            ParamType::Optional(v) => TokenValue::Optional(
-                (**v).clone(),
-                Some(Box::new(create_default_token_value(&**v))),
-            ),
-            ParamType::Ref(v) => TokenValue::Ref(Box::new(create_default_token_value(&**v))),
+            ParamType::Optional(v) => {
+                TokenValue::Optional((**v).clone(), Some(Box::new(create_default_token_value(v))))
+            }
+            ParamType::Ref(v) => TokenValue::Ref(Box::new(create_default_token_value(v))),
         }
     }
 
