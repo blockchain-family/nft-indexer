@@ -21,8 +21,8 @@ use super::{Decode, Decoded, Entity};
 impl Decode for AuctionCreated {
     fn decode(&self, msg_info: &EventMessageInfo) -> Result<Decoded> {
         Ok(Decoded::AuctionCreated(AddressChangedDecoded {
-            id_address: msg_info.tx_data.get_account().into(),
-            new_address: self.value0.auction_subject.to_string().into(),
+            id_address: msg_info.tx_data.get_account(),
+            new_address: self.value0.auction_subject.to_string(),
             timestamp: 0,
         }))
     }
@@ -137,7 +137,7 @@ impl Decode for BidDeclined {
             bid_value: u128_to_bigdecimal(self.value),
             next_value: Default::default(),
             buyer: self.buyer.to_string(),
-            created_at: msg_info.tx_data.get_timestamp().try_into()?,
+            created_at: msg_info.tx_data.get_timestamp(),
             tx_lt: msg_info.tx_data.logical_time().try_into()?,
             declined: true,
         };

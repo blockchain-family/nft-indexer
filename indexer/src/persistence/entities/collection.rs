@@ -17,10 +17,10 @@ impl Decode for NftCreated {
     fn decode(&self, msg_info: &EventMessageInfo) -> Result<Decoded> {
         let logical_time = msg_info.tx_data.logical_time() as i64;
         let record = NftCreateDecoded {
-            address: self.nft.to_string().into(),
-            collection: msg_info.tx_data.get_account().into(),
-            owner: self.owner.to_string().into(),
-            manager: self.manager.to_string().into(),
+            address: self.nft.to_string(),
+            collection: msg_info.tx_data.get_account(),
+            owner: self.owner.to_string(),
+            manager: self.manager.to_string(),
             updated: NaiveDateTime::from_timestamp_opt(msg_info.tx_data.get_timestamp(), 0)
                 .unwrap_or_default(),
             owner_update_lt: logical_time,
@@ -50,9 +50,9 @@ impl Decode for NftCreated {
 impl Decode for NftBurned {
     fn decode(&self, _: &EventMessageInfo) -> Result<Decoded> {
         let record = NftBurnedDecoded {
-            address: self.nft.to_string().into(),
-            owner: self.owner.to_string().into(),
-            manager: self.manager.to_string().into(),
+            address: self.nft.to_string(),
+            owner: self.owner.to_string(),
+            manager: self.manager.to_string(),
         };
 
         Ok(Decoded::BurnNft(record))

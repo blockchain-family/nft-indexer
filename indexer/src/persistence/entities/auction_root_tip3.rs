@@ -41,7 +41,7 @@ impl Decode for AuctionDeployed {
 }
 
 impl Decode for AuctionDeclined {
-    fn decode(&self, msg_info: &EventMessageInfo) -> Result<Decoded> {
+    fn decode(&self, _msg_info: &EventMessageInfo) -> Result<Decoded> {
         Ok(Decoded::ShouldSkip)
     }
 

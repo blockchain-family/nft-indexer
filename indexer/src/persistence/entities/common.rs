@@ -36,6 +36,10 @@ impl Decode for OwnershipTransferred {
 }
 
 impl Decode for MarketFeeDefaultChanged {
+    fn decode(&self, _: &EventMessageInfo) -> Result<Decoded> {
+        Ok(Decoded::ShouldSkip)
+    }
+
     fn decode_event(&self, msg_info: &EventMessageInfo) -> Result<Decoded> {
         Ok(Decoded::RawEventRecord(EventRecord {
             event_category: EventCategory::Collection,
@@ -50,9 +54,6 @@ impl Decode for MarketFeeDefaultChanged {
 
             raw_data: serde_json::to_value(self).unwrap_or_default(),
         }))
-    }
-    fn decode(&self, _: &EventMessageInfo) -> Result<Decoded> {
-        Ok(Decoded::ShouldSkip)
     }
 }
 
@@ -79,6 +80,14 @@ impl Decode for MarketFeeChanged {
 }
 
 impl Decode for AddCollectionRules {
+    fn decode(&self, _: &EventMessageInfo) -> Result<Decoded> {
+        Ok(Decoded::AuctionRulesChanged(CollectionFeeDecoded {
+            address: self.collection.to_string(),
+            numerator: Some(self.collection_fee_info.numerator.try_into()?),
+            denominator: Some(self.collection_fee_info.denominator.try_into()?),
+        }))
+    }
+
     fn decode_event(&self, msg_info: &EventMessageInfo) -> Result<Decoded> {
         Ok(Decoded::RawEventRecord(EventRecord {
             event_category: EventCategory::Collection,
@@ -92,14 +101,6 @@ impl Decode for AddCollectionRules {
             collection: Some(self.collection.to_string().into()),
 
             raw_data: serde_json::to_value(self).unwrap_or_default(),
-        }))
-    }
-
-    fn decode(&self, _: &EventMessageInfo) -> Result<Decoded> {
-        Ok(Decoded::AuctionRulesChanged(CollectionFeeDecoded {
-            address: self.collection.to_string(),
-            numerator: Some(self.collection_fee_info.numerator.try_into()?),
-            denominator: Some(self.collection_fee_info.denominator.try_into()?),
         }))
     }
 }

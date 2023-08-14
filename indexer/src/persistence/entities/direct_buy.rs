@@ -2,11 +2,12 @@ use anyhow::Result;
 use async_trait::async_trait;
 use chrono::NaiveDateTime;
 use indexer_repo::types::{
-    DirectBuyState, EventCategory, EventRecord, EventType, NftCollection, NftDirectBuy,
-    NftPriceHistory, NftPriceSource,
+    DirectBuyDecoded, DirectBuyState, EventCategory, EventRecord, EventType, NftCollection,
+    NftDirectBuy, NftPriceHistory, NftPriceSource,
 };
 use sqlx::PgPool;
 
+use crate::persistence::entities::{Decode, Decoded};
 use crate::utils::u128_to_bigdecimal;
 use crate::{
     models::events::DirectBuyStateChanged,
@@ -99,5 +100,61 @@ impl Entity for DirectBuyStateChanged {
         pg_pool_tx.commit().await?;
 
         Ok(())
+    }
+}
+
+impl Decode for DirectBuyStateChanged {
+    fn decode(&self, msg_info: &EventMessageInfo) -> Result<Decoded> {
+        let state = self.to.into();
+
+        if state == DirectBuyState::Create || state == DirectBuyState::AwaitTokens {
+            return Ok(Decoded::ShouldSkip);
+        }
+
+        Ok(Decoded::DirectBuyStateChanged((
+            DirectBuyDecoded {
+                address: msg_info.tx_data.get_account(),
+                nft: self.value2.nft.to_string(),
+                collection: None,
+                price_token: self.value2.spent_token.to_string(),
+                price: u128_to_bigdecimal(self.value2._price),
+                buy_price_usd: None,
+                buyer: self.value2.creator.to_string(),
+                finished_at: None,
+                expired_at: NaiveDateTime::from_timestamp_opt(self.value2.end_time_buy as i64, 0)
+                    .unwrap_or_default(),
+                state,
+                created: NaiveDateTime::from_timestamp_opt(self.value2.start_time_buy as i64, 0)
+                    .unwrap_or_default(),
+                updated: NaiveDateTime::from_timestamp_opt(msg_info.tx_data.get_timestamp(), 0)
+                    .unwrap_or_default(),
+                tx_lt: msg_info.tx_data.logical_time() as i64,
+            },
+            NftPriceHistory {
+                source: msg_info.tx_data.get_account().into(),
+                source_type: NftPriceSource::DirectBuy,
+                created_at: NaiveDateTime::from_timestamp_opt(msg_info.tx_data.get_timestamp(), 0)
+                    .unwrap_or_default(),
+                price: u128_to_bigdecimal(self.value2._price),
+                price_token: Some(self.value2.spent_token.to_string().into()),
+                nft: Some(self.value2.nft.to_string().into()),
+                collection: None,
+            },
+        )))
+    }
+
+    fn decode_event(&self, msg_info: &EventMessageInfo) -> Result<Decoded> {
+        Ok(Decoded::RawEventRecord(EventRecord {
+            event_category: EventCategory::DirectBuy,
+            event_type: EventType::DirectBuyStateChanged,
+
+            address: msg_info.tx_data.get_account().into(),
+            created_lt: msg_info.tx_data.logical_time() as i64,
+            created_at: msg_info.tx_data.get_timestamp(),
+            message_hash: msg_info.message_hash.to_string(),
+            nft: Some(self.value2.nft.to_string().into()),
+            collection: None,
+            raw_data: serde_json::to_value(self).unwrap_or_default(),
+        }))
     }
 }

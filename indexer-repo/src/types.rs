@@ -89,6 +89,12 @@ pub enum DirectSellState {
     Expired,
 }
 
+impl sqlx::postgres::PgHasArrayType for DirectSellState {
+    fn array_type_info() -> sqlx::postgres::PgTypeInfo {
+        sqlx::postgres::PgTypeInfo::with_name("_direct_sell_state")
+    }
+}
+
 #[derive(Clone, Debug, Serialize, PartialEq, Eq, sqlx::Type)]
 #[sqlx(type_name = "direct_buy_state", rename_all = "snake_case")]
 pub enum DirectBuyState {
@@ -98,6 +104,12 @@ pub enum DirectBuyState {
     Filled,
     Cancelled,
     Expired,
+}
+
+impl sqlx::postgres::PgHasArrayType for DirectBuyState {
+    fn array_type_info() -> sqlx::postgres::PgTypeInfo {
+        sqlx::postgres::PgTypeInfo::with_name("_direct_buy_state")
+    }
 }
 
 #[derive(Copy, Clone, Debug, Serialize, PartialEq, Eq, sqlx::Type)]
@@ -413,4 +425,38 @@ pub struct CollectionFeeDecoded {
     pub address: String,
     pub numerator: Option<i32>,
     pub denominator: Option<i32>,
+}
+
+#[derive(Clone, Debug)]
+pub struct DirectBuyDecoded {
+    pub address: String,
+    pub nft: String,
+    pub collection: Option<String>,
+    pub price_token: String,
+    pub price: BigDecimal,
+    pub buy_price_usd: Option<BigDecimal>,
+    pub buyer: String,
+    pub finished_at: Option<NaiveDateTime>,
+    pub expired_at: NaiveDateTime,
+    pub state: DirectBuyState,
+    pub created: NaiveDateTime,
+    pub updated: NaiveDateTime,
+    pub tx_lt: i64,
+}
+
+#[derive(Clone, Debug)]
+pub struct DirectSellDecoded {
+    pub address: String,
+    pub nft: String,
+    pub collection: Option<String>,
+    pub price_token: String,
+    pub price: BigDecimal,
+    pub sell_price_usd: Option<BigDecimal>,
+    pub seller: String,
+    pub finished_at: Option<NaiveDateTime>,
+    pub expired_at: NaiveDateTime,
+    pub state: DirectSellState,
+    pub created: NaiveDateTime,
+    pub updated: NaiveDateTime,
+    pub tx_lt: i64,
 }

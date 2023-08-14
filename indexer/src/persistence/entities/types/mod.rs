@@ -1,7 +1,7 @@
 use indexer_repo::types::{
     Address, AddressChangedDecoded, AuctionActiveDecoded, AuctionBidDecoded,
-    AuctionCancelledDecoded, AuctionCompleteDecoded, CollectionFeeDecoded, EventRecord,
-    NftBurnedDecoded, NftCreateDecoded, NftPriceHistory,
+    AuctionCancelledDecoded, AuctionCompleteDecoded, CollectionFeeDecoded, DirectBuyDecoded,
+    DirectSellDecoded, EventRecord, NftBurnedDecoded, NftCreateDecoded, NftPriceHistory,
 };
 
 pub enum Decoded {
@@ -19,4 +19,8 @@ pub enum Decoded {
     AuctionCancelled(AuctionCancelledDecoded),
     RawEventRecord(EventRecord),
     AuctionRulesChanged(CollectionFeeDecoded),
+    DirectBuyStateChanged((DirectBuyDecoded, NftPriceHistory)),
+    DirectSellStateChanged((DirectSellDecoded, NftPriceHistory)),
+    DirectBuyDeployed(Address),
+    DirectSellDeployed(Address),
 }

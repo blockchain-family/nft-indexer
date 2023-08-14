@@ -5,15 +5,7 @@ use crate::utils::EventMessageInfo;
 use anyhow::Result;
 use futures::channel::mpsc::{Receiver, Sender};
 use futures::{future, SinkExt, StreamExt};
-use indexer_repo::batch::{
-    save_auc_acitve, save_auc_bid, save_auc_cancelled, save_auc_complete, save_nft_burned,
-    save_nft_created, save_nft_manager_changed, save_nft_owner_changed, save_price_history,
-    save_raw_event, save_whitelist_address, update_auc_maxmin, update_collection_fee,
-};
-use indexer_repo::types::{
-    AddressChangedDecoded, AuctionActiveDecoded, NftBurnedDecoded, NftCreateDecoded,
-    NftPriceHistory, NftPriceSource,
-};
+use indexer_repo::batch::*;
 use nekoton_abi::transaction_parser::{ExtractedOwned, ParsedType};
 use nekoton_abi::UnpackAbiPlain;
 use sqlx::types::chrono::NaiveDateTime;
@@ -105,14 +97,12 @@ pub async fn run_nft_indexer(
             };
 
             for event in events {
-                if let Ok(unpacked) = unpack_entity(&event) {
-                    if let Some((entity, _)) = unpacked {
-                        if let Ok(decoded) = entity.decode(&msg_info) {
-                            data.push(decoded);
-                        }
-                        if let Ok(event) = entity.decode_event(&msg_info) {
-                            data.push(event);
-                        }
+                if let Ok(Some((entity, _))) = unpack_entity(&event) {
+                    if let Ok(decoded) = entity.decode(&msg_info) {
+                        data.push(decoded);
+                    }
+                    if let Ok(event) = entity.decode_event(&msg_info) {
+                        data.push(event);
                     }
                 }
             }
@@ -143,7 +133,7 @@ async fn save_to_db(pool: &PgPool, data: Vec<Decoded>) -> Result<()> {
     let mut nft_created = Vec::with_capacity(EVENTS_PER_ITERATION);
     let mut nft_burned = Vec::with_capacity(EVENTS_PER_ITERATION);
     let mut nft_owner_changed = Vec::with_capacity(EVENTS_PER_ITERATION);
-    let mut nft_manager_chaged = Vec::with_capacity(EVENTS_PER_ITERATION);
+    let mut nft_manager_changed = Vec::with_capacity(EVENTS_PER_ITERATION);
     let mut whitelist_insertion_addresses = Vec::with_capacity(EVENTS_PER_ITERATION);
     // let mut auc_created = Vec::with_capacity(EVENTS_PER_ITERATION);
     let mut auc_active = Vec::with_capacity(EVENTS_PER_ITERATION);
@@ -154,6 +144,8 @@ async fn save_to_db(pool: &PgPool, data: Vec<Decoded>) -> Result<()> {
     let mut auc_cancelled = Vec::with_capacity(EVENTS_PER_ITERATION);
     let mut raw_events = Vec::with_capacity(EVENTS_PER_ITERATION);
     let mut auc_rules = Vec::with_capacity(EVENTS_PER_ITERATION);
+    let mut dss = Vec::with_capacity(EVENTS_PER_ITERATION);
+    let mut dbs = Vec::with_capacity(EVENTS_PER_ITERATION);
 
     for element in data {
         match element {
@@ -167,7 +159,7 @@ async fn save_to_db(pool: &PgPool, data: Vec<Decoded>) -> Result<()> {
                 nft_owner_changed.push(addr);
             }
             Decoded::ManagerChangedNft(addr) => {
-                nft_manager_chaged.push(addr);
+                nft_manager_changed.push(addr);
             }
             Decoded::ShouldSkip => (),
             Decoded::AuctionDeployed(addr) => whitelist_insertion_addresses.push(addr.0),
@@ -195,30 +187,40 @@ async fn save_to_db(pool: &PgPool, data: Vec<Decoded>) -> Result<()> {
             Decoded::AuctionRulesChanged(rules) => {
                 auc_rules.push(rules);
             }
+            Decoded::DirectSellStateChanged((ds, price)) => {
+                dss.push(ds);
+                prices.push(price);
+            }
+            Decoded::DirectBuyStateChanged((db, price)) => {
+                dbs.push(db);
+                prices.push(price);
+            }
+            Decoded::DirectSellDeployed(addr) => whitelist_insertion_addresses.push(addr.0),
+            Decoded::DirectBuyDeployed(addr) => whitelist_insertion_addresses.push(addr.0),
         }
     }
     if !raw_events.is_empty() {
-        save_raw_event(&pool, raw_events).await?;
+        save_raw_event(pool, raw_events).await?;
     }
 
     if !nft_created.is_empty() {
-        save_nft_created(&pool, nft_created).await?;
+        save_nft_created(pool, nft_created).await?;
     };
 
     if !nft_burned.is_empty() {
-        save_nft_burned(&pool, nft_burned).await?;
+        save_nft_burned(pool, nft_burned).await?;
     }
 
     if !nft_owner_changed.is_empty() {
-        save_nft_owner_changed(&pool, nft_owner_changed).await?;
+        save_nft_owner_changed(pool, nft_owner_changed).await?;
     }
 
-    if !nft_manager_chaged.is_empty() {
-        save_nft_manager_changed(&pool, nft_manager_chaged).await?;
+    if !nft_manager_changed.is_empty() {
+        save_nft_manager_changed(pool, nft_manager_changed).await?;
     }
 
     if !whitelist_insertion_addresses.is_empty() {
-        save_whitelist_address(&pool, whitelist_insertion_addresses).await?;
+        save_whitelist_address(pool, whitelist_insertion_addresses).await?;
     }
 
     // if !auc_created.is_empty() {
@@ -227,38 +229,46 @@ async fn save_to_db(pool: &PgPool, data: Vec<Decoded>) -> Result<()> {
     // }
 
     if !auc_active.is_empty() {
-        save_auc_acitve(&pool, auc_active).await?;
+        save_auc_acitve(pool, auc_active).await?;
     }
 
     if !prices.is_empty() {
-        save_price_history(&pool, prices).await?;
+        save_price_history(pool, prices).await?;
     }
     if !auc_bid_placed.is_empty() {
-        save_auc_bid(&pool, &auc_bid_placed[..]).await?;
-        update_auc_maxmin(&pool, &auc_bid_placed[..]).await?;
+        save_auc_bid(pool, &auc_bid_placed[..]).await?;
+        update_auc_maxmin(pool, &auc_bid_placed[..]).await?;
     }
     if !auc_bid_declined.is_empty() {
-        save_auc_bid(&pool, &auc_bid_declined[..]).await?;
+        save_auc_bid(pool, &auc_bid_declined[..]).await?;
     }
     if !auc_complete.is_empty() {
-        save_auc_complete(&pool, &auc_complete[..]).await?;
+        save_auc_complete(pool, &auc_complete[..]).await?;
     }
     if !auc_cancelled.is_empty() {
-        save_auc_cancelled(&pool, &auc_cancelled[..]).await?;
+        save_auc_cancelled(pool, &auc_cancelled[..]).await?;
     }
     if !auc_rules.is_empty() {
-        update_collection_fee(&pool, auc_rules).await?;
+        update_collection_fee(pool, auc_rules).await?;
+    }
+
+    if !dss.is_empty() {
+        save_direct_sell_state_changed(pool, dss).await?;
+    }
+
+    if !dbs.is_empty() {
+        save_direct_buy_state_changed(pool, dbs).await?;
     }
 
     Ok(())
 }
 
-async fn process_event(
+async fn _process_event(
     event: ExtractedOwned,
     msg_info: &mut EventMessageInfo,
-    pool: &PgPool,
+    _pool: &PgPool,
 ) -> Result<()> {
-    if let Some((entity, message_hash)) = unpack_entity(&event)? {
+    if let Some((_entity, message_hash)) = unpack_entity(&event)? {
         msg_info.message_hash = message_hash;
         log::info!(
             "saving {}, tx hash {:?}, timestamp: {}",
@@ -314,24 +324,25 @@ fn unpack_entity(event: &ExtractedOwned) -> Result<Option<(Box<dyn Decode>, UInt
         /* Collection */
         NftCreated,
         NftBurned,
-        // /* DirectBuy */
-        // DirectBuyStateChanged,
-        // /* DirectSell */
-        // DirectSellStateChanged,
-        // /* FactoryDirectBuy */
-        // DirectBuyDeployed,
-        // DirectBuyDeclined,
-        // /* FactoryDirectSell */
-        // DirectSellDeployed,
-        // DirectSellDeclined,
+        /* DirectBuy */
+        DirectBuyStateChanged,
+        /* DirectSell */
+        DirectSellStateChanged,
+        /* FactoryDirectBuy */
+        DirectBuyDeployed,
+        DirectBuyDeclined,
+        /* FactoryDirectSell */
+        DirectSellDeployed,
+        DirectSellDeclined,
         /* Nft */
         ManagerChanged,
-        OwnerChanged // /* common for all events */
-                     // OwnershipTransferred,
-                     // MarketFeeDefaultChanged,
-                     // MarketFeeChanged,
-                     // AddCollectionRules,
-                     // RemoveCollectionRules
+        OwnerChanged,
+        /* common for all events */
+        OwnershipTransferred,
+        MarketFeeDefaultChanged,
+        MarketFeeChanged,
+        AddCollectionRules,
+        RemoveCollectionRules
     )
 }
 
@@ -472,7 +483,7 @@ mod test {
                                 UnpackAbiPlain::<$entity>::unpack(event_raw.clone()).unwrap();
                             PackAbiPlain::pack(unpacked_static)
                         })+
-                        _ => panic!("Unknow event, might be missing"),
+                        _ => panic!("Unknown event, might be missing"),
                     }
                 };
             }
