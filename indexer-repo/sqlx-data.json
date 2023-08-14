@@ -175,6 +175,18 @@
     },
     "query": "\n        insert into nft_price_history (\n            source, source_type, \n            ts, \n            price,  price_token, \n            nft,    collection\n        )\n        values (\n            $1,     $2, \n            $3, \n            $4,     $5, \n            $6,     $7\n        )\n        "
   },
+  "65a2b1248a0e0798384981095abd8858e8fcc85957b0dc9285f81b2350396291": {
+    "describe": {
+      "columns": [],
+      "nullable": [],
+      "parameters": {
+        "Left": [
+          "VarcharArray"
+        ]
+      }
+    },
+    "query": "\n            insert into events_whitelist(address)\n            select * from unnest($1::varchar[])\n            on conflict(address) do nothing\n        "
+  },
   "6f0fa608f7d0b847580fae9efb25389e76c11f42489f5220447c4caa845430a5": {
     "describe": {
       "columns": [],
@@ -556,6 +568,20 @@
     },
     "query": "\n        select \n            nft.address as \"nft?: Address\", \n            collection as \"collection?: Address\" \n        from nft\n        inner join nft_auction\n        on nft_auction.nft = nft.address\n        where nft_auction.address = $1\n        "
   },
+  "9e785ebcd70336f018a5c52a32816eb3c26a5dc439344d691ef9cdcef0584381": {
+    "describe": {
+      "columns": [],
+      "nullable": [],
+      "parameters": {
+        "Left": [
+          "VarcharArray",
+          "VarcharArray",
+          "TimestampArray"
+        ]
+      }
+    },
+    "query": "\n        update nft set\n            owner = data.owner,\n            updated = data.time\n        from\n        (\n            select \n                unnest($1::varchar[]) as address,\n                unnest($2::varchar[]) as owner,\n                unnest($3::timestamp[]) as time\n        ) as data\n        where nft.address = data.address\n    "
+  },
   "a40d50e5bf1536d2dfa32d508381e7deca1564fd4b1703dff1de48526cb581c9": {
     "describe": {
       "columns": [
@@ -595,6 +621,20 @@
       }
     },
     "query": "\n            select address \n            from nft \n            where collection = $1\n            "
+  },
+  "a76e7676bc83e0d7ce7a25db1772552bd60eb7376fd761ed748dc622046d2748": {
+    "describe": {
+      "columns": [],
+      "nullable": [],
+      "parameters": {
+        "Left": [
+          "VarcharArray",
+          "VarcharArray",
+          "VarcharArray"
+        ]
+      }
+    },
+    "query": "\n        update nft set\n            burned = true,\n            owner = data.owner,\n            manager = data.manager\n        from\n        (\n            select \n                unnest($1::varchar[]) as address,\n                unnest($2::varchar[]) as owner,\n                unnest($3::varchar[]) as manager\n        ) as data\n        where nft.address = data.address\n    "
   },
   "aaf93547db178572807ccc14aa43553f65b9509c3238b9412d5e68b404f91c7d": {
     "describe": {
@@ -888,6 +928,37 @@
       }
     },
     "query": "\n        update \n            nft_price_history as nph\n        set \n            price_token = coalesce(nph.price_token, $2), \n            nft         = coalesce(nph.nft, $3), \n            collection  = coalesce(nph.collection, $4)\n        where source = $1\n        "
+  },
+  "ec32b53c7f5bb406eb8a722b38f53f9f640fc9fbff71e368c374c0a99796e05c": {
+    "describe": {
+      "columns": [],
+      "nullable": [],
+      "parameters": {
+        "Left": [
+          "VarcharArray",
+          "VarcharArray"
+        ]
+      }
+    },
+    "query": "\n        update nft set\n            manager = data.manager\n        from\n        (\n            select \n                unnest($1::varchar[]) as address,\n                unnest($2::varchar[]) as manager\n        ) as data\n        where nft.address = data.address\n    "
+  },
+  "eea4dd6ea15b71a4325cf0a7ffd2d5f0f5b76c30bbd43efc3833294e178d9850": {
+    "describe": {
+      "columns": [],
+      "nullable": [],
+      "parameters": {
+        "Left": [
+          "VarcharArray",
+          "VarcharArray",
+          "VarcharArray",
+          "VarcharArray",
+          "TimestampArray",
+          "Int8Array",
+          "Int8Array"
+        ]
+      }
+    },
+    "query": "\n            insert into nft(address, collection, owner, manager, updated, owner_update_lt, manager_update_lt)\n            select * from unnest(\n                $1::varchar[], \n                $2::varchar[], \n                $3::varchar[], \n                $4::varchar[], \n                $5::timestamp[],\n                $6::bigint[], \n                $7::bigint[]) \n            on conflict(address) do nothing\n        "
   },
   "ef7fce702e8ab060c2e4f23644e01de2fcad6a08f3e55bb3b0a602b87282f479": {
     "describe": {

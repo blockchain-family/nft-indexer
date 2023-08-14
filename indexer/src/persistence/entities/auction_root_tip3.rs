@@ -1,6 +1,6 @@
 use anyhow::Result;
 use async_trait::async_trait;
-use indexer_repo::types::{EventCategory, EventRecord, EventType};
+use indexer_repo::types::{Address, EventCategory, EventRecord, EventType};
 use sqlx::PgPool;
 
 use crate::{
@@ -9,7 +9,27 @@ use crate::{
     utils::{EventMessageInfo, KeyInfo},
 };
 
-use super::Entity;
+use super::{Decode, Decoded, Entity};
+
+impl Decode for AuctionDeployed {
+    fn decode(&self, msg_info: &EventMessageInfo) -> Result<Decoded> {
+        let emitter_address: Address = msg_info.tx_data.get_account().into();
+
+        if TRUSTED_ADDRESSES.get().unwrap()[&OfferRootType::AuctionRoot]
+            .contains(&emitter_address.0)
+        {
+            Ok(Decoded::AuctionDeployed(self.offer.to_string().into()))
+        } else {
+            Ok(Decoded::ShouldSkip)
+        }
+    }
+}
+
+impl Decode for AuctionDeclined {
+    fn decode(&self, msg_info: &EventMessageInfo) -> Result<Decoded> {
+        Ok(Decoded::ShouldSkip)
+    }
+}
 
 #[async_trait]
 impl Entity for AuctionDeployed {

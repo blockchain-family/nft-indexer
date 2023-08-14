@@ -1,7 +1,9 @@
 use anyhow::Result;
 use async_trait::async_trait;
 use chrono::NaiveDateTime;
-use indexer_repo::types::{EventCategory, EventRecord, EventType, Nft, NftCollection};
+use indexer_repo::types::{
+    EventCategory, EventRecord, EventType, Nft, NftBurnedDecoded, NftCollection, NftCreateDecoded,
+};
 use sqlx::PgPool;
 
 use crate::{
@@ -9,7 +11,37 @@ use crate::{
     utils::{EventMessageInfo, KeyInfo},
 };
 
-use super::Entity;
+use super::{types::Decoded, Decode, Entity};
+
+impl Decode for NftCreated {
+    fn decode(&self, msg_info: &EventMessageInfo) -> Result<Decoded> {
+        let logical_time = msg_info.tx_data.logical_time() as i64;
+        let record = NftCreateDecoded {
+            address: self.nft.to_string().into(),
+            collection: msg_info.tx_data.get_account().into(),
+            owner: self.owner.to_string().into(),
+            manager: self.manager.to_string().into(),
+            updated: NaiveDateTime::from_timestamp_opt(msg_info.tx_data.get_timestamp(), 0)
+                .unwrap_or_default(),
+            owner_update_lt: logical_time,
+            manager_update_lt: logical_time,
+        };
+
+        Ok(Decoded::CreateNft(record))
+    }
+}
+
+impl Decode for NftBurned {
+    fn decode(&self, _: &EventMessageInfo) -> Result<Decoded> {
+        let record = NftBurnedDecoded {
+            address: self.nft.to_string().into(),
+            owner: self.owner.to_string().into(),
+            manager: self.manager.to_string().into(),
+        };
+
+        Ok(Decoded::BurnNft(record))
+    }
+}
 
 #[async_trait]
 impl Entity for NftCreated {

@@ -1,7 +1,7 @@
 use anyhow::Result;
 use async_trait::async_trait;
 use chrono::NaiveDateTime;
-use indexer_repo::types::{EventCategory, EventRecord, EventType, Nft};
+use indexer_repo::types::{AddressChangedDecoded, EventCategory, EventRecord, EventType, Nft};
 use sqlx::PgPool;
 
 use crate::{
@@ -9,7 +9,31 @@ use crate::{
     utils::{EventMessageInfo, KeyInfo},
 };
 
-use super::Entity;
+use super::{types::Decoded, Decode, Entity};
+
+impl Decode for OwnerChanged {
+    fn decode(&self, msg_info: &EventMessageInfo) -> Result<Decoded> {
+        let nft_new_owner = AddressChangedDecoded {
+            nft_address: msg_info.tx_data.get_account().into(),
+            new_address: self.new_owner.to_string().into(),
+            timestamp: msg_info.tx_data.get_timestamp(),
+        };
+
+        Ok(Decoded::OwnerChangedNft(nft_new_owner))
+    }
+}
+
+impl Decode for ManagerChanged {
+    fn decode(&self, msg_info: &EventMessageInfo) -> Result<Decoded> {
+        let nft_new_manager = AddressChangedDecoded {
+            nft_address: msg_info.tx_data.get_account().into(),
+            new_address: self.new_manager.to_string().into(),
+            timestamp: msg_info.tx_data.get_timestamp(),
+        };
+
+        Ok(Decoded::ManagerChangedNft(nft_new_manager))
+    }
+}
 
 #[async_trait]
 impl Entity for OwnerChanged {

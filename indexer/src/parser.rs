@@ -5,6 +5,11 @@ use crate::utils::EventMessageInfo;
 use anyhow::Result;
 use futures::channel::mpsc::{Receiver, Sender};
 use futures::{future, SinkExt, StreamExt};
+use indexer_repo::batch::{
+    save_auc_acitve, save_nft_burned, save_nft_created, save_nft_manager_changed,
+    save_nft_owner_changed, save_whitelist_address,
+};
+use indexer_repo::types::{AddressChangedDecoded, NftBurnedDecoded, NftCreateDecoded};
 use nekoton_abi::transaction_parser::{ExtractedOwned, ParsedType};
 use nekoton_abi::UnpackAbiPlain;
 use sqlx::types::chrono::NaiveDateTime;
@@ -12,6 +17,8 @@ use sqlx::PgPool;
 use ton_block::GetRepresentationHash;
 use ton_types::UInt256;
 use transaction_buffer::models::{BufferedConsumerChannels, RawTransaction};
+
+const EVENTS_PER_ITERATION: usize = 1000;
 
 pub async fn start_parsing(config: settings::config::Config, pg_pool: PgPool) -> Result<()> {
     let BufferedConsumerChannels {
@@ -36,49 +43,198 @@ pub async fn run_nft_indexer(
 ) {
     log::info!("Start nft indexer...");
 
-    while let Some(message) = rx_raw_transactions.next().await {
-        let mut jobs = Vec::with_capacity(1000);
+    let mut data = Vec::with_capacity(10000);
+    for step in 0..1000 {
+        let create_nft = NftCreateDecoded {
+            address: format!("addr{step}").into(),
+            collection: format!("coll{step}").into(),
+            owner: format!("own{step}").into(),
+            manager: format!("man{step}").into(),
+            updated: Default::default(),
+            owner_update_lt: 0,
+            manager_update_lt: 0,
+        };
 
-        for (out, tx) in message {
-            let mut events = Vec::new();
-            let mut function_inputs = Vec::new();
+        data.push(Decoded::CreateNft(create_nft));
 
-            for extractable in out {
-                match extractable.parsed_type {
-                    ParsedType::Event => {
-                        events.push(extractable);
-                    }
-                    ParsedType::FunctionInput => {
-                        function_inputs.extend(extractable.tokens.into_iter());
-                    }
-                    _ => {}
-                }
-            }
+        let burned_nft = NftBurnedDecoded {
+            address: format!("addr{step}").into(),
+            owner: format!("own{step} changed").into(),
+            manager: format!("man{step} changed").into(),
+        };
+        data.push(Decoded::BurnNft(burned_nft));
 
-            let mut msg_info = EventMessageInfo {
-                tx_data: tx.data,
-                function_inputs,
-                message_hash: UInt256::default(),
-            };
+        let owner_changing = AddressChangedDecoded {
+            id_address: format!("addr0").into(),
+            new_address: format!("changed_owner{step}").into(),
+            timestamp: step,
+        };
 
-            let pool = pool.clone();
-
-            jobs.push(tokio::spawn(async move {
-                for event in events {
-                    if let Err(e) = process_event(event, &mut msg_info, &pool).await {
-                        // TODO: check error kind; exit if critical
-                        log::error!("Error processing event: {:#?}. Exiting.", e);
-                    }
-                }
-            }));
-        }
-
-        futures::future::join_all(jobs).await;
-
-        tx_commit.send(()).await.expect("dead commit sender");
+        data.push(Decoded::OwnerChangedNft(owner_changing));
     }
 
+    let now = std::time::Instant::now();
+    let _ = save_to_db(&pool, data).await;
+    let elapsed = now.elapsed();
+
+    log::info!("METRIC | Saving to db, elapsed {}ms", elapsed.as_millis());
+
+    // while let Some(message) = rx_raw_transactions.next().await {
+    //     let mut data = Vec::with_capacity(EVENTS_PER_ITERATION);
+
+    //     for (out, tx) in message {
+    //         let mut events = Vec::new();
+    //         let mut function_inputs = Vec::new();
+
+    //         for extractable in out {
+    //             match extractable.parsed_type {
+    //                 ParsedType::Event => {
+    //                     events.push(extractable);
+    //                 }
+    //                 ParsedType::FunctionInput => {
+    //                     function_inputs.extend(extractable.tokens.into_iter());
+    //                 }
+    //                 _ => {}
+    //             }
+    //         }
+
+    //         let mut msg_info = EventMessageInfo {
+    //             tx_data: tx.data,
+    //             function_inputs,
+    //             message_hash: UInt256::default(),
+    //         };
+
+    //         let pool = pool.clone();
+
+    //         for event in events {
+    //             if let Ok(unpacked) = unpack_entity(&event) {
+    //                 if let Some((entity, _)) = unpacked {
+    //                     if let Ok(decoded) = entity.decode(&msg_info) {
+    //                         data.push(decoded);
+    //                     }
+    //                 }
+    //             }
+    //         }
+    //         // jobs.push(tokio::spawn(async move {
+    //         //     for event in events {
+    //         //         if let Err(e) = process_event(event, &mut msg_info, &pool).await {
+    //         //             // TODO: check error kind; exit if critical
+    //         //             log::error!("Error processing event: {:#?}. Exiting.", e);
+    //         //         }
+    //         //     }
+    //         // }));
+    //     }
+
+    //     // futures::future::join_all(jobs).await;
+    //     let now = std::time::Instant::now();
+    //     let _ = save_to_db(&pool, data).await;
+    //     let elapsed = now.elapsed();
+
+    //     log::info!("METRIC | Saving to db, elapsed {}ms", elapsed.as_millis());
+
+    //     tx_commit.send(()).await.expect("dead commit sender");
+    // }
+
     panic!("rip kafka consumer");
+}
+
+async fn save_to_db(pool: &PgPool, data: Vec<Decoded>) -> Result<()> {
+    let mut nft_created = Vec::with_capacity(EVENTS_PER_ITERATION);
+    let mut nft_burned = Vec::with_capacity(EVENTS_PER_ITERATION);
+    let mut nft_owner_changed = Vec::with_capacity(EVENTS_PER_ITERATION);
+    let mut nft_manager_chaged = Vec::with_capacity(EVENTS_PER_ITERATION);
+    let mut whitelist_insertion_addresses = Vec::with_capacity(EVENTS_PER_ITERATION);
+    // let mut auc_created = Vec::with_capacity(EVENTS_PER_ITERATION);
+    let mut auc_active = Vec::with_capacity(EVENTS_PER_ITERATION);
+    let mut prices = Vec::with_capacity(EVENTS_PER_ITERATION * 2);
+    let mut auc_bid_placed = Vec::with_capacity(EVENTS_PER_ITERATION);
+    let mut auc_bid_declined = Vec::with_capacity(EVENTS_PER_ITERATION);
+    let mut auc_complete = Vec::with_capacity(EVENTS_PER_ITERATION);
+    let mut auc_cancelled = Vec::with_capacity(EVENTS_PER_ITERATION);
+
+    for element in data {
+        match element {
+            Decoded::CreateNft(nft) => {
+                nft_created.push(nft);
+            }
+            Decoded::BurnNft(nft) => {
+                nft_burned.push(nft);
+            }
+            Decoded::OwnerChangedNft(addr) => {
+                nft_owner_changed.push(addr);
+            }
+            Decoded::ManagerChangedNft(addr) => {
+                nft_manager_chaged.push(addr);
+            }
+            Decoded::ShouldSkip => (),
+            Decoded::AuctionDeployed(a) => whitelist_insertion_addresses.push(a.0),
+            Decoded::AuctionCreated(a) => (), //auc_created.push(a),
+            Decoded::AuctionActive((auc, price)) => {
+                auc_active.push(auc);
+                prices.push(price);
+            }
+            Decoded::AuctionBidPlaced((auc, price)) => {
+                auc_bid_placed.push(auc);
+                prices.push(price);
+            }
+            Decoded::AuctionBidDeclined(a) => {
+                auc_bid_declined.push(a);
+            }
+            Decoded::AuctionComplete(a) => {
+                auc_complete.push(a);
+            }
+            Decoded::AuctionCancelled(a) => {
+                auc_cancelled.push(a);
+            }
+        }
+    }
+
+    if !nft_created.is_empty() {
+        save_nft_created(&pool, nft_created).await?;
+    };
+
+    if !nft_burned.is_empty() {
+        save_nft_burned(&pool, nft_burned).await?;
+    }
+
+    if !nft_owner_changed.is_empty() {
+        save_nft_owner_changed(&pool, nft_owner_changed).await?;
+    }
+
+    if !nft_manager_chaged.is_empty() {
+        save_nft_manager_changed(&pool, nft_manager_chaged).await?;
+    }
+
+    if !whitelist_insertion_addresses.is_empty() {
+        save_whitelist_address(&pool, whitelist_insertion_addresses).await?;
+    }
+
+    // if !auc_created.is_empty() {
+    //     // Should we do something?
+    //     ();
+    // }
+
+    if !auc_active.is_empty() {
+        save_auc_acitve(&pool, auc_active).await?;
+    }
+
+    if !prices.is_empty() {
+        unimplemented!()
+    }
+    if !auc_bid_placed.is_empty() {
+        unimplemented!()
+    }
+    if !auc_bid_declined.is_empty() {
+        unimplemented!()
+    }
+    if !auc_complete.is_empty() {
+        unimplemented!()
+    }
+    if !auc_cancelled.is_empty() {
+        unimplemented!()
+    }
+
+    Ok(())
 }
 
 async fn process_event(
@@ -97,7 +253,7 @@ async fn process_event(
 
         let now = std::time::Instant::now();
         let cpu_now = cpu_time::ProcessTime::now();
-        entity.save_to_db(pool, msg_info).await?;
+        // entity.save_to_db(pool, msg_info).await?;
         let cpu_elapsed = cpu_now.elapsed();
         let elapsed = now.elapsed();
         log::debug!(
@@ -126,41 +282,40 @@ macro_rules! try_unpack_entity {
     };
 }
 
-fn unpack_entity(event: &ExtractedOwned) -> Result<Option<(Box<dyn Entity>, UInt256)>> {
+fn unpack_entity(event: &ExtractedOwned) -> Result<Option<(Box<dyn Decode>, UInt256)>> {
     try_unpack_entity!(
         event,
-        /* AuctionRootTip3 */
-        AuctionDeployed,
-        AuctionDeclined,
-        /* AuctionTip3 */
-        AuctionCreated,
-        AuctionActive,
-        BidPlaced,
-        BidDeclined,
-        AuctionComplete,
-        AuctionCancelled,
-        /* Collection */
+        // /* AuctionRootTip3 */
+        // AuctionDeployed,
+        // AuctionDeclined,
+        // /* AuctionTip3 */
+        // AuctionCreated,
+        // AuctionActive,
+        // BidPlaced,
+        // BidDeclined,
+        // AuctionComplete,
+        // AuctionCancelled,
+        // /* Collection */
         NftCreated,
         NftBurned,
-        /* DirectBuy */
-        DirectBuyStateChanged,
-        /* DirectSell */
-        DirectSellStateChanged,
-        /* FactoryDirectBuy */
-        DirectBuyDeployed,
-        DirectBuyDeclined,
-        /* FactoryDirectSell */
-        DirectSellDeployed,
-        DirectSellDeclined,
+        // /* DirectBuy */
+        // DirectBuyStateChanged,
+        // /* DirectSell */
+        // DirectSellStateChanged,
+        // /* FactoryDirectBuy */
+        // DirectBuyDeployed,
+        // DirectBuyDeclined,
+        // /* FactoryDirectSell */
+        // DirectSellDeployed,
+        // DirectSellDeclined,
         /* Nft */
         ManagerChanged,
-        OwnerChanged,
-        /* common for all events */
-        OwnershipTransferred,
-        MarketFeeDefaultChanged,
-        MarketFeeChanged,
-        AddCollectionRules,
-        RemoveCollectionRules
+        OwnerChanged // /* common for all events */
+                     // OwnershipTransferred,
+                     // MarketFeeDefaultChanged,
+                     // MarketFeeChanged,
+                     // AddCollectionRules,
+                     // RemoveCollectionRules
     )
 }
 

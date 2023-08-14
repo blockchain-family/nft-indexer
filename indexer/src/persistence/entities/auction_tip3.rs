@@ -2,8 +2,9 @@ use anyhow::Result;
 use async_trait::async_trait;
 use chrono::NaiveDateTime;
 use indexer_repo::types::{
-    AuctionStatus, EventCategory, EventRecord, EventType, NftAuction, NftAuctionBid, NftCollection,
-    NftPriceHistory, NftPriceSource,
+    AddressChangedDecoded, AuctionActiveDecoded, AuctionBidDecoded, AuctionCancelledDecoded,
+    AuctionCompleteDecoded, AuctionStatus, EventCategory, EventRecord, EventType, NftAuction,
+    NftAuctionBid, NftCollection, NftPriceHistory, NftPriceSource,
 };
 use sqlx::PgPool;
 
@@ -15,7 +16,108 @@ use crate::{
     utils::{EventMessageInfo, KeyInfo},
 };
 
-use super::Entity;
+use super::{Decode, Decoded, Entity};
+
+impl Decode for AuctionCreated {
+    fn decode(&self, msg_info: &EventMessageInfo) -> Result<Decoded> {
+        Ok(Decoded::AuctionCreated(AddressChangedDecoded {
+            id_address: msg_info.tx_data.get_account().into(),
+            new_address: self.value0.auction_subject.to_string().into(),
+            timestamp: 0,
+        }))
+    }
+}
+
+impl Decode for AuctionActive {
+    fn decode(&self, msg_info: &EventMessageInfo) -> Result<Decoded> {
+        let auction = AuctionActiveDecoded {
+            address: msg_info.tx_data.get_account(),
+            nft: self.value0.auction_subject.to_string(),
+            wallet_for_bids: self.value0.wallet_for_bids.to_string(),
+            price_token: self.value0._payment_token.to_string(),
+            start_price: u128_to_bigdecimal(self.value0._price),
+            min_bid: u128_to_bigdecimal(self.value0._price),
+            created_at: self.value0.start_time,
+            finished_at: self.value0.finish_time,
+            tx_lt: msg_info.tx_data.logical_time().try_into()?,
+        };
+
+        let price_hist = NftPriceHistory {
+            source: msg_info.tx_data.get_account().into(),
+            source_type: NftPriceSource::AuctionBid,
+            created_at: NaiveDateTime::from_timestamp_opt(msg_info.tx_data.get_timestamp(), 0)
+                .unwrap_or_default(),
+            price: u128_to_bigdecimal(self.value0._price),
+            price_token: Some(self.value0._payment_token.to_string().into()),
+            nft: Some(self.value0.auction_subject.to_string().into()),
+            collection: None,
+        };
+
+        Ok(Decoded::AuctionActive((auction, price_hist)))
+    }
+}
+
+impl Decode for BidPlaced {
+    fn decode(&self, msg_info: &EventMessageInfo) -> Result<Decoded> {
+        let bid = AuctionBidDecoded {
+            address: msg_info.tx_data.get_account(),
+            bid_value: u128_to_bigdecimal(self.value),
+            next_value: u128_to_bigdecimal(self.next_bid_value),
+            buyer: self.buyer.to_string(),
+            created_at: msg_info.tx_data.get_timestamp().try_into()?,
+            tx_lt: msg_info.tx_data.logical_time(),
+        };
+
+        let price_hist = NftPriceHistory {
+            source: msg_info.tx_data.get_account().into(),
+            source_type: NftPriceSource::AuctionBid,
+            created_at: NaiveDateTime::from_timestamp_opt(msg_info.tx_data.get_timestamp(), 0)
+                .unwrap_or_default(),
+            price: u128_to_bigdecimal(self.value),
+            price_token: None,
+            nft: None,
+            collection: None,
+        };
+
+        Ok(Decoded::AuctionBidPlaced((bid, price_hist)))
+    }
+}
+
+impl Decode for BidDeclined {
+    fn decode(&self, msg_info: &EventMessageInfo) -> Result<Decoded> {
+        let bid = AuctionBidDecoded {
+            address: msg_info.tx_data.get_account(),
+            bid_value: u128_to_bigdecimal(self.value),
+            next_value: Default::default(),
+            buyer: self.buyer.to_string(),
+            created_at: msg_info.tx_data.get_timestamp().try_into()?,
+            tx_lt: msg_info.tx_data.logical_time(),
+        };
+
+        Ok(Decoded::AuctionBidDeclined(bid))
+    }
+}
+
+impl Decode for AuctionComplete {
+    fn decode(&self, msg_info: &EventMessageInfo) -> Result<Decoded> {
+        let auc = AuctionCompleteDecoded {
+            address: msg_info.tx_data.get_account(),
+            max_bid: u128_to_bigdecimal(self.value),
+        };
+
+        Ok(Decoded::AuctionComplete(auc))
+    }
+}
+
+impl Decode for AuctionCancelled {
+    fn decode(&self, msg_info: &EventMessageInfo) -> Result<Decoded> {
+        let auc = AuctionCancelledDecoded {
+            address: msg_info.tx_data.get_account(),
+        };
+
+        Ok(Decoded::AuctionCancelled(auc))
+    }
+}
 
 #[async_trait]
 impl Entity for AuctionCreated {

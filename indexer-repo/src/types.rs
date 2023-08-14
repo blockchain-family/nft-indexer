@@ -337,3 +337,55 @@ pub enum BcName {
     Everscale,
     Venom,
 }
+
+pub struct NftCreateDecoded {
+    pub address: String,
+    pub collection: String,
+    pub owner: String,
+    pub manager: String,
+    pub updated: NaiveDateTime,
+    pub owner_update_lt: i64,
+    pub manager_update_lt: i64,
+}
+
+pub struct NftBurnedDecoded {
+    pub address: String,
+    pub owner: String,
+    pub manager: String,
+}
+
+pub struct AddressChangedDecoded {
+    pub id_address: String,
+    pub new_address: String,
+    pub timestamp: i64,
+}
+
+pub struct AuctionActiveDecoded {
+    pub address: String,
+    pub nft: String,
+    pub wallet_for_bids: String,
+    pub price_token: String,
+    pub start_price: BigDecimal,
+    pub min_bid: BigDecimal,
+    pub created_at: u64,
+    pub finished_at: u64,
+    pub tx_lt: u64,
+}
+
+pub struct AuctionBidDecoded {
+    pub address: String,
+    pub bid_value: BigDecimal,
+    pub next_value: BigDecimal,
+    pub buyer: String,
+    pub created_at: u64,
+    pub tx_lt: u64,
+}
+
+pub struct AuctionCompleteDecoded {
+    pub address: String,
+    pub max_bid: BigDecimal,
+}
+
+pub struct AuctionCancelledDecoded {
+    pub address: String,
+}
