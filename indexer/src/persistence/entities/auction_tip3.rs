@@ -26,6 +26,21 @@ impl Decode for AuctionCreated {
             timestamp: 0,
         }))
     }
+
+    fn decode_event(&self, msg_info: &EventMessageInfo) -> Result<Decoded> {
+        Ok(Decoded::RawEventRecord(EventRecord {
+            event_category: EventCategory::Auction,
+            event_type: EventType::AuctionCreated,
+
+            address: msg_info.tx_data.get_account().into(),
+            created_lt: msg_info.tx_data.logical_time() as i64,
+            created_at: msg_info.tx_data.get_timestamp(),
+            message_hash: msg_info.message_hash.to_string(),
+            nft: Some(self.value0.auction_subject.to_string().into()),
+            collection: None,
+            raw_data: serde_json::to_value(self).unwrap_or_default(),
+        }))
+    }
 }
 
 impl Decode for AuctionActive {
@@ -55,6 +70,21 @@ impl Decode for AuctionActive {
 
         Ok(Decoded::AuctionActive((auction, price_hist)))
     }
+
+    fn decode_event(&self, msg_info: &EventMessageInfo) -> Result<Decoded> {
+        Ok(Decoded::RawEventRecord(EventRecord {
+            event_category: EventCategory::Auction,
+            event_type: EventType::AuctionActive,
+
+            address: msg_info.tx_data.get_account().into(),
+            created_lt: msg_info.tx_data.logical_time() as i64,
+            created_at: msg_info.tx_data.get_timestamp(),
+            message_hash: msg_info.message_hash.to_string(),
+            nft: Some(self.value0.auction_subject.to_string().into()),
+            collection: None,
+            raw_data: serde_json::to_value(self).unwrap_or_default(),
+        }))
+    }
 }
 
 impl Decode for BidPlaced {
@@ -82,6 +112,22 @@ impl Decode for BidPlaced {
 
         Ok(Decoded::AuctionBidPlaced((bid, price_hist)))
     }
+
+    fn decode_event(&self, msg_info: &EventMessageInfo) -> Result<Decoded> {
+        Ok(Decoded::RawEventRecord(EventRecord {
+            event_category: EventCategory::Auction,
+            event_type: EventType::AuctionBidPlaced,
+
+            address: msg_info.tx_data.get_account().into(),
+            created_lt: msg_info.tx_data.logical_time() as i64,
+            created_at: msg_info.tx_data.get_timestamp(),
+            message_hash: msg_info.message_hash.to_string(),
+            nft: None,
+            collection: None,
+
+            raw_data: serde_json::to_value(self).unwrap_or_default(),
+        }))
+    }
 }
 
 impl Decode for BidDeclined {
@@ -98,6 +144,22 @@ impl Decode for BidDeclined {
 
         Ok(Decoded::AuctionBidDeclined(bid))
     }
+
+    fn decode_event(&self, msg_info: &EventMessageInfo) -> Result<Decoded> {
+        Ok(Decoded::RawEventRecord(EventRecord {
+            event_category: EventCategory::Auction,
+            event_type: EventType::AuctionBidDeclined,
+
+            address: msg_info.tx_data.get_account().into(),
+            created_lt: msg_info.tx_data.logical_time() as i64,
+            created_at: msg_info.tx_data.get_timestamp(),
+            message_hash: msg_info.message_hash.to_string(),
+            nft: None,
+            collection: None,
+
+            raw_data: serde_json::to_value(self).unwrap_or_default(),
+        }))
+    }
 }
 
 impl Decode for AuctionComplete {
@@ -109,6 +171,22 @@ impl Decode for AuctionComplete {
 
         Ok(Decoded::AuctionComplete(auc))
     }
+
+    fn decode_event(&self, msg_info: &EventMessageInfo) -> Result<Decoded> {
+        Ok(Decoded::RawEventRecord(EventRecord {
+            event_category: EventCategory::Auction,
+            event_type: EventType::AuctionComplete,
+
+            address: msg_info.tx_data.get_account().into(),
+            created_lt: msg_info.tx_data.logical_time() as i64,
+            created_at: msg_info.tx_data.get_timestamp(),
+            message_hash: msg_info.message_hash.to_string(),
+            nft: None,
+            collection: None,
+
+            raw_data: serde_json::to_value(self).unwrap_or_default(),
+        }))
+    }
 }
 
 impl Decode for AuctionCancelled {
@@ -118,6 +196,22 @@ impl Decode for AuctionCancelled {
         };
 
         Ok(Decoded::AuctionCancelled(auc))
+    }
+
+    fn decode_event(&self, msg_info: &EventMessageInfo) -> Result<Decoded> {
+        Ok(Decoded::RawEventRecord(EventRecord {
+            event_category: EventCategory::Auction,
+            event_type: EventType::AuctionCancelled,
+
+            address: msg_info.tx_data.get_account().into(),
+            created_lt: msg_info.tx_data.logical_time() as i64,
+            created_at: msg_info.tx_data.get_timestamp(),
+            message_hash: msg_info.message_hash.to_string(),
+            nft: None,
+            collection: None,
+
+            raw_data: serde_json::to_value(self).unwrap_or_default(),
+        }))
     }
 }
 

@@ -23,11 +23,42 @@ impl Decode for AuctionDeployed {
             Ok(Decoded::ShouldSkip)
         }
     }
+
+    fn decode_event(&self, msg_info: &EventMessageInfo) -> Result<Decoded> {
+        Ok(Decoded::RawEventRecord(EventRecord {
+            event_category: EventCategory::Auction,
+            event_type: EventType::AuctionDeployed,
+            address: msg_info.tx_data.get_account().into(),
+            created_lt: msg_info.tx_data.logical_time() as i64,
+            created_at: msg_info.tx_data.get_timestamp(),
+            message_hash: msg_info.message_hash.to_string(),
+            nft: Some(self.offer_info.nft.to_string().into()),
+            collection: Some(self.offer_info.collection.to_string().into()),
+
+            raw_data: serde_json::to_value(self).unwrap_or_default(),
+        }))
+    }
 }
 
 impl Decode for AuctionDeclined {
     fn decode(&self, msg_info: &EventMessageInfo) -> Result<Decoded> {
         Ok(Decoded::ShouldSkip)
+    }
+
+    fn decode_event(&self, msg_info: &EventMessageInfo) -> Result<Decoded> {
+        Ok(Decoded::RawEventRecord(EventRecord {
+            event_category: EventCategory::Auction,
+            event_type: EventType::AuctionDeclined,
+
+            address: msg_info.tx_data.get_account().into(),
+            created_lt: msg_info.tx_data.logical_time() as i64,
+            created_at: msg_info.tx_data.get_timestamp(),
+            message_hash: msg_info.message_hash.to_string(),
+            nft: Some(self.nft.to_string().into()),
+            collection: None,
+
+            raw_data: serde_json::to_value(self).unwrap_or_default(),
+        }))
     }
 }
 

@@ -23,4 +23,5 @@ pub trait Entity: Sync + Send {
 
 pub trait Decode {
     fn decode(&self, msg_info: &EventMessageInfo) -> Result<Decoded>;
+    fn decode_event(&self, msg_info: &EventMessageInfo) -> Result<Decoded>;
 }

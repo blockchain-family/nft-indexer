@@ -1,0 +1,37 @@
+database_url="postgresql://postgres:pass@127.0.0.1:5432/nft-indexer"
+database_max_connections=5
+kafka_consumer_group="temp-test-local-rf-nft-indexer"
+kafka_topic="everscale-transactions"
+
+# List of endpoints, comma separated
+# states_rpc_endpoints=["https://jrpc.everwallet.net/rpc"]
+states_rpc_endpoints=["https://jrpc-testnet.venom.foundation/rpc"]
+
+jrpc_req_latency_millis=1000
+
+bc_name = "Venom"
+idle_after_price_loop_sec = 100
+idle_after_meta_loop_sec = 100
+
+# Start streaming from beginning
+reset=false
+
+trusted_auction_roots=["0:f969852da5b1b42b165aa5d84db39953fdcace380eb4e7eb4fc4777aafd9393d"] # addresses of AuctionRootTip3, comma separated
+trusted_direct_buy_factories=["0:7aedf6beaf1dfa1684fe47f244abbc5a8da35c4cc531529656721f46c5a1d3f5"] # addresses of FactoryDirectBuy, comma separated
+trusted_direct_sell_factories=["0:302bc2690998c0c9633526e28b37501b1532a82060491e803d6dcdb8933b504f"] # addresses of FactoryDirectSell, comma separated
+
+
+server_api_url="127.0.0.1:3080"
+# Add if necessary
+
+[kafka_settings]
+bootstrap_servers="kafka-1.bf.rocks,kafka-2.bf.rocks,kafka-3.bf.rocks"
+security_protocol="SASL_SSL"
+sasl_username="everread"
+sasl_password="v53uionburweOUUN4VH24I3WBOENSTPISJG"
+sasl_mechanism="SCRAM-SHA-512"
+ssl_key_password=""
+ssl_keystore_location="/Users/rf/Documents/projects/bfam/kafka_cred/kafka_broker.keystore.jks"
+ssl_keystore_password="confluentkeystorestorepass"
+ssl_ca_location="/Users/rf/Documents/projects/bfam/kafka_cred/ca.crt"
+

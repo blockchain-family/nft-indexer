@@ -21,6 +21,21 @@ impl Decode for OwnerChanged {
 
         Ok(Decoded::OwnerChangedNft(nft_new_owner))
     }
+
+    fn decode_event(&self, msg_info: &EventMessageInfo) -> Result<Decoded> {
+        Ok(Decoded::RawEventRecord(EventRecord {
+            event_category: EventCategory::Nft,
+            event_type: EventType::NftOwnerChanged,
+
+            address: msg_info.tx_data.get_account().into(),
+            created_lt: msg_info.tx_data.logical_time() as i64,
+            created_at: msg_info.tx_data.get_timestamp(),
+            message_hash: msg_info.message_hash.to_string(),
+            nft: Some(msg_info.tx_data.get_account().into()),
+            collection: None,
+            raw_data: serde_json::to_value(self).unwrap_or_default(),
+        }))
+    }
 }
 
 impl Decode for ManagerChanged {
@@ -32,6 +47,21 @@ impl Decode for ManagerChanged {
         };
 
         Ok(Decoded::ManagerChangedNft(nft_new_manager))
+    }
+
+    fn decode_event(&self, msg_info: &EventMessageInfo) -> Result<Decoded> {
+        Ok(Decoded::RawEventRecord(EventRecord {
+            event_category: EventCategory::Nft,
+            event_type: EventType::NftManagerChanged,
+
+            address: msg_info.tx_data.get_account().into(),
+            created_lt: msg_info.tx_data.logical_time() as i64,
+            created_at: msg_info.tx_data.get_timestamp(),
+            message_hash: msg_info.message_hash.to_string(),
+            nft: Some(msg_info.tx_data.get_account().into()),
+            collection: None,
+            raw_data: serde_json::to_value(self).unwrap_or_default(),
+        }))
     }
 }
 

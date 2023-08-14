@@ -120,6 +120,89 @@
     },
     "query": "\n        select \n            count(distinct owner) as owners\n        from \n            nft\n        where \n            collection = $1\n        "
   },
+  "42b3e8687219dcffe6d1e8d8d3aa1d80560628e87517c2a7d786da80f0a3f414": {
+    "describe": {
+      "columns": [],
+      "nullable": [],
+      "parameters": {
+        "Left": [
+          {
+            "Custom": {
+              "kind": {
+                "Array": {
+                  "Custom": {
+                    "kind": {
+                      "Enum": [
+                        "auction",
+                        "direct_buy",
+                        "direct_sell",
+                        "nft",
+                        "collection",
+                        "common"
+                      ]
+                    },
+                    "name": "event_category"
+                  }
+                }
+              },
+              "name": "_event_category"
+            }
+          },
+          {
+            "Custom": {
+              "kind": {
+                "Array": {
+                  "Custom": {
+                    "kind": {
+                      "Enum": [
+                        "auction_deployed",
+                        "auction_created",
+                        "auction_root_ownership_transferred",
+                        "auction_active",
+                        "auction_declined",
+                        "auction_bid_placed",
+                        "auction_bid_declined",
+                        "auction_cancelled",
+                        "auction_complete",
+                        "direct_buy_deployed",
+                        "direct_buy_declined",
+                        "factory_direct_buy_ownership_transferred",
+                        "direct_buy_state_changed",
+                        "direct_sell_deployed",
+                        "direct_sell_declined",
+                        "factory_direct_sell_ownership_transferred",
+                        "direct_sell_state_changed",
+                        "nft_owner_changed",
+                        "nft_manager_changed",
+                        "collection_ownership_transferred",
+                        "nft_created",
+                        "nft_burned",
+                        "market_fee_default_changed",
+                        "market_fee_changed",
+                        "add_collection_rules",
+                        "remove_collection_rules",
+                        "ownership_transferred"
+                      ]
+                    },
+                    "name": "event_type"
+                  }
+                }
+              },
+              "name": "_event_type"
+            }
+          },
+          "VarcharArray",
+          "VarcharArray",
+          "VarcharArray",
+          "Int8Array",
+          "Int8Array",
+          "JsonbArray",
+          "TextArray"
+        ]
+      }
+    },
+    "query": "\n            insert into nft_events (\n                event_cat,  \n                event_type, \n                address, \n                nft,\n                collection, \n                created_lt,\n                created_at, \n                args, \n                message_hash\n            )\n\n            select * \n            from unnest(\n                $1::event_category[], \n                $2::event_type[], \n                $3::varchar[], \n                $4::varchar[], \n                $5::varchar[],\n                $6::bigint[], \n                $7::bigint[],\n                $8::jsonb[],\n                $9::text[]\n            )\n            on conflict(message_hash) do nothing\n        "
+  },
   "5a254f39cdadfa8c4af29faaf92e64800cb9320c690bb4ac6407cd15592bd472": {
     "describe": {
       "columns": [],

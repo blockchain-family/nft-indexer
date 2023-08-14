@@ -11,7 +11,7 @@ pub struct Address(pub String);
 #[sqlx(type_name = "t_uri")]
 pub struct Uri(pub String);
 
-#[derive(Clone, Debug, Serialize, sqlx::Type)]
+#[derive(Copy, Clone, Debug, Serialize, sqlx::Type)]
 #[sqlx(type_name = "event_type", rename_all = "snake_case")]
 pub enum EventType {
     AuctionDeployed,
@@ -45,7 +45,13 @@ pub enum EventType {
     OwnershipTransferred,
 }
 
-#[derive(Clone, Debug, Serialize, sqlx::Type)]
+impl sqlx::postgres::PgHasArrayType for EventType {
+    fn array_type_info() -> sqlx::postgres::PgTypeInfo {
+        sqlx::postgres::PgTypeInfo::with_name("_event_type")
+    }
+}
+
+#[derive(Copy, Clone, Debug, Serialize, sqlx::Type)]
 #[sqlx(type_name = "event_category", rename_all = "snake_case")]
 pub enum EventCategory {
     Auction,
@@ -54,6 +60,12 @@ pub enum EventCategory {
     Nft,
     Collection,
     Common,
+}
+
+impl sqlx::postgres::PgHasArrayType for EventCategory {
+    fn array_type_info() -> sqlx::postgres::PgTypeInfo {
+        sqlx::postgres::PgTypeInfo::with_name("_event_category")
+    }
 }
 
 #[derive(Clone, Debug, Serialize, sqlx::Type)]
