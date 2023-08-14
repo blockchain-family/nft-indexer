@@ -408,3 +408,9 @@ pub struct AuctionCompleteDecoded {
 pub struct AuctionCancelledDecoded {
     pub address: String,
 }
+
+pub struct CollectionFeeDecoded {
+    pub address: String,
+    pub numerator: Option<i32>,
+    pub denominator: Option<i32>,
+}

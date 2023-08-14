@@ -1,6 +1,7 @@
 use std::collections::HashMap;
 
 use anyhow::{anyhow, Result};
+use chrono::NaiveDateTime;
 use sqlx::PgPool;
 
 use crate::types::AddressChangedDecoded;
@@ -20,26 +21,31 @@ pub async fn save_nft_manager_changed(
 
     let mut addresses = Vec::with_capacity(last_addresses.keys().len());
     let mut new_managers = Vec::with_capacity(last_addresses.keys().len());
+    let mut timestamps = Vec::with_capacity(last_addresses.keys().len());
 
     for val in last_addresses.values() {
         addresses.push(val.id_address.as_str());
         new_managers.push(val.new_address.as_str());
+        timestamps.push(NaiveDateTime::from_timestamp_opt(val.timestamp, 0).unwrap_or_default());
     }
 
     sqlx::query!(
         r#"
         update nft set
-            manager = data.manager
+            manager = data.manager,
+            updated = data.time
         from
         (
             select 
                 unnest($1::varchar[]) as address,
-                unnest($2::varchar[]) as manager
+                unnest($2::varchar[]) as manager,
+                unnest($3::timestamp[]) as time
         ) as data
         where nft.address = data.address
     "#,
         addresses as _,
         new_managers as _,
+        timestamps as _,
     )
     .execute(pool)
     .await

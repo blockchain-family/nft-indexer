@@ -8,7 +8,7 @@ use futures::{future, SinkExt, StreamExt};
 use indexer_repo::batch::{
     save_auc_acitve, save_auc_bid, save_auc_cancelled, save_auc_complete, save_nft_burned,
     save_nft_created, save_nft_manager_changed, save_nft_owner_changed, save_price_history,
-    save_raw_event, save_whitelist_address, update_auc_maxmin,
+    save_raw_event, save_whitelist_address, update_auc_maxmin, update_collection_fee,
 };
 use indexer_repo::types::{
     AddressChangedDecoded, AuctionActiveDecoded, NftBurnedDecoded, NftCreateDecoded,
@@ -153,6 +153,7 @@ async fn save_to_db(pool: &PgPool, data: Vec<Decoded>) -> Result<()> {
     let mut auc_complete = Vec::with_capacity(EVENTS_PER_ITERATION);
     let mut auc_cancelled = Vec::with_capacity(EVENTS_PER_ITERATION);
     let mut raw_events = Vec::with_capacity(EVENTS_PER_ITERATION);
+    let mut auc_rules = Vec::with_capacity(EVENTS_PER_ITERATION);
 
     for element in data {
         match element {
@@ -190,6 +191,9 @@ async fn save_to_db(pool: &PgPool, data: Vec<Decoded>) -> Result<()> {
             }
             Decoded::RawEventRecord(e) => {
                 raw_events.push(e);
+            }
+            Decoded::AuctionRulesChanged(rules) => {
+                auc_rules.push(rules);
             }
         }
     }
@@ -241,6 +245,9 @@ async fn save_to_db(pool: &PgPool, data: Vec<Decoded>) -> Result<()> {
     }
     if !auc_cancelled.is_empty() {
         save_auc_cancelled(&pool, &auc_cancelled[..]).await?;
+    }
+    if !auc_rules.is_empty() {
+        update_collection_fee(&pool, auc_rules).await?;
     }
 
     Ok(())

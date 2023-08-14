@@ -325,6 +325,20 @@
     },
     "query": "\n                update nft\n                set name = $1,\n                    description = $2\n                where address = $3\n            "
   },
+  "72fd506d9ae7f62408d15cf50ef9a3709d6770ad7ca6b3aef30263ae929ebd41": {
+    "describe": {
+      "columns": [],
+      "nullable": [],
+      "parameters": {
+        "Left": [
+          "VarcharArray",
+          "Int4Array",
+          "Int4Array"
+        ]
+      }
+    },
+    "query": "\n        update nft_collection set\n            fee_numerator   = data.num, \n            fee_denominator = data.den\n        from\n        (\n            select \n                unnest($1::varchar[]) as address,\n                unnest($2::integer[]) as num,\n                unnest($3::integer[]) as den\n        ) as data\n        where nft_collection.address = data.address\n    "
+  },
   "735e0a811723e09c9a25be89683cce5b9de9f0463a33ab6760675277318235c9": {
     "describe": {
       "columns": [],
@@ -1167,19 +1181,6 @@
     },
     "query": "\n        update \n            nft_price_history as nph\n        set \n            price_token = coalesce(nph.price_token, $2), \n            nft         = coalesce(nph.nft, $3), \n            collection  = coalesce(nph.collection, $4)\n        where source = $1\n        "
   },
-  "ec32b53c7f5bb406eb8a722b38f53f9f640fc9fbff71e368c374c0a99796e05c": {
-    "describe": {
-      "columns": [],
-      "nullable": [],
-      "parameters": {
-        "Left": [
-          "VarcharArray",
-          "VarcharArray"
-        ]
-      }
-    },
-    "query": "\n        update nft set\n            manager = data.manager\n        from\n        (\n            select \n                unnest($1::varchar[]) as address,\n                unnest($2::varchar[]) as manager\n        ) as data\n        where nft.address = data.address\n    "
-  },
   "eea4dd6ea15b71a4325cf0a7ffd2d5f0f5b76c30bbd43efc3833294e178d9850": {
     "describe": {
       "columns": [],
@@ -1453,5 +1454,19 @@
       }
     },
     "query": "\n                select \n                    n.address,\n                    n.collection\n                from nft n\n                left join meta_handled_addresses mha on mha.address = n.address\n                where \n                    (mha.address is null) or\n                    (extract(epoch from now()) - mha.updated_at > $2 and failed is true)\n                limit $1\n            "
+  },
+  "fe6605371497cf9f59c6633361e1214b02d7eaa876274bdae69495cecaf96215": {
+    "describe": {
+      "columns": [],
+      "nullable": [],
+      "parameters": {
+        "Left": [
+          "VarcharArray",
+          "VarcharArray",
+          "TimestampArray"
+        ]
+      }
+    },
+    "query": "\n        update nft set\n            manager = data.manager,\n            updated = data.time\n        from\n        (\n            select \n                unnest($1::varchar[]) as address,\n                unnest($2::varchar[]) as manager,\n                unnest($3::timestamp[]) as time\n        ) as data\n        where nft.address = data.address\n    "
   }
 }

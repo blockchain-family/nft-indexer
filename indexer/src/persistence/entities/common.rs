@@ -1,6 +1,6 @@
 use anyhow::Result;
 use async_trait::async_trait;
-use indexer_repo::types::{EventCategory, EventRecord, EventType};
+use indexer_repo::types::{CollectionFeeDecoded, EventCategory, EventRecord, EventType};
 use sqlx::PgPool;
 
 use crate::{
@@ -11,7 +11,124 @@ use crate::{
     utils::{EventMessageInfo, KeyInfo},
 };
 
-use super::Entity;
+use super::{Decode, Decoded, Entity};
+
+impl Decode for OwnershipTransferred {
+    fn decode(&self, _: &EventMessageInfo) -> Result<Decoded> {
+        Ok(Decoded::ShouldSkip)
+    }
+
+    fn decode_event(&self, msg_info: &EventMessageInfo) -> Result<Decoded> {
+        Ok(Decoded::RawEventRecord(EventRecord {
+            event_category: EventCategory::Common,
+            event_type: EventType::OwnershipTransferred,
+
+            address: msg_info.tx_data.get_account().into(),
+            created_lt: msg_info.tx_data.logical_time() as i64,
+            created_at: msg_info.tx_data.get_timestamp(),
+            message_hash: msg_info.message_hash.to_string(),
+            nft: None,
+            collection: None,
+
+            raw_data: serde_json::to_value(self).unwrap_or_default(),
+        }))
+    }
+}
+
+impl Decode for MarketFeeDefaultChanged {
+    fn decode_event(&self, msg_info: &EventMessageInfo) -> Result<Decoded> {
+        Ok(Decoded::RawEventRecord(EventRecord {
+            event_category: EventCategory::Collection,
+            event_type: EventType::MarketFeeDefaultChanged,
+
+            address: msg_info.tx_data.get_account().into(),
+            created_lt: msg_info.tx_data.logical_time() as i64,
+            created_at: msg_info.tx_data.get_timestamp(),
+            message_hash: msg_info.message_hash.to_string(),
+            nft: None,
+            collection: None,
+
+            raw_data: serde_json::to_value(self).unwrap_or_default(),
+        }))
+    }
+    fn decode(&self, _: &EventMessageInfo) -> Result<Decoded> {
+        Ok(Decoded::ShouldSkip)
+    }
+}
+
+impl Decode for MarketFeeChanged {
+    fn decode(&self, _: &EventMessageInfo) -> Result<Decoded> {
+        Ok(Decoded::ShouldSkip)
+    }
+
+    fn decode_event(&self, msg_info: &EventMessageInfo) -> Result<Decoded> {
+        Ok(Decoded::RawEventRecord(EventRecord {
+            event_category: EventCategory::Collection,
+            event_type: EventType::MarketFeeChanged,
+
+            address: msg_info.tx_data.get_account().into(),
+            created_lt: msg_info.tx_data.logical_time() as i64,
+            created_at: msg_info.tx_data.get_timestamp(),
+            message_hash: msg_info.message_hash.to_string(),
+            nft: None,
+            collection: None,
+
+            raw_data: serde_json::to_value(self).unwrap_or_default(),
+        }))
+    }
+}
+
+impl Decode for AddCollectionRules {
+    fn decode_event(&self, msg_info: &EventMessageInfo) -> Result<Decoded> {
+        Ok(Decoded::RawEventRecord(EventRecord {
+            event_category: EventCategory::Collection,
+            event_type: EventType::AddCollectionRules,
+
+            address: msg_info.tx_data.get_account().into(),
+            created_lt: msg_info.tx_data.logical_time() as i64,
+            created_at: msg_info.tx_data.get_timestamp(),
+            message_hash: msg_info.message_hash.to_string(),
+            nft: None,
+            collection: Some(self.collection.to_string().into()),
+
+            raw_data: serde_json::to_value(self).unwrap_or_default(),
+        }))
+    }
+
+    fn decode(&self, _: &EventMessageInfo) -> Result<Decoded> {
+        Ok(Decoded::AuctionRulesChanged(CollectionFeeDecoded {
+            address: self.collection.to_string(),
+            numerator: Some(self.collection_fee_info.numerator.try_into()?),
+            denominator: Some(self.collection_fee_info.denominator.try_into()?),
+        }))
+    }
+}
+
+impl Decode for RemoveCollectionRules {
+    fn decode(&self, _: &EventMessageInfo) -> Result<Decoded> {
+        Ok(Decoded::AuctionRulesChanged(CollectionFeeDecoded {
+            address: self.collection.to_string(),
+            numerator: None,
+            denominator: None,
+        }))
+    }
+
+    fn decode_event(&self, msg_info: &EventMessageInfo) -> Result<Decoded> {
+        Ok(Decoded::RawEventRecord(EventRecord {
+            event_category: EventCategory::Collection,
+            event_type: EventType::RemoveCollectionRules,
+
+            address: msg_info.tx_data.get_account().into(),
+            created_lt: msg_info.tx_data.logical_time() as i64,
+            created_at: msg_info.tx_data.get_timestamp(),
+            message_hash: msg_info.message_hash.to_string(),
+            nft: None,
+            collection: Some(self.collection.to_string().into()),
+
+            raw_data: serde_json::to_value(self).unwrap_or_default(),
+        }))
+    }
+}
 
 #[async_trait]
 impl Entity for OwnershipTransferred {
