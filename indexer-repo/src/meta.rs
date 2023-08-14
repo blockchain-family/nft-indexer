@@ -2,7 +2,7 @@ use anyhow::{anyhow, Result};
 use chrono::NaiveDateTime;
 use sqlx::{PgPool, Postgres, Transaction};
 
-use crate::types::NftCollection;
+use crate::types::NftCollectionMeta;
 
 #[derive(Clone)]
 pub struct MetadataModelService {
@@ -240,8 +240,8 @@ impl<'a> MetadataModelTransaction<'a> {
         .map_err(|e| anyhow!(e))
     }
 
-    pub async fn update_collection(&mut self, collection: &NftCollection) -> Result<()> {
-        crate::actions::upsert_collection(collection, &mut self.tx, None)
+    pub async fn update_collection(&mut self, collection: &NftCollectionMeta) -> Result<()> {
+        crate::actions::update_collection_meta(collection, &mut self.tx)
             .await
             .map(|_| ())
             .map_err(|e| anyhow!(e))

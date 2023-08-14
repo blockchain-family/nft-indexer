@@ -226,17 +226,14 @@ pub struct NftMeta {
 }
 
 #[derive(Default, Clone, Debug)]
-pub struct NftCollection {
+pub struct NftCollectionMeta {
     pub address: Address,
     pub owner: Address,
     pub name: Option<String>,
     pub description: Option<String>,
-    pub created: NaiveDateTime,
     pub updated: NaiveDateTime,
     pub logo: Option<Uri>,
     pub wallpaper: Option<Uri>,
-    pub total_price: BigDecimal,
-    pub max_price: BigDecimal,
 }
 
 #[derive(Default, Clone, Debug)]

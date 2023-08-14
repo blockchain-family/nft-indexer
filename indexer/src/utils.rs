@@ -32,7 +32,7 @@ impl KeyInfo for ton_block::Transaction {
     }
 }
 
-pub struct EventMessageInfo {
+pub struct DecodeContext {
     pub tx_data: ton_block::Transaction,
     pub function_inputs: Vec<ton_abi::Token>,
     pub message_hash: UInt256,

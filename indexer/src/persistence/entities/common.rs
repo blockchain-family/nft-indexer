@@ -8,25 +8,25 @@ use crate::{
         AddCollectionRules, MarketFeeChanged, MarketFeeDefaultChanged, OwnershipTransferred,
         RemoveCollectionRules,
     },
-    utils::{EventMessageInfo, KeyInfo},
+    utils::{DecodeContext, KeyInfo},
 };
 
 use super::{Decode, Decoded, Entity};
 
 impl Decode for OwnershipTransferred {
-    fn decode(&self, _: &EventMessageInfo) -> Result<Decoded> {
+    fn decode(&self, _: &DecodeContext) -> Result<Decoded> {
         Ok(Decoded::ShouldSkip)
     }
 
-    fn decode_event(&self, msg_info: &EventMessageInfo) -> Result<Decoded> {
+    fn decode_event(&self, ctx: &DecodeContext) -> Result<Decoded> {
         Ok(Decoded::RawEventRecord(EventRecord {
             event_category: EventCategory::Common,
             event_type: EventType::OwnershipTransferred,
 
-            address: msg_info.tx_data.get_account().into(),
-            created_lt: msg_info.tx_data.logical_time() as i64,
-            created_at: msg_info.tx_data.get_timestamp(),
-            message_hash: msg_info.message_hash.to_string(),
+            address: ctx.tx_data.get_account().into(),
+            created_lt: ctx.tx_data.logical_time() as i64,
+            created_at: ctx.tx_data.get_timestamp(),
+            message_hash: ctx.message_hash.to_string(),
             nft: None,
             collection: None,
 
@@ -36,19 +36,19 @@ impl Decode for OwnershipTransferred {
 }
 
 impl Decode for MarketFeeDefaultChanged {
-    fn decode(&self, _: &EventMessageInfo) -> Result<Decoded> {
+    fn decode(&self, _: &DecodeContext) -> Result<Decoded> {
         Ok(Decoded::ShouldSkip)
     }
 
-    fn decode_event(&self, msg_info: &EventMessageInfo) -> Result<Decoded> {
+    fn decode_event(&self, ctx: &DecodeContext) -> Result<Decoded> {
         Ok(Decoded::RawEventRecord(EventRecord {
             event_category: EventCategory::Collection,
             event_type: EventType::MarketFeeDefaultChanged,
 
-            address: msg_info.tx_data.get_account().into(),
-            created_lt: msg_info.tx_data.logical_time() as i64,
-            created_at: msg_info.tx_data.get_timestamp(),
-            message_hash: msg_info.message_hash.to_string(),
+            address: ctx.tx_data.get_account().into(),
+            created_lt: ctx.tx_data.logical_time() as i64,
+            created_at: ctx.tx_data.get_timestamp(),
+            message_hash: ctx.message_hash.to_string(),
             nft: None,
             collection: None,
 
@@ -58,11 +58,11 @@ impl Decode for MarketFeeDefaultChanged {
 }
 
 impl Decode for MarketFeeChanged {
-    fn decode(&self, _: &EventMessageInfo) -> Result<Decoded> {
+    fn decode(&self, _: &DecodeContext) -> Result<Decoded> {
         Ok(Decoded::ShouldSkip)
     }
 
-    fn decode_event(&self, msg_info: &EventMessageInfo) -> Result<Decoded> {
+    fn decode_event(&self, msg_info: &DecodeContext) -> Result<Decoded> {
         Ok(Decoded::RawEventRecord(EventRecord {
             event_category: EventCategory::Collection,
             event_type: EventType::MarketFeeChanged,
@@ -80,7 +80,7 @@ impl Decode for MarketFeeChanged {
 }
 
 impl Decode for AddCollectionRules {
-    fn decode(&self, _: &EventMessageInfo) -> Result<Decoded> {
+    fn decode(&self, _: &DecodeContext) -> Result<Decoded> {
         Ok(Decoded::AuctionRulesChanged(CollectionFeeDecoded {
             address: self.collection.to_string(),
             numerator: Some(self.collection_fee_info.numerator.try_into()?),
@@ -88,7 +88,7 @@ impl Decode for AddCollectionRules {
         }))
     }
 
-    fn decode_event(&self, msg_info: &EventMessageInfo) -> Result<Decoded> {
+    fn decode_event(&self, msg_info: &DecodeContext) -> Result<Decoded> {
         Ok(Decoded::RawEventRecord(EventRecord {
             event_category: EventCategory::Collection,
             event_type: EventType::AddCollectionRules,
@@ -106,7 +106,7 @@ impl Decode for AddCollectionRules {
 }
 
 impl Decode for RemoveCollectionRules {
-    fn decode(&self, _: &EventMessageInfo) -> Result<Decoded> {
+    fn decode(&self, _: &DecodeContext) -> Result<Decoded> {
         Ok(Decoded::AuctionRulesChanged(CollectionFeeDecoded {
             address: self.collection.to_string(),
             numerator: None,
@@ -114,7 +114,7 @@ impl Decode for RemoveCollectionRules {
         }))
     }
 
-    fn decode_event(&self, msg_info: &EventMessageInfo) -> Result<Decoded> {
+    fn decode_event(&self, msg_info: &DecodeContext) -> Result<Decoded> {
         Ok(Decoded::RawEventRecord(EventRecord {
             event_category: EventCategory::Collection,
             event_type: EventType::RemoveCollectionRules,
@@ -133,7 +133,7 @@ impl Decode for RemoveCollectionRules {
 
 #[async_trait]
 impl Entity for OwnershipTransferred {
-    async fn save_to_db(&self, pg_pool: &PgPool, msg_info: &EventMessageInfo) -> Result<()> {
+    async fn save_to_db(&self, pg_pool: &PgPool, msg_info: &DecodeContext) -> Result<()> {
         let mut pg_pool_tx = pg_pool.begin().await?;
 
         let event_record = EventRecord {
@@ -166,7 +166,7 @@ impl Entity for OwnershipTransferred {
 
 #[async_trait]
 impl Entity for MarketFeeDefaultChanged {
-    async fn save_to_db(&self, pg_pool: &PgPool, msg_info: &EventMessageInfo) -> Result<()> {
+    async fn save_to_db(&self, pg_pool: &PgPool, msg_info: &DecodeContext) -> Result<()> {
         let mut pg_pool_tx = pg_pool.begin().await?;
 
         let event_record = EventRecord {
@@ -199,7 +199,7 @@ impl Entity for MarketFeeDefaultChanged {
 
 #[async_trait]
 impl Entity for MarketFeeChanged {
-    async fn save_to_db(&self, pg_pool: &PgPool, msg_info: &EventMessageInfo) -> Result<()> {
+    async fn save_to_db(&self, pg_pool: &PgPool, msg_info: &DecodeContext) -> Result<()> {
         let mut pg_pool_tx = pg_pool.begin().await?;
 
         let event_record = EventRecord {
@@ -232,7 +232,7 @@ impl Entity for MarketFeeChanged {
 
 #[async_trait]
 impl Entity for AddCollectionRules {
-    async fn save_to_db(&self, pg_pool: &PgPool, msg_info: &EventMessageInfo) -> Result<()> {
+    async fn save_to_db(&self, pg_pool: &PgPool, msg_info: &DecodeContext) -> Result<()> {
         let mut pg_pool_tx = pg_pool.begin().await?;
 
         let event_record = EventRecord {
@@ -273,7 +273,7 @@ impl Entity for AddCollectionRules {
 
 #[async_trait]
 impl Entity for RemoveCollectionRules {
-    async fn save_to_db(&self, pg_pool: &PgPool, msg_info: &EventMessageInfo) -> Result<()> {
+    async fn save_to_db(&self, pg_pool: &PgPool, msg_info: &DecodeContext) -> Result<()> {
         let mut pg_pool_tx = pg_pool.begin().await?;
 
         let event_record = EventRecord {

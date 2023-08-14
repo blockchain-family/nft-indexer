@@ -6,14 +6,14 @@ use sqlx::PgPool;
 use crate::{
     models::events::{AuctionDeclined, AuctionDeployed},
     settings::whitelist::{OfferRootType, TRUSTED_ADDRESSES},
-    utils::{EventMessageInfo, KeyInfo},
+    utils::{DecodeContext, KeyInfo},
 };
 
 use super::{Decode, Decoded, Entity};
 
 impl Decode for AuctionDeployed {
-    fn decode(&self, msg_info: &EventMessageInfo) -> Result<Decoded> {
-        let emitter_address: Address = msg_info.tx_data.get_account().into();
+    fn decode(&self, ctx: &DecodeContext) -> Result<Decoded> {
+        let emitter_address: Address = ctx.tx_data.get_account().into();
 
         if TRUSTED_ADDRESSES.get().unwrap()[&OfferRootType::AuctionRoot]
             .contains(&emitter_address.0)
@@ -24,14 +24,14 @@ impl Decode for AuctionDeployed {
         }
     }
 
-    fn decode_event(&self, msg_info: &EventMessageInfo) -> Result<Decoded> {
+    fn decode_event(&self, ctx: &DecodeContext) -> Result<Decoded> {
         Ok(Decoded::RawEventRecord(EventRecord {
             event_category: EventCategory::Auction,
             event_type: EventType::AuctionDeployed,
-            address: msg_info.tx_data.get_account().into(),
-            created_lt: msg_info.tx_data.logical_time() as i64,
-            created_at: msg_info.tx_data.get_timestamp(),
-            message_hash: msg_info.message_hash.to_string(),
+            address: ctx.tx_data.get_account().into(),
+            created_lt: ctx.tx_data.logical_time() as i64,
+            created_at: ctx.tx_data.get_timestamp(),
+            message_hash: ctx.message_hash.to_string(),
             nft: Some(self.offer_info.nft.to_string().into()),
             collection: Some(self.offer_info.collection.to_string().into()),
 
@@ -41,19 +41,19 @@ impl Decode for AuctionDeployed {
 }
 
 impl Decode for AuctionDeclined {
-    fn decode(&self, _msg_info: &EventMessageInfo) -> Result<Decoded> {
+    fn decode(&self, _ctx: &DecodeContext) -> Result<Decoded> {
         Ok(Decoded::ShouldSkip)
     }
 
-    fn decode_event(&self, msg_info: &EventMessageInfo) -> Result<Decoded> {
+    fn decode_event(&self, ctx: &DecodeContext) -> Result<Decoded> {
         Ok(Decoded::RawEventRecord(EventRecord {
             event_category: EventCategory::Auction,
             event_type: EventType::AuctionDeclined,
 
-            address: msg_info.tx_data.get_account().into(),
-            created_lt: msg_info.tx_data.logical_time() as i64,
-            created_at: msg_info.tx_data.get_timestamp(),
-            message_hash: msg_info.message_hash.to_string(),
+            address: ctx.tx_data.get_account().into(),
+            created_lt: ctx.tx_data.logical_time() as i64,
+            created_at: ctx.tx_data.get_timestamp(),
+            message_hash: ctx.message_hash.to_string(),
             nft: Some(self.nft.to_string().into()),
             collection: None,
 
@@ -64,7 +64,7 @@ impl Decode for AuctionDeclined {
 
 #[async_trait]
 impl Entity for AuctionDeployed {
-    async fn save_to_db(&self, pg_pool: &PgPool, msg_info: &EventMessageInfo) -> Result<()> {
+    async fn save_to_db(&self, pg_pool: &PgPool, msg_info: &DecodeContext) -> Result<()> {
         let mut pg_pool_tx = pg_pool.begin().await?;
 
         let event_record = EventRecord {
@@ -107,7 +107,7 @@ impl Entity for AuctionDeployed {
 
 #[async_trait]
 impl Entity for AuctionDeclined {
-    async fn save_to_db(&self, pg_pool: &PgPool, msg_info: &EventMessageInfo) -> Result<()> {
+    async fn save_to_db(&self, pg_pool: &PgPool, msg_info: &DecodeContext) -> Result<()> {
         let mut pg_pool_tx = pg_pool.begin().await?;
 
         let event_record = EventRecord {

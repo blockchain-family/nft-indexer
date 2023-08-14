@@ -7,24 +7,24 @@ use crate::persistence::entities::{Decode, Decoded};
 use crate::{
     models::events::{DirectSellDeclined, DirectSellDeployed},
     settings::whitelist::{OfferRootType, TRUSTED_ADDRESSES},
-    utils::{EventMessageInfo, KeyInfo},
+    utils::{DecodeContext, KeyInfo},
 };
 
 use super::Entity;
 
 #[async_trait]
 impl Entity for DirectSellDeployed {
-    async fn save_to_db(&self, pg_pool: &PgPool, msg_info: &EventMessageInfo) -> Result<()> {
+    async fn save_to_db(&self, pg_pool: &PgPool, ctx: &DecodeContext) -> Result<()> {
         let mut pg_pool_tx = pg_pool.begin().await?;
 
         let event_record = EventRecord {
             event_category: EventCategory::DirectSell,
             event_type: EventType::DirectSellDeployed,
 
-            address: msg_info.tx_data.get_account().into(),
-            created_lt: msg_info.tx_data.logical_time() as i64,
-            created_at: msg_info.tx_data.get_timestamp(),
-            message_hash: msg_info.message_hash.to_string(),
+            address: ctx.tx_data.get_account().into(),
+            created_lt: ctx.tx_data.logical_time() as i64,
+            created_at: ctx.tx_data.get_timestamp(),
+            message_hash: ctx.message_hash.to_string(),
             nft: Some(self.nft.to_string().into()),
             collection: indexer_repo::actions::get_collection_by_nft(
                 &self.nft.to_string().into(),
@@ -60,17 +60,17 @@ impl Entity for DirectSellDeployed {
 
 #[async_trait]
 impl Entity for DirectSellDeclined {
-    async fn save_to_db(&self, pg_pool: &PgPool, msg_info: &EventMessageInfo) -> Result<()> {
+    async fn save_to_db(&self, pg_pool: &PgPool, ctx: &DecodeContext) -> Result<()> {
         let mut pg_pool_tx = pg_pool.begin().await?;
 
         let event_record = EventRecord {
             event_category: EventCategory::DirectSell,
             event_type: EventType::DirectSellDeclined,
 
-            address: msg_info.tx_data.get_account().into(),
-            created_lt: msg_info.tx_data.logical_time() as i64,
-            created_at: msg_info.tx_data.get_timestamp(),
-            message_hash: msg_info.message_hash.to_string(),
+            address: ctx.tx_data.get_account().into(),
+            created_lt: ctx.tx_data.logical_time() as i64,
+            created_at: ctx.tx_data.get_timestamp(),
+            message_hash: ctx.message_hash.to_string(),
             nft: Some(self.nft.to_string().into()),
             collection: None,
 
@@ -92,8 +92,8 @@ impl Entity for DirectSellDeclined {
 }
 
 impl Decode for DirectSellDeployed {
-    fn decode(&self, msg_info: &EventMessageInfo) -> Result<Decoded> {
-        let emitter_address: Address = msg_info.tx_data.get_account().into();
+    fn decode(&self, ctx: &DecodeContext) -> Result<Decoded> {
+        let emitter_address: Address = ctx.tx_data.get_account().into();
 
         if TRUSTED_ADDRESSES.get().unwrap()[&OfferRootType::FactoryDirectSell]
             .contains(&emitter_address.0)
@@ -104,7 +104,7 @@ impl Decode for DirectSellDeployed {
         }
     }
 
-    fn decode_event(&self, msg_info: &EventMessageInfo) -> Result<Decoded> {
+    fn decode_event(&self, msg_info: &DecodeContext) -> Result<Decoded> {
         Ok(Decoded::RawEventRecord(EventRecord {
             event_category: EventCategory::DirectSell,
             event_type: EventType::DirectSellDeployed,
@@ -121,11 +121,11 @@ impl Decode for DirectSellDeployed {
 }
 
 impl Decode for DirectSellDeclined {
-    fn decode(&self, _msg_info: &EventMessageInfo) -> Result<Decoded> {
+    fn decode(&self, _msg_info: &DecodeContext) -> Result<Decoded> {
         Ok(Decoded::ShouldSkip)
     }
 
-    fn decode_event(&self, msg_info: &EventMessageInfo) -> Result<Decoded> {
+    fn decode_event(&self, msg_info: &DecodeContext) -> Result<Decoded> {
         Ok(Decoded::RawEventRecord(EventRecord {
             event_category: EventCategory::DirectSell,
             event_type: EventType::DirectSellDeclined,

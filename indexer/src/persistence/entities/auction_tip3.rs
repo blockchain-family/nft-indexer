@@ -4,7 +4,7 @@ use chrono::NaiveDateTime;
 use indexer_repo::types::{
     AddressChangedDecoded, AuctionActiveDecoded, AuctionBidDecoded, AuctionCancelledDecoded,
     AuctionCompleteDecoded, AuctionStatus, EventCategory, EventRecord, EventType, NftAuction,
-    NftAuctionBid, NftCollection, NftPriceHistory, NftPriceSource,
+    NftAuctionBid, NftPriceHistory, NftPriceSource,
 };
 use sqlx::PgPool;
 
@@ -13,29 +13,29 @@ use crate::{
     models::events::{
         AuctionActive, AuctionCancelled, AuctionComplete, AuctionCreated, BidDeclined, BidPlaced,
     },
-    utils::{EventMessageInfo, KeyInfo},
+    utils::{DecodeContext, KeyInfo},
 };
 
 use super::{Decode, Decoded, Entity};
 
 impl Decode for AuctionCreated {
-    fn decode(&self, msg_info: &EventMessageInfo) -> Result<Decoded> {
+    fn decode(&self, ctx: &DecodeContext) -> Result<Decoded> {
         Ok(Decoded::AuctionCreated(AddressChangedDecoded {
-            id_address: msg_info.tx_data.get_account(),
+            id_address: ctx.tx_data.get_account(),
             new_address: self.value0.auction_subject.to_string(),
             timestamp: 0,
         }))
     }
 
-    fn decode_event(&self, msg_info: &EventMessageInfo) -> Result<Decoded> {
+    fn decode_event(&self, ctx: &DecodeContext) -> Result<Decoded> {
         Ok(Decoded::RawEventRecord(EventRecord {
             event_category: EventCategory::Auction,
             event_type: EventType::AuctionCreated,
 
-            address: msg_info.tx_data.get_account().into(),
-            created_lt: msg_info.tx_data.logical_time() as i64,
-            created_at: msg_info.tx_data.get_timestamp(),
-            message_hash: msg_info.message_hash.to_string(),
+            address: ctx.tx_data.get_account().into(),
+            created_lt: ctx.tx_data.logical_time() as i64,
+            created_at: ctx.tx_data.get_timestamp(),
+            message_hash: ctx.message_hash.to_string(),
             nft: Some(self.value0.auction_subject.to_string().into()),
             collection: None,
             raw_data: serde_json::to_value(self).unwrap_or_default(),
@@ -44,9 +44,9 @@ impl Decode for AuctionCreated {
 }
 
 impl Decode for AuctionActive {
-    fn decode(&self, msg_info: &EventMessageInfo) -> Result<Decoded> {
+    fn decode(&self, ctx: &DecodeContext) -> Result<Decoded> {
         let auction = AuctionActiveDecoded {
-            address: msg_info.tx_data.get_account(),
+            address: ctx.tx_data.get_account(),
             nft: self.value0.auction_subject.to_string(),
             wallet_for_bids: self.value0.wallet_for_bids.to_string(),
             price_token: self.value0._payment_token.to_string(),
@@ -54,13 +54,13 @@ impl Decode for AuctionActive {
             min_bid: u128_to_bigdecimal(self.value0._price),
             created_at: self.value0.start_time.try_into()?,
             finished_at: self.value0.finish_time.try_into()?,
-            tx_lt: msg_info.tx_data.logical_time().try_into()?,
+            tx_lt: ctx.tx_data.logical_time().try_into()?,
         };
 
         let price_hist = NftPriceHistory {
-            source: msg_info.tx_data.get_account().into(),
+            source: ctx.tx_data.get_account().into(),
             source_type: NftPriceSource::AuctionBid,
-            created_at: NaiveDateTime::from_timestamp_opt(msg_info.tx_data.get_timestamp(), 0)
+            created_at: NaiveDateTime::from_timestamp_opt(ctx.tx_data.get_timestamp(), 0)
                 .unwrap_or_default(),
             price: u128_to_bigdecimal(self.value0._price),
             price_token: Some(self.value0._payment_token.to_string().into()),
@@ -71,15 +71,15 @@ impl Decode for AuctionActive {
         Ok(Decoded::AuctionActive((auction, price_hist)))
     }
 
-    fn decode_event(&self, msg_info: &EventMessageInfo) -> Result<Decoded> {
+    fn decode_event(&self, ctx: &DecodeContext) -> Result<Decoded> {
         Ok(Decoded::RawEventRecord(EventRecord {
             event_category: EventCategory::Auction,
             event_type: EventType::AuctionActive,
 
-            address: msg_info.tx_data.get_account().into(),
-            created_lt: msg_info.tx_data.logical_time() as i64,
-            created_at: msg_info.tx_data.get_timestamp(),
-            message_hash: msg_info.message_hash.to_string(),
+            address: ctx.tx_data.get_account().into(),
+            created_lt: ctx.tx_data.logical_time() as i64,
+            created_at: ctx.tx_data.get_timestamp(),
+            message_hash: ctx.message_hash.to_string(),
             nft: Some(self.value0.auction_subject.to_string().into()),
             collection: None,
             raw_data: serde_json::to_value(self).unwrap_or_default(),
@@ -88,7 +88,7 @@ impl Decode for AuctionActive {
 }
 
 impl Decode for BidPlaced {
-    fn decode(&self, msg_info: &EventMessageInfo) -> Result<Decoded> {
+    fn decode(&self, msg_info: &DecodeContext) -> Result<Decoded> {
         let bid = AuctionBidDecoded {
             address: msg_info.tx_data.get_account(),
             bid_value: u128_to_bigdecimal(self.value),
@@ -113,7 +113,7 @@ impl Decode for BidPlaced {
         Ok(Decoded::AuctionBidPlaced((bid, price_hist)))
     }
 
-    fn decode_event(&self, msg_info: &EventMessageInfo) -> Result<Decoded> {
+    fn decode_event(&self, msg_info: &DecodeContext) -> Result<Decoded> {
         Ok(Decoded::RawEventRecord(EventRecord {
             event_category: EventCategory::Auction,
             event_type: EventType::AuctionBidPlaced,
@@ -131,7 +131,7 @@ impl Decode for BidPlaced {
 }
 
 impl Decode for BidDeclined {
-    fn decode(&self, msg_info: &EventMessageInfo) -> Result<Decoded> {
+    fn decode(&self, msg_info: &DecodeContext) -> Result<Decoded> {
         let bid = AuctionBidDecoded {
             address: msg_info.tx_data.get_account(),
             bid_value: u128_to_bigdecimal(self.value),
@@ -145,7 +145,7 @@ impl Decode for BidDeclined {
         Ok(Decoded::AuctionBidDeclined(bid))
     }
 
-    fn decode_event(&self, msg_info: &EventMessageInfo) -> Result<Decoded> {
+    fn decode_event(&self, msg_info: &DecodeContext) -> Result<Decoded> {
         Ok(Decoded::RawEventRecord(EventRecord {
             event_category: EventCategory::Auction,
             event_type: EventType::AuctionBidDeclined,
@@ -163,7 +163,7 @@ impl Decode for BidDeclined {
 }
 
 impl Decode for AuctionComplete {
-    fn decode(&self, msg_info: &EventMessageInfo) -> Result<Decoded> {
+    fn decode(&self, msg_info: &DecodeContext) -> Result<Decoded> {
         let auc = AuctionCompleteDecoded {
             address: msg_info.tx_data.get_account(),
             max_bid: u128_to_bigdecimal(self.value),
@@ -172,7 +172,7 @@ impl Decode for AuctionComplete {
         Ok(Decoded::AuctionComplete(auc))
     }
 
-    fn decode_event(&self, msg_info: &EventMessageInfo) -> Result<Decoded> {
+    fn decode_event(&self, msg_info: &DecodeContext) -> Result<Decoded> {
         Ok(Decoded::RawEventRecord(EventRecord {
             event_category: EventCategory::Auction,
             event_type: EventType::AuctionComplete,
@@ -190,7 +190,7 @@ impl Decode for AuctionComplete {
 }
 
 impl Decode for AuctionCancelled {
-    fn decode(&self, msg_info: &EventMessageInfo) -> Result<Decoded> {
+    fn decode(&self, msg_info: &DecodeContext) -> Result<Decoded> {
         let auc = AuctionCancelledDecoded {
             address: msg_info.tx_data.get_account(),
         };
@@ -198,7 +198,7 @@ impl Decode for AuctionCancelled {
         Ok(Decoded::AuctionCancelled(auc))
     }
 
-    fn decode_event(&self, msg_info: &EventMessageInfo) -> Result<Decoded> {
+    fn decode_event(&self, msg_info: &DecodeContext) -> Result<Decoded> {
         Ok(Decoded::RawEventRecord(EventRecord {
             event_category: EventCategory::Auction,
             event_type: EventType::AuctionCancelled,
@@ -217,7 +217,7 @@ impl Decode for AuctionCancelled {
 
 #[async_trait]
 impl Entity for AuctionCreated {
-    async fn save_to_db(&self, pg_pool: &PgPool, msg_info: &EventMessageInfo) -> Result<()> {
+    async fn save_to_db(&self, pg_pool: &PgPool, msg_info: &DecodeContext) -> Result<()> {
         let mut pg_pool_tx = pg_pool.begin().await?;
 
         let event_record = EventRecord {
@@ -261,7 +261,7 @@ impl Entity for AuctionCreated {
 
 #[async_trait]
 impl Entity for AuctionActive {
-    async fn save_to_db(&self, pg_pool: &PgPool, msg_info: &EventMessageInfo) -> Result<()> {
+    async fn save_to_db(&self, pg_pool: &PgPool, msg_info: &DecodeContext) -> Result<()> {
         let mut pg_pool_tx = pg_pool.begin().await?;
 
         let event_record = EventRecord {
@@ -305,19 +305,6 @@ impl Entity for AuctionActive {
         )
         .await?;
 
-        if let Some(collection) = event_record.collection.as_ref() {
-            let now = chrono::Utc::now().naive_utc();
-
-            let collection = NftCollection {
-                address: collection.clone(),
-                created: now,
-                updated: now,
-                ..Default::default()
-            };
-
-            indexer_repo::actions::upsert_collection(&collection, &mut pg_pool_tx, None).await?;
-        }
-
         let price_history = NftPriceHistory {
             source: event_record.address.clone(),
             source_type: NftPriceSource::AuctionBid,
@@ -346,7 +333,7 @@ impl Entity for AuctionActive {
 
 #[async_trait]
 impl Entity for BidPlaced {
-    async fn save_to_db(&self, pg_pool: &PgPool, msg_info: &EventMessageInfo) -> Result<()> {
+    async fn save_to_db(&self, pg_pool: &PgPool, msg_info: &DecodeContext) -> Result<()> {
         let mut pg_pool_tx = pg_pool.begin().await?;
 
         let mut event_record = EventRecord {
@@ -412,19 +399,6 @@ impl Entity for BidPlaced {
 
         indexer_repo::actions::upsert_nft_price_history(&price_history, &mut pg_pool_tx).await?;
 
-        if let Some(collection) = event_record.collection.as_ref() {
-            let now = chrono::Utc::now().naive_utc();
-
-            let collection = NftCollection {
-                address: collection.clone(),
-                created: now,
-                updated: now,
-                ..Default::default()
-            };
-
-            indexer_repo::actions::upsert_collection(&collection, &mut pg_pool_tx, None).await?;
-        }
-
         let save_result = indexer_repo::actions::save_event(&event_record, &mut pg_pool_tx)
             .await
             .expect("Failed to save AuctionBid event");
@@ -441,7 +415,7 @@ impl Entity for BidPlaced {
 
 #[async_trait]
 impl Entity for BidDeclined {
-    async fn save_to_db(&self, pg_pool: &PgPool, msg_info: &EventMessageInfo) -> Result<()> {
+    async fn save_to_db(&self, pg_pool: &PgPool, msg_info: &DecodeContext) -> Result<()> {
         let mut pg_pool_tx = pg_pool.begin().await?;
 
         let event_record = EventRecord {
@@ -487,7 +461,7 @@ impl Entity for BidDeclined {
 
 #[async_trait]
 impl Entity for AuctionComplete {
-    async fn save_to_db(&self, pg_pool: &PgPool, msg_info: &EventMessageInfo) -> Result<()> {
+    async fn save_to_db(&self, pg_pool: &PgPool, msg_info: &DecodeContext) -> Result<()> {
         let mut pg_pool_tx = pg_pool.begin().await?;
 
         let mut event_record = EventRecord {
@@ -530,19 +504,6 @@ impl Entity for AuctionComplete {
 
         indexer_repo::actions::upsert_auction(&auction, &mut pg_pool_tx).await?;
 
-        if let Some(collection) = event_record.collection.as_ref() {
-            let now = chrono::Utc::now().naive_utc();
-
-            let collection = NftCollection {
-                address: collection.clone(),
-                created: now,
-                updated: now,
-                ..Default::default()
-            };
-
-            indexer_repo::actions::upsert_collection(&collection, &mut pg_pool_tx, None).await?;
-        }
-
         let save_result = indexer_repo::actions::save_event(&event_record, &mut pg_pool_tx)
             .await
             .expect("Failed to save AuctionComplete event");
@@ -559,7 +520,7 @@ impl Entity for AuctionComplete {
 
 #[async_trait]
 impl Entity for AuctionCancelled {
-    async fn save_to_db(&self, pg_pool: &PgPool, msg_info: &EventMessageInfo) -> Result<()> {
+    async fn save_to_db(&self, pg_pool: &PgPool, msg_info: &DecodeContext) -> Result<()> {
         let mut pg_pool_tx = pg_pool.begin().await?;
 
         let mut event_record = EventRecord {
@@ -595,19 +556,6 @@ impl Entity for AuctionCancelled {
         };
 
         indexer_repo::actions::upsert_auction(&auction, &mut pg_pool_tx).await?;
-
-        if let Some(collection) = event_record.collection.as_ref() {
-            let now = chrono::Utc::now().naive_utc();
-
-            let collection = NftCollection {
-                address: collection.clone(),
-                created: now,
-                updated: now,
-                ..Default::default()
-            };
-
-            indexer_repo::actions::upsert_collection(&collection, &mut pg_pool_tx, None).await?;
-        }
 
         let save_result = indexer_repo::actions::save_event(&event_record, &mut pg_pool_tx)
             .await

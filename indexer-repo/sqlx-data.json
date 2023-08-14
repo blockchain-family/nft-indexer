@@ -730,57 +730,6 @@
     },
     "query": "\n        update nft_direct_buy \n        set state = $1\n        where expired_at != $2 and expired_at < $3 and nft_direct_buy.state = $4\n        "
   },
-  "91e5adafe8b6e0c076098a6649ed48c7d92ed16bd44d91868b5481f37e5b5b2e": {
-    "describe": {
-      "columns": [],
-      "nullable": [],
-      "parameters": {
-        "Left": [
-          {
-            "Custom": {
-              "kind": {
-                "Domain": "Varchar"
-              },
-              "name": "t_address"
-            }
-          },
-          {
-            "Custom": {
-              "kind": {
-                "Domain": "Varchar"
-              },
-              "name": "t_address"
-            }
-          },
-          "Text",
-          "Text",
-          "Timestamp",
-          "Timestamp",
-          {
-            "Custom": {
-              "kind": {
-                "Domain": "Varchar"
-              },
-              "name": "t_uri"
-            }
-          },
-          {
-            "Custom": {
-              "kind": {
-                "Domain": "Varchar"
-              },
-              "name": "t_uri"
-            }
-          },
-          "Numeric",
-          "Numeric",
-          "Int4",
-          "Timestamp"
-        ]
-      }
-    },
-    "query": "\n        insert into nft_collection (\n            address, \n            owner, \n            name,         description, \n            created,      updated, \n            logo,         wallpaper,\n            total_price,  max_price, \n            owners_count, \n            first_mint\n        )\n        values (\n            $1, \n            $2, \n            $3,           $4, \n            $5,           $6, \n            $7,           $8, \n            $9,           $10, \n            $11, \n            $12\n        )\n        on conflict (address) do update\n        set \n            owner        = $2, \n            name         = coalesce($3, nft_collection.name),\n            description  = coalesce($4, nft_collection.description), \n            created      = case when nft_collection.created < $5 then nft_collection.created else $5 end, \n            updated      = $6,\n            logo         = coalesce($7, nft_collection.logo),\n            wallpaper    = coalesce($8, nft_collection.wallpaper), \n            total_price  = $9,\n            max_price    = $10, \n            owners_count = $11, \n            first_mint   = least($12, nft_collection.first_mint)\n        "
-  },
   "979b256cf628449f0b0eea47d0ab101b3cc2bbcbccfc29a4417db320f7452b53": {
     "describe": {
       "columns": [
@@ -1069,6 +1018,31 @@
     },
     "query": "\n        insert into nft_auction (\n            address, \n            nft, \n            wallet_for_bids, \n            price_token,\n            start_price,\n            min_bid,\n            created_at,\n            finished_at, \n            tx_lt,\n            closing_price_usd, \n            max_bid, \n            status\n        )\n\n            select *, 0, 0, $10\n            from unnest(\n                $1::varchar[],\n                $2::varchar[],\n                $3::varchar[],\n                $4::varchar[],\n                $5::numeric[],\n                $6::numeric[], \n                $7::timestamp[],\n                $8::timestamp[],\n                $9::bigint[]\n            ) \n            on conflict(address) do nothing\n        "
   },
+  "c66bb817f45e75bcd20d6bf45fe5f1b4da994b9d823cb1ac8fcfdfbbe437deb9": {
+    "describe": {
+      "columns": [],
+      "nullable": [],
+      "parameters": {
+        "Left": [
+          "Text",
+          {
+            "Custom": {
+              "kind": {
+                "Domain": "Varchar"
+              },
+              "name": "t_address"
+            }
+          },
+          "Text",
+          "Text",
+          "Varchar",
+          "Varchar",
+          "Timestamp"
+        ]
+      }
+    },
+    "query": "\n        update nft_collection\n        set \n            owner        = $2, \n            name         = coalesce($3, nft_collection.name),\n            description  = coalesce($4, nft_collection.description),\n            logo         = coalesce($5, nft_collection.logo),\n            wallpaper    = coalesce($6, nft_collection.wallpaper),\n            updated      = $7\n        where address = $1\n        "
+  },
   "c852cd4e25d808f4484022daa8f5f877c8baa18a1b11bdb0368f7fa0c97b1920": {
     "describe": {
       "columns": [],
@@ -1284,6 +1258,48 @@
       }
     },
     "query": "\n                update nft\n                set description = $1\n                where address = $2\n            "
+  },
+  "d46901ec8e46c0e62c9436981a1b62cd0c3c4f30dd4dc6964f23409ea6a94aaf": {
+    "describe": {
+      "columns": [],
+      "nullable": [],
+      "parameters": {
+        "Left": [
+          {
+            "Custom": {
+              "kind": {
+                "Domain": "Varchar"
+              },
+              "name": "t_address"
+            }
+          },
+          "Timestamp",
+          "Timestamp",
+          "Timestamp"
+        ]
+      }
+    },
+    "query": "\n        insert into nft_collection (\n            address, first_mint,\n            created, updated\n        ) values (\n            $1,       $2,\n            $3,       $4\n        )\n        on conflict do nothing\n        "
+  },
+  "df85b1a14d51617e4f3dc80faf38ec24f2058567b084f32d9f8ca267539e9511": {
+    "describe": {
+      "columns": [
+        {
+          "name": "address",
+          "ordinal": 0,
+          "type_info": "Varchar"
+        }
+      ],
+      "nullable": [
+        false
+      ],
+      "parameters": {
+        "Left": [
+          "Int8"
+        ]
+      }
+    },
+    "query": "\n        select address\n        from nft_collection\n        limit $1\n        "
   },
   "e84a7fe746418e01bca2bc5557dafaf9d6066bf126651f291def4947b85232d6": {
     "describe": {

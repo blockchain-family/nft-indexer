@@ -2,27 +2,29 @@ use anyhow::Result;
 use async_trait::async_trait;
 use chrono::NaiveDateTime;
 use indexer_repo::types::{
-    EventCategory, EventRecord, EventType, Nft, NftBurnedDecoded, NftCollection, NftCreateDecoded,
+    EventCategory, EventRecord, EventType, Nft, NftBurnedDecoded, NftCreateDecoded,
 };
 use sqlx::PgPool;
 
 use crate::{
     models::events::{NftBurned, NftCreated},
-    utils::{EventMessageInfo, KeyInfo},
+    utils::{DecodeContext, KeyInfo},
 };
 
 use super::{types::Decoded, Decode, Entity};
 
 impl Decode for NftCreated {
-    fn decode(&self, msg_info: &EventMessageInfo) -> Result<Decoded> {
-        let logical_time = msg_info.tx_data.logical_time() as i64;
+    fn decode(&self, ctx: &DecodeContext) -> Result<Decoded> {
+        let logical_time = ctx.tx_data.logical_time() as i64;
+        let event_time =
+            NaiveDateTime::from_timestamp_opt(ctx.tx_data.get_timestamp(), 0).unwrap_or_default();
+
         let record = NftCreateDecoded {
             address: self.nft.to_string(),
-            collection: msg_info.tx_data.get_account(),
+            collection: ctx.tx_data.get_account(),
             owner: self.owner.to_string(),
             manager: self.manager.to_string(),
-            updated: NaiveDateTime::from_timestamp_opt(msg_info.tx_data.get_timestamp(), 0)
-                .unwrap_or_default(),
+            updated: event_time,
             owner_update_lt: logical_time,
             manager_update_lt: logical_time,
         };
@@ -30,17 +32,17 @@ impl Decode for NftCreated {
         Ok(Decoded::CreateNft(record))
     }
 
-    fn decode_event(&self, msg_info: &EventMessageInfo) -> Result<Decoded> {
+    fn decode_event(&self, ctx: &DecodeContext) -> Result<Decoded> {
         Ok(Decoded::RawEventRecord(EventRecord {
             event_category: EventCategory::Collection,
             event_type: EventType::NftCreated,
 
-            address: msg_info.tx_data.get_account().into(),
-            created_lt: msg_info.tx_data.logical_time() as i64,
-            created_at: msg_info.tx_data.get_timestamp(),
-            message_hash: msg_info.message_hash.to_string(),
+            address: ctx.tx_data.get_account().into(),
+            created_lt: ctx.tx_data.logical_time() as i64,
+            created_at: ctx.tx_data.get_timestamp(),
+            message_hash: ctx.message_hash.to_string(),
             nft: Some(self.nft.to_string().into()),
-            collection: Some(msg_info.tx_data.get_account().into()),
+            collection: Some(ctx.tx_data.get_account().into()),
 
             raw_data: serde_json::to_value(self).unwrap_or_default(),
         }))
@@ -48,7 +50,7 @@ impl Decode for NftCreated {
 }
 
 impl Decode for NftBurned {
-    fn decode(&self, _: &EventMessageInfo) -> Result<Decoded> {
+    fn decode(&self, _: &DecodeContext) -> Result<Decoded> {
         let record = NftBurnedDecoded {
             address: self.nft.to_string(),
             owner: self.owner.to_string(),
@@ -58,7 +60,7 @@ impl Decode for NftBurned {
         Ok(Decoded::BurnNft(record))
     }
 
-    fn decode_event(&self, msg_info: &EventMessageInfo) -> Result<Decoded> {
+    fn decode_event(&self, msg_info: &DecodeContext) -> Result<Decoded> {
         Ok(Decoded::RawEventRecord(EventRecord {
             event_category: EventCategory::Collection,
             event_type: EventType::NftBurned,
@@ -77,7 +79,7 @@ impl Decode for NftBurned {
 
 #[async_trait]
 impl Entity for NftCreated {
-    async fn save_to_db(&self, pg_pool: &PgPool, msg_info: &EventMessageInfo) -> Result<()> {
+    async fn save_to_db(&self, pg_pool: &PgPool, msg_info: &DecodeContext) -> Result<()> {
         let mut pg_pool_tx = pg_pool.begin().await?;
 
         let event_record = EventRecord {
@@ -108,27 +110,6 @@ impl Entity for NftCreated {
         };
 
         indexer_repo::actions::upsert_nft(&nft, &mut pg_pool_tx).await?;
-
-        if let Some(collection) = event_record.collection.as_ref() {
-            let now = chrono::Utc::now().naive_utc();
-
-            let collection = NftCollection {
-                address: collection.clone(),
-                created: now,
-                updated: now,
-                ..Default::default()
-            };
-
-            let nft_created_at_timestamp =
-                NaiveDateTime::from_timestamp_opt(event_record.created_at, 0);
-
-            indexer_repo::actions::upsert_collection(
-                &collection,
-                &mut pg_pool_tx,
-                nft_created_at_timestamp,
-            )
-            .await?;
-        }
 
         let save_result = indexer_repo::actions::save_event(&event_record, &mut pg_pool_tx)
             .await
@@ -186,7 +167,7 @@ impl Entity for NftCreated {
 
 #[async_trait]
 impl Entity for NftBurned {
-    async fn save_to_db(&self, pg_pool: &PgPool, msg_info: &EventMessageInfo) -> Result<()> {
+    async fn save_to_db(&self, pg_pool: &PgPool, msg_info: &DecodeContext) -> Result<()> {
         let mut pg_pool_tx = pg_pool.begin().await?;
 
         let event_record = EventRecord {
@@ -217,19 +198,6 @@ impl Entity for NftBurned {
         };
 
         indexer_repo::actions::upsert_nft(&nft, &mut pg_pool_tx).await?;
-
-        if let Some(collection) = event_record.collection.as_ref() {
-            let now = chrono::Utc::now().naive_utc();
-
-            let collection = NftCollection {
-                address: collection.clone(),
-                created: now,
-                updated: now,
-                ..Default::default()
-            };
-
-            indexer_repo::actions::upsert_collection(&collection, &mut pg_pool_tx, None).await?;
-        }
 
         let save_result = indexer_repo::actions::save_event(&event_record, &mut pg_pool_tx)
             .await

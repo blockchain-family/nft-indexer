@@ -4,7 +4,7 @@ use crate::service::MetadataJrpcService;
 use anyhow::{bail, Result};
 use indexer_repo::{
     meta::{MetadataModelService, NftAddressData, NftMeta, NftMetaAttribute},
-    types::NftCollection,
+    types::NftCollectionMeta,
 };
 use sqlx::{types::chrono, PgPool};
 use ton_block::MsgAddressInt;
@@ -115,7 +115,7 @@ pub async fn update_collections_meta(
 
     let now = chrono::Utc::now().naive_utc();
 
-    let collection = NftCollection {
+    let collection = NftCollectionMeta {
         address: address.into(),
         owner: collection_owner.into(),
         name: meta
@@ -130,7 +130,6 @@ pub async fn update_collections_meta(
             .unwrap_or_default()
             .as_str()
             .map(str::to_string),
-        created: now,
         updated: now,
         logo: meta
             .get("preview")
@@ -156,7 +155,6 @@ pub async fn update_collections_meta(
             .unwrap_or_default()
             .as_str()
             .map(|s| s.into()),
-        ..Default::default()
     };
 
     if let Err(e) = tx.update_collection(&collection).await {

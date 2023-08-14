@@ -70,61 +70,56 @@ pub async fn get_owners_count(
     .unwrap_or_default()
 }
 
-pub async fn upsert_collection(
-    collection: &NftCollection,
-    tx: &mut Transaction<'_, Postgres>,
-    nft_created_at: Option<NaiveDateTime>,
+pub async fn insert_collection(
+    address: Address,
+    nft_mint_ts: NaiveDateTime,
+    pg_pool: &PgPool,
 ) -> Result<PgQueryResult, sqlx::Error> {
-    let owners_count = get_owners_count(&collection.address, tx).await;
+    let now = chrono::Utc::now().naive_utc();
 
     sqlx::query!(
         r#"
         insert into nft_collection (
-            address, 
-            owner, 
-            name,         description, 
-            created,      updated, 
-            logo,         wallpaper,
-            total_price,  max_price, 
-            owners_count, 
-            first_mint
+            address, first_mint,
+            created, updated
+        ) values (
+            $1,       $2,
+            $3,       $4
         )
-        values (
-            $1, 
-            $2, 
-            $3,           $4, 
-            $5,           $6, 
-            $7,           $8, 
-            $9,           $10, 
-            $11, 
-            $12
-        )
-        on conflict (address) do update
+        on conflict do nothing
+        "#,
+        address as _,
+        nft_mint_ts,
+        now,
+        now,
+    )
+    .execute(pg_pool)
+    .await
+}
+
+pub async fn update_collection_meta(
+    meta: &NftCollectionMeta,
+    tx: &mut Transaction<'_, Postgres>,
+) -> Result<PgQueryResult, sqlx::Error> {
+    sqlx::query!(
+        r#"
+        update nft_collection
         set 
             owner        = $2, 
             name         = coalesce($3, nft_collection.name),
-            description  = coalesce($4, nft_collection.description), 
-            created      = case when nft_collection.created < $5 then nft_collection.created else $5 end, 
-            updated      = $6,
-            logo         = coalesce($7, nft_collection.logo),
-            wallpaper    = coalesce($8, nft_collection.wallpaper), 
-            total_price  = $9,
-            max_price    = $10, 
-            owners_count = $11, 
-            first_mint   = least($12, nft_collection.first_mint)
+            description  = coalesce($4, nft_collection.description),
+            logo         = coalesce($5, nft_collection.logo),
+            wallpaper    = coalesce($6, nft_collection.wallpaper),
+            updated      = $7
+        where address = $1
         "#,
-        collection.address as _,
-        collection.owner as _,
-        collection.name,
-        collection.description,
-        collection.created,
-        collection.updated,
-        collection.logo as _,
-        collection.wallpaper as _,
-        collection.total_price,
-        collection.max_price,
-        owners_count.unwrap_or_default() as _,
-        nft_created_at
+        meta.address as _,
+        meta.owner as _,
+        meta.name,
+        meta.description,
+        meta.logo as _,
+        meta.wallpaper as _,
+        meta.updated,
     )
     .execute(tx)
     .await
@@ -686,4 +681,17 @@ pub async fn update_offers_status(pool: &PgPool) -> Result<(), sqlx::Error> {
     .await?;
 
     tx.commit().await
+}
+
+pub async fn get_collections(limit: i64, pool: &PgPool) -> Result<Vec<String>, sqlx::Error> {
+    sqlx::query_scalar!(
+        r#"
+        select address
+        from nft_collection
+        limit $1
+        "#,
+        limit
+    )
+    .fetch_all(pool)
+    .await
 }

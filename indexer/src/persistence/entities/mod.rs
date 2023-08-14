@@ -1,7 +1,7 @@
 use anyhow::Result;
 use sqlx::PgPool;
 
-use crate::utils::EventMessageInfo;
+use crate::utils::DecodeContext;
 
 pub use self::types::Decoded;
 
@@ -18,10 +18,10 @@ mod types;
 
 #[async_trait::async_trait]
 pub trait Entity: Sync + Send {
-    async fn save_to_db(&self, pg_pool: &PgPool, msg_info: &EventMessageInfo) -> Result<()>;
+    async fn save_to_db(&self, pg_pool: &PgPool, ctx: &DecodeContext) -> Result<()>;
 }
 
 pub trait Decode {
-    fn decode(&self, msg_info: &EventMessageInfo) -> Result<Decoded>;
-    fn decode_event(&self, msg_info: &EventMessageInfo) -> Result<Decoded>;
+    fn decode(&self, ctx: &DecodeContext) -> Result<Decoded>;
+    fn decode_event(&self, ctx: &DecodeContext) -> Result<Decoded>;
 }

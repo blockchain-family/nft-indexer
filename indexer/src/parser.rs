@@ -1,7 +1,9 @@
 use crate::models::events::*;
+use crate::persistence::collections_queue;
+use crate::persistence::collections_queue::CollectionsQueue;
 use crate::persistence::entities::*;
 use crate::settings;
-use crate::utils::EventMessageInfo;
+use crate::utils::DecodeContext;
 use anyhow::Result;
 use futures::channel::mpsc::{Receiver, Sender};
 use futures::{future, SinkExt, StreamExt};
@@ -11,7 +13,6 @@ use nekoton_abi::UnpackAbiPlain;
 use sqlx::types::chrono::NaiveDateTime;
 use sqlx::PgPool;
 use ton_block::GetRepresentationHash;
-use ton_types::UInt256;
 use transaction_buffer::models::{BufferedConsumerChannels, RawTransaction};
 
 const EVENTS_PER_ITERATION: usize = 1000;
@@ -39,37 +40,7 @@ pub async fn run_nft_indexer(
 ) {
     log::info!("Start nft indexer...");
 
-    // let mut data = Vec::with_capacity(10000);
-    // for step in 0..1000 {
-    //     let a = AuctionActiveDecoded {
-    //         address: "".to_string(),
-    //         nft: "".to_string(),
-    //         wallet_for_bids: "".to_string(),
-    //         price_token: "".to_string(),
-    //         start_price: Default::default(),
-    //         min_bid: Default::default(),
-    //         created_at: 0,
-    //         finished_at: 0,
-    //         tx_lt: 0,
-    //     };
-    //     let price = NftPriceHistory {
-    //         source: "aaa".to_string().into(),
-    //         source_type: NftPriceSource::AuctionBid,
-    //         created_at: NaiveDateTime::default(),
-    //         price: Default::default(),
-    //         price_token: Some("someToken".to_string().into()),
-    //         nft: Some("nftAddr".to_string().into()),
-    //         collection: None,
-    //     };
-
-    //     data.push(Decoded::AuctionActive((a, price)));
-    // }
-
-    // let now = std::time::Instant::now();
-    // let _ = save_to_db(&pool, data).await;
-    // let elapsed = now.elapsed();
-
-    // log::info!("METRIC | Saving to db, elapsed {}ms", elapsed.as_millis());
+    let collection_queue = collections_queue::create_and_run_queue(pool.clone()).await;
 
     while let Some(message) = rx_raw_transactions.next().await {
         let mut data = Vec::with_capacity(EVENTS_PER_ITERATION * 3);
@@ -90,35 +61,26 @@ pub async fn run_nft_indexer(
                 }
             }
 
-            let msg_info = EventMessageInfo {
-                tx_data: tx.data,
-                function_inputs,
-                message_hash: UInt256::default(),
-            };
-
             for event in events {
-                if let Ok(Some((entity, _))) = unpack_entity(&event) {
-                    if let Ok(decoded) = entity.decode(&msg_info) {
+                let ctx = DecodeContext {
+                    tx_data: tx.data.clone(),
+                    function_inputs: function_inputs.clone(),
+                    message_hash: event.message_hash,
+                };
+
+                if let Ok(Some(entity)) = unpack_entity(&event) {
+                    if let Ok(decoded) = entity.decode(&ctx) {
                         data.push(decoded);
                     }
-                    if let Ok(event) = entity.decode_event(&msg_info) {
+                    if let Ok(event) = entity.decode_event(&ctx) {
                         data.push(event);
                     }
                 }
             }
-            // jobs.push(tokio::spawn(async move {
-            //     for event in events {
-            //         if let Err(e) = process_event(event, &mut msg_info, &pool).await {
-            //             // TODO: check error kind; exit if critical
-            //             log::error!("Error processing event: {:#?}. Exiting.", e);
-            //         }
-            //     }
-            // }));
         }
 
-        // futures::future::join_all(jobs).await;
         let now = std::time::Instant::now();
-        let _ = save_to_db(&pool, data).await;
+        let _ = save_to_db(&pool, data, &collection_queue).await;
         let elapsed = now.elapsed();
 
         log::info!("METRIC | Saving to db, elapsed {}ms", elapsed.as_millis());
@@ -129,7 +91,11 @@ pub async fn run_nft_indexer(
     panic!("rip kafka consumer");
 }
 
-async fn save_to_db(pool: &PgPool, data: Vec<Decoded>) -> Result<()> {
+async fn save_to_db(
+    pool: &PgPool,
+    data: Vec<Decoded>,
+    collections_queue: &CollectionsQueue,
+) -> Result<()> {
     let mut nft_created = Vec::with_capacity(EVENTS_PER_ITERATION);
     let mut nft_burned = Vec::with_capacity(EVENTS_PER_ITERATION);
     let mut nft_owner_changed = Vec::with_capacity(EVENTS_PER_ITERATION);
@@ -150,6 +116,9 @@ async fn save_to_db(pool: &PgPool, data: Vec<Decoded>) -> Result<()> {
     for element in data {
         match element {
             Decoded::CreateNft(nft) => {
+                collections_queue
+                    .add(nft.collection.clone(), nft.updated.timestamp())
+                    .await?;
                 nft_created.push(nft);
             }
             Decoded::BurnNft(nft) => {
@@ -265,16 +234,16 @@ async fn save_to_db(pool: &PgPool, data: Vec<Decoded>) -> Result<()> {
 
 async fn _process_event(
     event: ExtractedOwned,
-    msg_info: &mut EventMessageInfo,
+    ctx: &mut DecodeContext,
     _pool: &PgPool,
 ) -> Result<()> {
-    if let Some((_entity, message_hash)) = unpack_entity(&event)? {
-        msg_info.message_hash = message_hash;
+    if let Some(_entity) = unpack_entity(&event)? {
+        ctx.message_hash = event.message_hash;
         log::info!(
             "saving {}, tx hash {:?}, timestamp: {}",
             event.name,
-            msg_info.tx_data.hash().unwrap_or_default(),
-            NaiveDateTime::from_timestamp_opt(msg_info.tx_data.now as i64, 0).unwrap_or_default()
+            ctx.tx_data.hash().unwrap_or_default(),
+            NaiveDateTime::from_timestamp_opt(ctx.tx_data.now as i64, 0).unwrap_or_default()
         );
 
         let now = std::time::Instant::now();
@@ -299,16 +268,14 @@ macro_rules! try_unpack_entity {
     ($msg:ident, $($entity:ty),+) => {
         match $msg.name.as_str() {
             $(stringify!($entity) => Ok(
-                Some(
-                    (Box::new(UnpackAbiPlain::<$entity>::unpack($msg.tokens.clone())?), $msg.message_hash)
-                )
+                Some(Box::new(UnpackAbiPlain::<$entity>::unpack($msg.tokens.clone())?))
             ),)+
             _ => Ok(None),
         }
     };
 }
 
-fn unpack_entity(event: &ExtractedOwned) -> Result<Option<(Box<dyn Decode>, UInt256)>> {
+fn unpack_entity(event: &ExtractedOwned) -> Result<Option<Box<dyn Decode>>> {
     try_unpack_entity!(
         event,
         /* AuctionRootTip3 */

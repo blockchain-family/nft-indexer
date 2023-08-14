@@ -6,32 +6,32 @@ use sqlx::PgPool;
 
 use crate::{
     models::events::{ManagerChanged, OwnerChanged},
-    utils::{EventMessageInfo, KeyInfo},
+    utils::{DecodeContext, KeyInfo},
 };
 
 use super::{types::Decoded, Decode, Entity};
 
 impl Decode for OwnerChanged {
-    fn decode(&self, msg_info: &EventMessageInfo) -> Result<Decoded> {
+    fn decode(&self, ctx: &DecodeContext) -> Result<Decoded> {
         let nft_new_owner = AddressChangedDecoded {
-            id_address: msg_info.tx_data.get_account(),
+            id_address: ctx.tx_data.get_account(),
             new_address: self.new_owner.to_string(),
-            timestamp: msg_info.tx_data.get_timestamp(),
+            timestamp: ctx.tx_data.get_timestamp(),
         };
 
         Ok(Decoded::OwnerChangedNft(nft_new_owner))
     }
 
-    fn decode_event(&self, msg_info: &EventMessageInfo) -> Result<Decoded> {
+    fn decode_event(&self, ctx: &DecodeContext) -> Result<Decoded> {
         Ok(Decoded::RawEventRecord(EventRecord {
             event_category: EventCategory::Nft,
             event_type: EventType::NftOwnerChanged,
 
-            address: msg_info.tx_data.get_account().into(),
-            created_lt: msg_info.tx_data.logical_time() as i64,
-            created_at: msg_info.tx_data.get_timestamp(),
-            message_hash: msg_info.message_hash.to_string(),
-            nft: Some(msg_info.tx_data.get_account().into()),
+            address: ctx.tx_data.get_account().into(),
+            created_lt: ctx.tx_data.logical_time() as i64,
+            created_at: ctx.tx_data.get_timestamp(),
+            message_hash: ctx.message_hash.to_string(),
+            nft: Some(ctx.tx_data.get_account().into()),
             collection: None,
             raw_data: serde_json::to_value(self).unwrap_or_default(),
         }))
@@ -39,17 +39,17 @@ impl Decode for OwnerChanged {
 }
 
 impl Decode for ManagerChanged {
-    fn decode(&self, msg_info: &EventMessageInfo) -> Result<Decoded> {
+    fn decode(&self, ctx: &DecodeContext) -> Result<Decoded> {
         let nft_new_manager = AddressChangedDecoded {
-            id_address: msg_info.tx_data.get_account(),
+            id_address: ctx.tx_data.get_account(),
             new_address: self.new_manager.to_string(),
-            timestamp: msg_info.tx_data.get_timestamp(),
+            timestamp: ctx.tx_data.get_timestamp(),
         };
 
         Ok(Decoded::ManagerChangedNft(nft_new_manager))
     }
 
-    fn decode_event(&self, msg_info: &EventMessageInfo) -> Result<Decoded> {
+    fn decode_event(&self, msg_info: &DecodeContext) -> Result<Decoded> {
         Ok(Decoded::RawEventRecord(EventRecord {
             event_category: EventCategory::Nft,
             event_type: EventType::NftManagerChanged,
@@ -67,7 +67,7 @@ impl Decode for ManagerChanged {
 
 #[async_trait]
 impl Entity for OwnerChanged {
-    async fn save_to_db(&self, pg_pool: &PgPool, msg_info: &EventMessageInfo) -> Result<()> {
+    async fn save_to_db(&self, pg_pool: &PgPool, msg_info: &DecodeContext) -> Result<()> {
         let mut pg_pool_tx = pg_pool.begin().await?;
 
         let event_record = EventRecord {
@@ -124,7 +124,7 @@ impl Entity for OwnerChanged {
 
 #[async_trait]
 impl Entity for ManagerChanged {
-    async fn save_to_db(&self, pg_pool: &PgPool, msg_info: &EventMessageInfo) -> Result<()> {
+    async fn save_to_db(&self, pg_pool: &PgPool, msg_info: &DecodeContext) -> Result<()> {
         let mut pg_pool_tx = pg_pool.begin().await?;
 
         let event_record = EventRecord {
