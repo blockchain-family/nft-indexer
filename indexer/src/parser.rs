@@ -47,93 +47,94 @@ pub async fn run_nft_indexer(
 ) {
     log::info!("Start nft indexer...");
 
-    let mut data = Vec::with_capacity(10000);
-    for step in 0..1000 {
-        let a = AuctionActiveDecoded {
-            address: "".to_string(),
-            nft: "".to_string(),
-            wallet_for_bids: "".to_string(),
-            price_token: "".to_string(),
-            start_price: Default::default(),
-            min_bid: Default::default(),
-            created_at: 0,
-            finished_at: 0,
-            tx_lt: 0,
-        };
-        let price = NftPriceHistory {
-            source: "aaa".to_string().into(),
-            source_type: NftPriceSource::AuctionBid,
-            created_at: NaiveDateTime::default(),
-            price: Default::default(),
-            price_token: Some("someToken".to_string().into()),
-            nft: Some("nftAddr".to_string().into()),
-            collection: None,
-        };
+    // let mut data = Vec::with_capacity(10000);
+    // for step in 0..1000 {
+    //     let a = AuctionActiveDecoded {
+    //         address: "".to_string(),
+    //         nft: "".to_string(),
+    //         wallet_for_bids: "".to_string(),
+    //         price_token: "".to_string(),
+    //         start_price: Default::default(),
+    //         min_bid: Default::default(),
+    //         created_at: 0,
+    //         finished_at: 0,
+    //         tx_lt: 0,
+    //     };
+    //     let price = NftPriceHistory {
+    //         source: "aaa".to_string().into(),
+    //         source_type: NftPriceSource::AuctionBid,
+    //         created_at: NaiveDateTime::default(),
+    //         price: Default::default(),
+    //         price_token: Some("someToken".to_string().into()),
+    //         nft: Some("nftAddr".to_string().into()),
+    //         collection: None,
+    //     };
 
-        data.push(Decoded::AuctionActive((a, price)));
-    }
-
-    let now = std::time::Instant::now();
-    let _ = save_to_db(&pool, data).await;
-    let elapsed = now.elapsed();
-
-    log::info!("METRIC | Saving to db, elapsed {}ms", elapsed.as_millis());
-
-    // while let Some(message) = rx_raw_transactions.next().await {
-    //     let mut data = Vec::with_capacity(EVENTS_PER_ITERATION);
-
-    //     for (out, tx) in message {
-    //         let mut events = Vec::new();
-    //         let mut function_inputs = Vec::new();
-
-    //         for extractable in out {
-    //             match extractable.parsed_type {
-    //                 ParsedType::Event => {
-    //                     events.push(extractable);
-    //                 }
-    //                 ParsedType::FunctionInput => {
-    //                     function_inputs.extend(extractable.tokens.into_iter());
-    //                 }
-    //                 _ => {}
-    //             }
-    //         }
-
-    //         let mut msg_info = EventMessageInfo {
-    //             tx_data: tx.data,
-    //             function_inputs,
-    //             message_hash: UInt256::default(),
-    //         };
-
-    //         let pool = pool.clone();
-
-    //         for event in events {
-    //             if let Ok(unpacked) = unpack_entity(&event) {
-    //                 if let Some((entity, _)) = unpacked {
-    //                     if let Ok(decoded) = entity.decode(&msg_info) {
-    //                         data.push(decoded);
-    //                     }
-    //                 }
-    //             }
-    //         }
-    //         // jobs.push(tokio::spawn(async move {
-    //         //     for event in events {
-    //         //         if let Err(e) = process_event(event, &mut msg_info, &pool).await {
-    //         //             // TODO: check error kind; exit if critical
-    //         //             log::error!("Error processing event: {:#?}. Exiting.", e);
-    //         //         }
-    //         //     }
-    //         // }));
-    //     }
-
-    //     // futures::future::join_all(jobs).await;
-    //     let now = std::time::Instant::now();
-    //     let _ = save_to_db(&pool, data).await;
-    //     let elapsed = now.elapsed();
-
-    //     log::info!("METRIC | Saving to db, elapsed {}ms", elapsed.as_millis());
-
-    //     tx_commit.send(()).await.expect("dead commit sender");
+    //     data.push(Decoded::AuctionActive((a, price)));
     // }
+
+    // let now = std::time::Instant::now();
+    // let _ = save_to_db(&pool, data).await;
+    // let elapsed = now.elapsed();
+
+    // log::info!("METRIC | Saving to db, elapsed {}ms", elapsed.as_millis());
+
+    while let Some(message) = rx_raw_transactions.next().await {
+        let mut data = Vec::with_capacity(EVENTS_PER_ITERATION * 3);
+
+        for (out, tx) in message {
+            let mut events = Vec::new();
+            let mut function_inputs = Vec::new();
+
+            for extractable in out {
+                match extractable.parsed_type {
+                    ParsedType::Event => {
+                        events.push(extractable);
+                    }
+                    ParsedType::FunctionInput => {
+                        function_inputs.extend(extractable.tokens.into_iter());
+                    }
+                    _ => {}
+                }
+            }
+
+            let msg_info = EventMessageInfo {
+                tx_data: tx.data,
+                function_inputs,
+                message_hash: UInt256::default(),
+            };
+
+            for event in events {
+                if let Ok(unpacked) = unpack_entity(&event) {
+                    if let Some((entity, _)) = unpacked {
+                        if let Ok(decoded) = entity.decode(&msg_info) {
+                            data.push(decoded);
+                        }
+                        if let Ok(event) = entity.decode_event(&msg_info) {
+                            data.push(event);
+                        }
+                    }
+                }
+            }
+            // jobs.push(tokio::spawn(async move {
+            //     for event in events {
+            //         if let Err(e) = process_event(event, &mut msg_info, &pool).await {
+            //             // TODO: check error kind; exit if critical
+            //             log::error!("Error processing event: {:#?}. Exiting.", e);
+            //         }
+            //     }
+            // }));
+        }
+
+        // futures::future::join_all(jobs).await;
+        let now = std::time::Instant::now();
+        let _ = save_to_db(&pool, data).await;
+        let elapsed = now.elapsed();
+
+        log::info!("METRIC | Saving to db, elapsed {}ms", elapsed.as_millis());
+
+        tx_commit.send(()).await.expect("dead commit sender");
+    }
 
     panic!("rip kafka consumer");
 }
