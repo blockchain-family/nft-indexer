@@ -383,8 +383,9 @@ pub struct AuctionBidDecoded {
     pub bid_value: BigDecimal,
     pub next_value: BigDecimal,
     pub buyer: String,
-    pub created_at: u64,
-    pub tx_lt: u64,
+    pub created_at: i64,
+    pub tx_lt: i64,
+    pub declined: bool,
 }
 
 pub struct AuctionCompleteDecoded {

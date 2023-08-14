@@ -26,6 +26,21 @@
     },
     "query": "\n                update nft_auction\n                set closing_price_usd = $1\n                where address = $2\n            "
   },
+  "23dde169ba4c8c92dd329f563239e0d5cf62f4681814561c9b8da8da983e0800": {
+    "describe": {
+      "columns": [],
+      "nullable": [],
+      "parameters": {
+        "Left": [
+          "VarcharArray",
+          "NumericArray",
+          "NumericArray",
+          "Int8Array"
+        ]
+      }
+    },
+    "query": "\n        update nft_auction set\n            min_bid = data.min_bid,\n            max_bid = data.max_bid,\n            tx_lt = data.tx_lt\n        from\n        (\n            select \n                unnest($1::varchar[]) as address,\n                unnest($2::numeric[]) as min_bid,\n                unnest($3::numeric[]) as max_bid,\n                unnest($4::bigint[]) as tx_lt\n        ) as data\n        where nft_auction.address = data.address\n    "
+  },
   "26a933a554da5ddb6363466dab92a0f5fd54779903c2869a6370adb4983fd233": {
     "describe": {
       "columns": [
@@ -174,6 +189,32 @@
       }
     },
     "query": "\n        insert into nft_price_history (\n            source, source_type, \n            ts, \n            price,  price_token, \n            nft,    collection\n        )\n        values (\n            $1,     $2, \n            $3, \n            $4,     $5, \n            $6,     $7\n        )\n        "
+  },
+  "5f619b22c878e3bb0288ce9aa8ddae142b8d0d2e68580bbf4e3992d7bd8c6c07": {
+    "describe": {
+      "columns": [],
+      "nullable": [],
+      "parameters": {
+        "Left": [
+          "VarcharArray",
+          {
+            "Custom": {
+              "kind": {
+                "Enum": [
+                  "created",
+                  "active",
+                  "cancelled",
+                  "completed",
+                  "expired"
+                ]
+              },
+              "name": "auction_status"
+            }
+          }
+        ]
+      }
+    },
+    "query": "\n        update nft_auction set\n            status = data.status\n        from\n        (\n            select \n                unnest($1::varchar[]) as address,\n                $2::auction_status as status\n        ) as data\n        where nft_auction.address = data.address\n    "
   },
   "65a2b1248a0e0798384981095abd8858e8fcc85957b0dc9285f81b2350396291": {
     "describe": {
@@ -378,6 +419,24 @@
       }
     },
     "query": "\n                update nft_direct_sell\n                set sell_price_usd = $1\n                where address = $2\n            "
+  },
+  "7e472afe355546a6d46d3be1bbdfc9f315900db226607804aa4a71b60af874f3": {
+    "describe": {
+      "columns": [],
+      "nullable": [],
+      "parameters": {
+        "Left": [
+          "VarcharArray",
+          "VarcharArray",
+          "NumericArray",
+          "NumericArray",
+          "TimestampArray",
+          "Int8Array",
+          "BoolArray"
+        ]
+      }
+    },
+    "query": "\n            insert into nft_auction_bid (\n                auction,\n                buyer,\n                price,\n                next_bid_value, \n                created_at,\n                tx_lt,\n                declined\n            )\n            select *\n            from unnest(\n                $1::varchar[],\n                $2::varchar[],\n                $3::numeric[],\n                $4::numeric[],\n                $5::timestamp[],\n                $6::bigint[],\n                $7::boolean[]\n            ) \n        "
   },
   "7f2f107b7fe45a4ec608bd972c3585aa8b2d7f268723a90b7858eea455db44ef": {
     "describe": {
@@ -721,6 +780,33 @@
       }
     },
     "query": "\n                insert into meta_handled_addresses (\n                    address, \n                    updated_at,\n                    failed\n                )\n                values (\n                    $1, \n                    $2,\n                    $3\n                )\n                on conflict (address) do update \n                set\n                    updated_at = $2,\n                    failed = $3\n            "
+  },
+  "b26379153f56804b980c102af4afc542ec8aeda91a7e11918c72a7690b4a67f5": {
+    "describe": {
+      "columns": [],
+      "nullable": [],
+      "parameters": {
+        "Left": [
+          "VarcharArray",
+          "NumericArray",
+          {
+            "Custom": {
+              "kind": {
+                "Enum": [
+                  "created",
+                  "active",
+                  "cancelled",
+                  "completed",
+                  "expired"
+                ]
+              },
+              "name": "auction_status"
+            }
+          }
+        ]
+      }
+    },
+    "query": "\n        update nft_auction set\n            max_bid = data.max_bid,\n            status = data.status\n        from\n        (\n            select \n                unnest($1::varchar[]) as address,\n                unnest($2::numeric[]) as max_bid,\n                $3::auction_status as status\n        ) as data\n        where nft_auction.address = data.address\n    "
   },
   "b808a83b7b32970f4a83cf042616ecefb4db0522b0e9d568444996918ae92943": {
     "describe": {

@@ -64,8 +64,9 @@ impl Decode for BidPlaced {
             bid_value: u128_to_bigdecimal(self.value),
             next_value: u128_to_bigdecimal(self.next_bid_value),
             buyer: self.buyer.to_string(),
-            created_at: msg_info.tx_data.get_timestamp().try_into()?,
-            tx_lt: msg_info.tx_data.logical_time(),
+            created_at: msg_info.tx_data.get_timestamp(),
+            tx_lt: msg_info.tx_data.logical_time().try_into()?,
+            declined: false,
         };
 
         let price_hist = NftPriceHistory {
@@ -91,7 +92,8 @@ impl Decode for BidDeclined {
             next_value: Default::default(),
             buyer: self.buyer.to_string(),
             created_at: msg_info.tx_data.get_timestamp().try_into()?,
-            tx_lt: msg_info.tx_data.logical_time(),
+            tx_lt: msg_info.tx_data.logical_time().try_into()?,
+            declined: true,
         };
 
         Ok(Decoded::AuctionBidDeclined(bid))

@@ -6,8 +6,9 @@ use anyhow::Result;
 use futures::channel::mpsc::{Receiver, Sender};
 use futures::{future, SinkExt, StreamExt};
 use indexer_repo::batch::{
-    save_auc_acitve, save_nft_burned, save_nft_created, save_nft_manager_changed,
-    save_nft_owner_changed, save_price_history, save_whitelist_address,
+    save_auc_acitve, save_auc_bid, save_auc_cancelled, save_auc_complete, save_nft_burned,
+    save_nft_created, save_nft_manager_changed, save_nft_owner_changed, save_price_history,
+    save_whitelist_address, update_auc_maxmin,
 };
 use indexer_repo::types::{
     AddressChangedDecoded, AuctionActiveDecoded, NftBurnedDecoded, NftCreateDecoded,
@@ -166,8 +167,8 @@ async fn save_to_db(pool: &PgPool, data: Vec<Decoded>) -> Result<()> {
                 nft_manager_chaged.push(addr);
             }
             Decoded::ShouldSkip => (),
-            Decoded::AuctionDeployed(a) => whitelist_insertion_addresses.push(a.0),
-            Decoded::AuctionCreated(a) => (), //auc_created.push(a),
+            Decoded::AuctionDeployed(addr) => whitelist_insertion_addresses.push(addr.0),
+            Decoded::AuctionCreated(_) => (), //auc_created.push(a),
             Decoded::AuctionActive((auc, price)) => {
                 auc_active.push(auc);
                 prices.push(price);
@@ -214,23 +215,24 @@ async fn save_to_db(pool: &PgPool, data: Vec<Decoded>) -> Result<()> {
     // }
 
     if !auc_active.is_empty() {
-        // save_auc_acitve(&pool, auc_active).await?;
+        save_auc_acitve(&pool, auc_active).await?;
     }
 
     if !prices.is_empty() {
         save_price_history(&pool, prices).await?;
     }
     if !auc_bid_placed.is_empty() {
-        unimplemented!()
+        save_auc_bid(&pool, &auc_bid_placed[..]).await?;
+        update_auc_maxmin(&pool, &auc_bid_placed[..]).await?;
     }
     if !auc_bid_declined.is_empty() {
-        unimplemented!()
+        save_auc_bid(&pool, &auc_bid_declined[..]).await?;
     }
     if !auc_complete.is_empty() {
-        unimplemented!()
+        save_auc_complete(&pool, &auc_complete[..]).await?;
     }
     if !auc_cancelled.is_empty() {
-        unimplemented!()
+        save_auc_cancelled(&pool, &auc_cancelled[..]).await?;
     }
 
     Ok(())
@@ -284,17 +286,17 @@ macro_rules! try_unpack_entity {
 fn unpack_entity(event: &ExtractedOwned) -> Result<Option<(Box<dyn Decode>, UInt256)>> {
     try_unpack_entity!(
         event,
-        // /* AuctionRootTip3 */
-        // AuctionDeployed,
-        // AuctionDeclined,
-        // /* AuctionTip3 */
-        // AuctionCreated,
-        // AuctionActive,
-        // BidPlaced,
-        // BidDeclined,
-        // AuctionComplete,
-        // AuctionCancelled,
-        // /* Collection */
+        /* AuctionRootTip3 */
+        AuctionDeployed,
+        AuctionDeclined,
+        /* AuctionTip3 */
+        AuctionCreated,
+        AuctionActive,
+        BidPlaced,
+        BidDeclined,
+        AuctionComplete,
+        AuctionCancelled,
+        /* Collection */
         NftCreated,
         NftBurned,
         // /* DirectBuy */
