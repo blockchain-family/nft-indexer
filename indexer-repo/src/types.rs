@@ -88,12 +88,18 @@ pub enum DirectBuyState {
     Expired,
 }
 
-#[derive(Clone, Debug, Serialize, PartialEq, Eq, sqlx::Type)]
+#[derive(Copy, Clone, Debug, Serialize, PartialEq, Eq, sqlx::Type)]
 #[sqlx(type_name = "nft_price_source", rename_all = "camelCase")]
 pub enum NftPriceSource {
     AuctionBid = 0,
     DirectBuy,
     DirectSell,
+}
+
+impl sqlx::postgres::PgHasArrayType for NftPriceSource {
+    fn array_type_info() -> sqlx::postgres::PgTypeInfo {
+        sqlx::postgres::PgTypeInfo::with_name("_nft_price_source")
+    }
 }
 
 impl From<String> for Address {
@@ -367,9 +373,9 @@ pub struct AuctionActiveDecoded {
     pub price_token: String,
     pub start_price: BigDecimal,
     pub min_bid: BigDecimal,
-    pub created_at: u64,
-    pub finished_at: u64,
-    pub tx_lt: u64,
+    pub created_at: i64,
+    pub finished_at: i64,
+    pub tx_lt: i64,
 }
 
 pub struct AuctionBidDecoded {

@@ -37,8 +37,8 @@ impl Decode for AuctionActive {
             price_token: self.value0._payment_token.to_string(),
             start_price: u128_to_bigdecimal(self.value0._price),
             min_bid: u128_to_bigdecimal(self.value0._price),
-            created_at: self.value0.start_time,
-            finished_at: self.value0.finish_time,
+            created_at: self.value0.start_time.try_into()?,
+            finished_at: self.value0.finish_time.try_into()?,
             tx_lt: msg_info.tx_data.logical_time().try_into()?,
         };
 

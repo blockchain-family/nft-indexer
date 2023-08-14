@@ -32,21 +32,23 @@ impl Default for Config {
 
 impl Config {
     pub fn new() -> Config {
-        let conf = config::Config::builder()
-            .add_source(
-                config::Environment::default()
-                    .separator("__")
-                    .list_separator(",")
-                    .with_list_parse_key("states_rpc_endpoints")
-                    .with_list_parse_key("trusted_auction_roots")
-                    .with_list_parse_key("trusted_direct_buy_factories")
-                    .with_list_parse_key("trusted_direct_sell_factories")
-                    .try_parsing(true),
-            )
-            .build()
-            .unwrap();
+        let mut conf_builder = config::Config::builder().add_source(
+            config::Environment::default()
+                .separator("__")
+                .list_separator(",")
+                .with_list_parse_key("states_rpc_endpoints")
+                .with_list_parse_key("trusted_auction_roots")
+                .with_list_parse_key("trusted_direct_buy_factories")
+                .with_list_parse_key("trusted_direct_sell_factories")
+                .try_parsing(true),
+        );
+        if std::path::Path::new("Settings.toml").exists() {
+            conf_builder = conf_builder.add_source(config::File::with_name("./Settings.toml"));
+        }
 
-        let mut conf = conf
+        let mut conf = conf_builder
+            .build()
+            .unwrap()
             .try_deserialize::<Config>()
             .unwrap_or_else(|e| panic!("Error parsing config: {}", e));
 

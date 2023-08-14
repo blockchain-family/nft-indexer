@@ -14,7 +14,7 @@ use super::{types::Decoded, Decode, Entity};
 impl Decode for OwnerChanged {
     fn decode(&self, msg_info: &EventMessageInfo) -> Result<Decoded> {
         let nft_new_owner = AddressChangedDecoded {
-            nft_address: msg_info.tx_data.get_account().into(),
+            id_address: msg_info.tx_data.get_account().into(),
             new_address: self.new_owner.to_string().into(),
             timestamp: msg_info.tx_data.get_timestamp(),
         };
@@ -26,7 +26,7 @@ impl Decode for OwnerChanged {
 impl Decode for ManagerChanged {
     fn decode(&self, msg_info: &EventMessageInfo) -> Result<Decoded> {
         let nft_new_manager = AddressChangedDecoded {
-            nft_address: msg_info.tx_data.get_account().into(),
+            id_address: msg_info.tx_data.get_account().into(),
             new_address: self.new_manager.to_string().into(),
             timestamp: msg_info.tx_data.get_timestamp(),
         };

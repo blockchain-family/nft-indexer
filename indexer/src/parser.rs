@@ -7,9 +7,12 @@ use futures::channel::mpsc::{Receiver, Sender};
 use futures::{future, SinkExt, StreamExt};
 use indexer_repo::batch::{
     save_auc_acitve, save_nft_burned, save_nft_created, save_nft_manager_changed,
-    save_nft_owner_changed, save_whitelist_address,
+    save_nft_owner_changed, save_price_history, save_whitelist_address,
 };
-use indexer_repo::types::{AddressChangedDecoded, NftBurnedDecoded, NftCreateDecoded};
+use indexer_repo::types::{
+    AddressChangedDecoded, AuctionActiveDecoded, NftBurnedDecoded, NftCreateDecoded,
+    NftPriceHistory, NftPriceSource,
+};
 use nekoton_abi::transaction_parser::{ExtractedOwned, ParsedType};
 use nekoton_abi::UnpackAbiPlain;
 use sqlx::types::chrono::NaiveDateTime;
@@ -45,32 +48,28 @@ pub async fn run_nft_indexer(
 
     let mut data = Vec::with_capacity(10000);
     for step in 0..1000 {
-        let create_nft = NftCreateDecoded {
-            address: format!("addr{step}").into(),
-            collection: format!("coll{step}").into(),
-            owner: format!("own{step}").into(),
-            manager: format!("man{step}").into(),
-            updated: Default::default(),
-            owner_update_lt: 0,
-            manager_update_lt: 0,
+        let a = AuctionActiveDecoded {
+            address: "".to_string(),
+            nft: "".to_string(),
+            wallet_for_bids: "".to_string(),
+            price_token: "".to_string(),
+            start_price: Default::default(),
+            min_bid: Default::default(),
+            created_at: 0,
+            finished_at: 0,
+            tx_lt: 0,
+        };
+        let price = NftPriceHistory {
+            source: "aaa".to_string().into(),
+            source_type: NftPriceSource::AuctionBid,
+            created_at: NaiveDateTime::default(),
+            price: Default::default(),
+            price_token: Some("someToken".to_string().into()),
+            nft: Some("nftAddr".to_string().into()),
+            collection: None,
         };
 
-        data.push(Decoded::CreateNft(create_nft));
-
-        let burned_nft = NftBurnedDecoded {
-            address: format!("addr{step}").into(),
-            owner: format!("own{step} changed").into(),
-            manager: format!("man{step} changed").into(),
-        };
-        data.push(Decoded::BurnNft(burned_nft));
-
-        let owner_changing = AddressChangedDecoded {
-            id_address: format!("addr0").into(),
-            new_address: format!("changed_owner{step}").into(),
-            timestamp: step,
-        };
-
-        data.push(Decoded::OwnerChangedNft(owner_changing));
+        data.push(Decoded::AuctionActive((a, price)));
     }
 
     let now = std::time::Instant::now();
@@ -215,11 +214,11 @@ async fn save_to_db(pool: &PgPool, data: Vec<Decoded>) -> Result<()> {
     // }
 
     if !auc_active.is_empty() {
-        save_auc_acitve(&pool, auc_active).await?;
+        // save_auc_acitve(&pool, auc_active).await?;
     }
 
     if !prices.is_empty() {
-        unimplemented!()
+        save_price_history(&pool, prices).await?;
     }
     if !auc_bid_placed.is_empty() {
         unimplemented!()
