@@ -173,6 +173,44 @@ async fn save_to_db(
             Decoded::DirectBuyDeployed(addr) => whitelist_insertion_addresses.push(addr.0),
         }
     }
+
+    log::info!(
+        r#" 
+        EVENTS:
+    nft_created: {},
+    nft_burned: {},
+    nft_owner_changed: {},
+    nft_manager_changed: {},
+    whitelist_insertion_addresses: {},
+    auc_active: {},
+    prices: {},
+    auc_bid_placed: {},
+    auc_bid_declined: {},
+    auc_complete: {},
+    auc_cancelled: {},
+    raw_events: {},
+    auc_rules: {},
+    dss: {},
+    dbs: {},
+
+    "#,
+        nft_created.len(),
+        nft_burned.len(),
+        nft_owner_changed.len(),
+        nft_manager_changed.len(),
+        whitelist_insertion_addresses.len(),
+        auc_active.len(),
+        prices.len(),
+        auc_bid_placed.len(),
+        auc_bid_declined.len(),
+        auc_complete.len(),
+        auc_cancelled.len(),
+        raw_events.len(),
+        auc_rules.len(),
+        dss.len(),
+        dbs.len()
+    );
+
     if !raw_events.is_empty() {
         save_raw_event(pool, raw_events).await?;
     }
