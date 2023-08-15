@@ -39,7 +39,7 @@ async fn main() -> Result<()> {
     settings::whitelist::init_trusted_addresses(config.clone())?;
     settings::whitelist::init_whitelist_addresses(&pg_pool).await?;
 
-    // tokio::spawn(run_updater(pg_pool.clone()));
+    tokio::spawn(run_updater(pg_pool.clone()));
 
     let jrpc_client = settings::get_jrpc_client(&config).await?;
     log::info!("Connected to jrpc endpoint");
