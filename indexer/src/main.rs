@@ -39,7 +39,7 @@ async fn main() -> Result<()> {
     settings::whitelist::init_trusted_addresses(config.clone())?;
     settings::whitelist::init_whitelist_addresses(&pg_pool).await?;
 
-    tokio::spawn(run_updater(pg_pool.clone()));
+    // tokio::spawn(run_updater(pg_pool.clone()));
 
     let jrpc_client = settings::get_jrpc_client(&config).await?;
     log::info!("Connected to jrpc endpoint");
@@ -51,7 +51,7 @@ async fn main() -> Result<()> {
         idle_after_loop: config.idle_after_meta_loop_sec,
     };
 
-    tokio::spawn(data_reader::run_meta_reader(meta_reader_context.clone()));
+    // tokio::spawn(data_reader::run_meta_reader(meta_reader_context.clone()));
     tokio::spawn(parser::start_parsing(config.clone(), pg_pool.clone()));
 
     let ctx = PriceReaderContext {
@@ -60,7 +60,7 @@ async fn main() -> Result<()> {
         idle_after_loop: config.idle_after_price_loop_sec,
     };
 
-    tokio::spawn(data_reader::run_price_reader(ctx));
+    // tokio::spawn(data_reader::run_price_reader(ctx));
 
     let socket_addr: SocketAddr =
         SocketAddr::from_str(&config.server_api_url).expect("Invalid socket addr");
