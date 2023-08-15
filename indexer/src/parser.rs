@@ -43,6 +43,8 @@ pub async fn run_nft_indexer(
     let collection_queue = collections_queue::create_and_run_queue(pool.clone()).await;
 
     while let Some(message) = rx_raw_transactions.next().await {
+        let now_loop = std::time::Instant::now();
+
         let mut data = Vec::with_capacity(EVENTS_PER_ITERATION * 3);
 
         for (out, tx) in message {
@@ -86,6 +88,9 @@ pub async fn run_nft_indexer(
         log::info!("METRIC | Saving to db, elapsed {}ms", elapsed.as_millis());
 
         tx_commit.send(()).await.expect("dead commit sender");
+
+        let elapsed_loop = now_loop.elapsed();
+        log::info!("METRIC | Loop, elapsed {}ms", elapsed_loop.as_millis());
     }
 
     panic!("rip kafka consumer");
