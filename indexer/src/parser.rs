@@ -73,9 +73,13 @@ pub async fn run_nft_indexer(
                 if let Ok(Some(entity)) = unpack_entity(&event) {
                     if let Ok(decoded) = entity.decode(&ctx) {
                         data.push(decoded);
+                    } else {
+                        log::error!("Error while decode");
                     }
                     if let Ok(event) = entity.decode_event(&ctx) {
                         data.push(event);
+                    } else {
+                        log::error!("Error while decode_event");
                     }
                 }
             }
