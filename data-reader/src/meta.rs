@@ -117,7 +117,7 @@ pub async fn update_collections_meta(
 
     let collection = NftCollectionMeta {
         address: address.into(),
-        owner: collection_owner.into(),
+        owner: collection_owner,
         name: meta
             .get("name")
             .cloned()

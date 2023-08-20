@@ -1,22 +1,19 @@
 use anyhow::{anyhow, Result};
 use sqlx::PgPool;
 
-use crate::types::EventRecord;
+use crate::types::decoded::EventRecord;
 
 pub async fn save_raw_event(pool: &PgPool, events: Vec<EventRecord>) -> Result<()> {
     let categories = events.iter().map(|e| e.event_category).collect::<Vec<_>>();
     let types = events.iter().map(|e| e.event_type).collect::<Vec<_>>();
     let addresses = events
         .iter()
-        .map(|e| e.address.0.as_str())
+        .map(|e| e.address.as_str())
         .collect::<Vec<_>>();
-    let nfts = events
-        .iter()
-        .map(|e| e.nft.as_ref().map(|n| n.0.as_str()))
-        .collect::<Vec<_>>();
+    let nfts = events.iter().map(|e| e.nft.as_deref()).collect::<Vec<_>>();
     let collections = events
         .iter()
-        .map(|e| e.collection.as_ref().map(|c| c.0.as_str()))
+        .map(|e| e.collection.as_deref())
         .collect::<Vec<_>>();
     let created_lt = events.iter().map(|e| e.created_lt).collect::<Vec<_>>();
     let created_at = events.iter().map(|e| e.created_at).collect::<Vec<_>>();

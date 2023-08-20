@@ -2,9 +2,9 @@ use anyhow::{anyhow, Result};
 use chrono::NaiveDateTime;
 use sqlx::PgPool;
 
-use crate::types::{AuctionActiveDecoded, AuctionStatus};
+use crate::types::{decoded::AuctionActive, AuctionStatus};
 
-pub async fn save_auc_acitve(pool: &PgPool, data: Vec<AuctionActiveDecoded>) -> Result<()> {
+pub async fn save_auc_acitve(pool: &PgPool, data: Vec<AuctionActive>) -> Result<()> {
     let addresses = data.iter().map(|n| n.address.as_str()).collect::<Vec<_>>();
     let nft = data.iter().map(|n| n.nft.as_str()).collect::<Vec<_>>();
     let wallets = data

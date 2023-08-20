@@ -1,4 +1,4 @@
-use crate::{settings::config::Config, state_updater::run_updater};
+use crate::settings::config::Config;
 use anyhow::Result;
 use data_reader::{MetaReaderContext, PriceReaderContext};
 use indexer_api::run_api;
@@ -10,7 +10,6 @@ mod models;
 mod parser;
 mod persistence;
 mod settings;
-mod state_updater;
 mod utils;
 
 extern crate num;
@@ -38,8 +37,6 @@ async fn main() -> Result<()> {
 
     settings::whitelist::init_trusted_addresses(config.clone())?;
     settings::whitelist::init_whitelist_addresses(&pg_pool).await?;
-
-    // tokio::spawn(run_updater(pg_pool.clone()));
 
     let jrpc_client = settings::get_jrpc_client(&config).await?;
     log::info!("Connected to jrpc endpoint");

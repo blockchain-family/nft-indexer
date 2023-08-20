@@ -35,18 +35,15 @@ pub async fn init_whitelist_addresses(pg_pool: &PgPool) -> Result<()> {
     let mut pg_pool_tx = pg_pool.begin().await?;
 
     for addr in TRUSTED_ADDRESSES.get().unwrap()[&OfferRootType::AuctionRoot].iter() {
-        indexer_repo::actions::add_whitelist_address(&(*addr.clone()).into(), &mut pg_pool_tx)
-            .await?;
+        indexer_repo::actions::add_whitelist_address(addr, &mut pg_pool_tx).await?;
     }
 
     for addr in TRUSTED_ADDRESSES.get().unwrap()[&OfferRootType::FactoryDirectBuy].iter() {
-        indexer_repo::actions::add_whitelist_address(&(*addr.clone()).into(), &mut pg_pool_tx)
-            .await?;
+        indexer_repo::actions::add_whitelist_address(addr, &mut pg_pool_tx).await?;
     }
 
     for addr in TRUSTED_ADDRESSES.get().unwrap()[&OfferRootType::FactoryDirectSell].iter() {
-        indexer_repo::actions::add_whitelist_address(&(*addr.clone()).into(), &mut pg_pool_tx)
-            .await?;
+        indexer_repo::actions::add_whitelist_address(addr, &mut pg_pool_tx).await?;
     }
 
     pg_pool_tx.commit().await?;

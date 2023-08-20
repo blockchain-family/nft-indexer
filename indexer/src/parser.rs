@@ -10,9 +10,7 @@ use futures::{future, SinkExt, StreamExt};
 use indexer_repo::batch::*;
 use nekoton_abi::transaction_parser::{ExtractedOwned, ParsedType};
 use nekoton_abi::UnpackAbiPlain;
-use sqlx::types::chrono::NaiveDateTime;
 use sqlx::PgPool;
-use ton_block::GetRepresentationHash;
 use transaction_buffer::models::{BufferedConsumerChannels, RawTransaction};
 
 const EVENTS_PER_ITERATION: usize = 1000;
@@ -143,7 +141,7 @@ async fn save_to_db(
                 nft_manager_changed.push(addr);
             }
             Decoded::ShouldSkip => (),
-            Decoded::AuctionDeployed(addr) => whitelist_insertion_addresses.push(addr.0),
+            Decoded::AuctionDeployed(addr) => whitelist_insertion_addresses.push(addr),
             Decoded::AuctionCreated(_) => (), //auc_created.push(a),
             Decoded::AuctionActive((auc, price)) => {
                 auc_active.push(auc);
@@ -176,8 +174,8 @@ async fn save_to_db(
                 dbs.push(db);
                 prices.push(price);
             }
-            Decoded::DirectSellDeployed(addr) => whitelist_insertion_addresses.push(addr.0),
-            Decoded::DirectBuyDeployed(addr) => whitelist_insertion_addresses.push(addr.0),
+            Decoded::DirectSellDeployed(addr) => whitelist_insertion_addresses.push(addr),
+            Decoded::DirectBuyDeployed(addr) => whitelist_insertion_addresses.push(addr),
         }
     }
 
@@ -277,38 +275,6 @@ async fn save_to_db(
 
     if !dbs.is_empty() {
         save_direct_buy_state_changed(pool, dbs).await?;
-    }
-
-    Ok(())
-}
-
-async fn _process_event(
-    event: ExtractedOwned,
-    ctx: &mut DecodeContext,
-    _pool: &PgPool,
-) -> Result<()> {
-    if let Some(_entity) = unpack_entity(&event)? {
-        ctx.message_hash = event.message_hash;
-        log::info!(
-            "saving {}, tx hash {:?}, timestamp: {}",
-            event.name,
-            ctx.tx_data.hash().unwrap_or_default(),
-            NaiveDateTime::from_timestamp_opt(ctx.tx_data.now as i64, 0).unwrap_or_default()
-        );
-
-        let now = std::time::Instant::now();
-        let cpu_now = cpu_time::ProcessTime::now();
-        // entity.save_to_db(pool, msg_info).await?;
-        let cpu_elapsed = cpu_now.elapsed();
-        let elapsed = now.elapsed();
-        log::debug!(
-            "METRIC | Saving {} took: {} ms / {} s clock time, {} ms / {} s cpu time",
-            event.name,
-            elapsed.as_millis(),
-            elapsed.as_secs_f64(),
-            cpu_elapsed.as_millis(),
-            cpu_elapsed.as_secs_f64(),
-        );
     }
 
     Ok(())

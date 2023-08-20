@@ -1,9 +1,12 @@
 use anyhow::{anyhow, Result};
 use sqlx::PgPool;
 
-use crate::types::{AuctionCancelledDecoded, AuctionCompleteDecoded, AuctionStatus};
+use crate::types::{
+    decoded::{AuctionCancelled, AuctionComplete},
+    AuctionStatus,
+};
 
-pub async fn save_auc_complete(pool: &PgPool, data: &[AuctionCompleteDecoded]) -> Result<()> {
+pub async fn save_auc_complete(pool: &PgPool, data: &[AuctionComplete]) -> Result<()> {
     let addresses = data.iter().map(|e| e.address.as_str()).collect::<Vec<_>>();
     let max_bids = data.iter().map(|e| e.max_bid.clone()).collect::<Vec<_>>();
 
@@ -31,7 +34,7 @@ pub async fn save_auc_complete(pool: &PgPool, data: &[AuctionCompleteDecoded]) -
     .map(|_| ())
 }
 
-pub async fn save_auc_cancelled(pool: &PgPool, data: &[AuctionCancelledDecoded]) -> Result<()> {
+pub async fn save_auc_cancelled(pool: &PgPool, data: &[AuctionCancelled]) -> Result<()> {
     let addresses = data.iter().map(|e| e.address.as_str()).collect::<Vec<_>>();
 
     sqlx::query!(

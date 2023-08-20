@@ -2,9 +2,9 @@ use anyhow::{anyhow, Result};
 use chrono::NaiveDateTime;
 use sqlx::PgPool;
 
-use crate::types::AuctionBidDecoded;
+use crate::types::decoded::AuctionBid;
 
-pub async fn save_auc_bid(pool: &PgPool, data: &[AuctionBidDecoded]) -> Result<()> {
+pub async fn save_auc_bid(pool: &PgPool, data: &[AuctionBid]) -> Result<()> {
     let auctions = data.iter().map(|e| e.address.as_str()).collect::<Vec<_>>();
     let buyers = data.iter().map(|e| e.buyer.as_str()).collect::<Vec<_>>();
     let bid_vals = data.iter().map(|e| e.bid_value.clone()).collect::<Vec<_>>();

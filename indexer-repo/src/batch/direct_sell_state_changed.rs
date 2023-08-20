@@ -1,12 +1,9 @@
-use crate::types::{DirectSellDecoded, DirectSellState};
+use crate::types::{decoded::DirectSell, DirectSellState};
 use anyhow::{anyhow, Result};
 use sqlx::PgPool;
 use std::collections::HashMap;
 
-pub async fn save_direct_sell_state_changed(
-    pool: &PgPool,
-    dss: Vec<DirectSellDecoded>,
-) -> Result<()> {
+pub async fn save_direct_sell_state_changed(pool: &PgPool, dss: Vec<DirectSell>) -> Result<()> {
     let mut to_insert = Vec::with_capacity(dss.len());
     let mut for_update = Vec::with_capacity(dss.len());
 
@@ -29,7 +26,7 @@ pub async fn save_direct_sell_state_changed(
     Ok(())
 }
 
-async fn insert_direct_sell(pool: &PgPool, dss: Vec<DirectSellDecoded>) -> Result<()> {
+async fn insert_direct_sell(pool: &PgPool, dss: Vec<DirectSell>) -> Result<()> {
     let addresses = dss.iter().map(|db| db.address.as_str()).collect::<Vec<_>>();
     let nfts = dss.iter().map(|db| db.nft.as_str()).collect::<Vec<_>>();
     let collections = dss
@@ -107,7 +104,7 @@ async fn insert_direct_sell(pool: &PgPool, dss: Vec<DirectSellDecoded>) -> Resul
     .map(|_| ())
 }
 
-async fn update_direct_sell_state(pool: &PgPool, mut dss: Vec<DirectSellDecoded>) -> Result<()> {
+async fn update_direct_sell_state(pool: &PgPool, mut dss: Vec<DirectSell>) -> Result<()> {
     dss.sort_by(|a, b| b.tx_lt.cmp(&a.tx_lt));
     let mut last_state_change = HashMap::with_capacity(dss.len());
 

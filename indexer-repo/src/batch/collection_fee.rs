@@ -1,9 +1,10 @@
 use anyhow::{anyhow, Result};
 use sqlx::PgPool;
 
-use crate::types::CollectionFeeDecoded;
+use crate::types::decoded::CollectionFee;
 
-pub async fn update_collection_fee(pool: &PgPool, data: Vec<CollectionFeeDecoded>) -> Result<()> {
+// TODO: check race condition with collections queue
+pub async fn update_collection_fee(pool: &PgPool, data: Vec<CollectionFee>) -> Result<()> {
     let addresses = data.iter().map(|e| e.address.as_str()).collect::<Vec<_>>();
     let nums = data.iter().map(|e| e.numerator).collect::<Vec<_>>();
     let denoms = data.iter().map(|e| e.denominator).collect::<Vec<_>>();

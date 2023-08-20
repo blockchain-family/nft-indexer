@@ -41,10 +41,12 @@ impl CollectionsQueue {
         );
 
         while let Some((collection, nft_mint_ts)) = rx.recv().await {
+            // TODO: refresh collections owners count
+            // TODO: add fee here
             if let Some(last_used) = collections.get_mut(&collection) {
                 *last_used = chrono::Utc::now().timestamp();
             } else if let Err(e) = indexer_repo::actions::insert_collection(
-                collection.clone().into(),
+                collection.as_str(),
                 chrono::NaiveDateTime::from_timestamp_opt(nft_mint_ts, 0).unwrap_or_default(),
                 &self.pg_pool,
             )

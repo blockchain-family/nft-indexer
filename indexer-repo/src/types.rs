@@ -1,15 +1,5 @@
 use chrono::NaiveDateTime;
 use serde::{Deserialize, Serialize};
-use sqlx::types::BigDecimal;
-use std::str::FromStr;
-
-#[derive(Default, Clone, Debug, Hash, PartialEq, Eq, Serialize, Deserialize, sqlx::Type)]
-#[sqlx(type_name = "t_address")]
-pub struct Address(pub String);
-
-#[derive(Clone, Debug, Hash, PartialEq, Eq, Serialize, Deserialize, sqlx::Type)]
-#[sqlx(type_name = "t_uri")]
-pub struct Uri(pub String);
 
 #[derive(Copy, Clone, Debug, Serialize, sqlx::Type)]
 #[sqlx(type_name = "event_type", rename_all = "snake_case")]
@@ -126,44 +116,6 @@ impl sqlx::postgres::PgHasArrayType for NftPriceSource {
     }
 }
 
-impl From<String> for Address {
-    fn from(str_address: String) -> Self {
-        Address(str_address)
-    }
-}
-
-impl From<&str> for Address {
-    fn from(str_address: &str) -> Self {
-        Address(str_address.to_string())
-    }
-}
-
-impl<'a> From<&'a Address> for &'a String {
-    fn from(address: &'a Address) -> Self {
-        &address.0
-    }
-}
-
-impl FromStr for Address {
-    type Err = std::convert::Infallible;
-
-    fn from_str(s: &str) -> Result<Self, Self::Err> {
-        Ok(Address(s.to_string()))
-    }
-}
-
-impl From<String> for Uri {
-    fn from(str: String) -> Self {
-        Uri(str)
-    }
-}
-
-impl From<&str> for Uri {
-    fn from(str: &str) -> Self {
-        Uri(str.to_string())
-    }
-}
-
 impl From<u8> for DirectSellState {
     fn from(state: u8) -> Self {
         match state {
@@ -204,160 +156,6 @@ impl From<u8> for AuctionStatus {
     }
 }
 
-#[derive(Default, Clone, Debug)]
-pub struct Nft {
-    pub address: Address,
-    pub collection: Option<Address>,
-    pub owner: Option<Address>,
-    pub manager: Option<Address>,
-    pub name: Option<String>,
-    pub description: Option<String>,
-    pub burned: bool,
-    pub updated: NaiveDateTime,
-    pub owner_update_lt: i64,
-    pub manager_update_lt: i64,
-}
-
-#[derive(Clone, Debug)]
-pub struct NftMeta {
-    pub nft: Address,
-    pub meta: serde_json::Value,
-    pub updated: NaiveDateTime,
-}
-
-#[derive(Default, Clone, Debug)]
-pub struct NftCollectionMeta {
-    pub address: Address,
-    pub owner: Address,
-    pub name: Option<String>,
-    pub description: Option<String>,
-    pub updated: NaiveDateTime,
-    pub logo: Option<Uri>,
-    pub wallpaper: Option<Uri>,
-}
-
-#[derive(Default, Clone, Debug)]
-pub struct NftAuction {
-    pub address: Address,
-    pub nft: Option<Address>,
-    pub wallet_for_bids: Option<Address>,
-    pub price_token: Option<Address>,
-    pub start_price: Option<BigDecimal>,
-    pub closing_price_usd: Option<BigDecimal>,
-    pub min_bid: Option<BigDecimal>,
-    pub max_bid: Option<BigDecimal>,
-    pub status: Option<AuctionStatus>,
-    pub created_at: Option<NaiveDateTime>,
-    pub finished_at: Option<NaiveDateTime>,
-    pub tx_lt: i64,
-}
-
-#[derive(Default, Clone, Debug)]
-pub struct NftAuctionBid {
-    pub auction: Address,
-    pub buyer: Address,
-    pub price: BigDecimal,
-    pub next_bid_value: Option<BigDecimal>,
-    pub declined: bool,
-    pub created_at: NaiveDateTime,
-    pub tx_lt: i64,
-}
-
-#[derive(Clone, Debug)]
-pub struct NftDirectSell {
-    pub address: Address,
-    pub nft: Address,
-    pub collection: Option<Address>,
-    pub price_token: Address,
-    pub price: BigDecimal,
-    pub sell_price_usd: Option<BigDecimal>,
-    pub seller: Address,
-    pub finished_at: Option<NaiveDateTime>,
-    pub expired_at: NaiveDateTime,
-    pub state: DirectSellState,
-    pub created: NaiveDateTime,
-    pub updated: NaiveDateTime,
-    pub tx_lt: i64,
-}
-
-#[derive(Clone, Debug)]
-pub struct NftDirectBuy {
-    pub address: Address,
-    pub nft: Address,
-    pub collection: Option<Address>,
-    pub price_token: Address,
-    pub price: BigDecimal,
-    pub buy_price_usd: Option<BigDecimal>,
-    pub buyer: Address,
-    pub finished_at: Option<NaiveDateTime>,
-    pub expired_at: NaiveDateTime,
-    pub state: DirectBuyState,
-    pub created: NaiveDateTime,
-    pub updated: NaiveDateTime,
-    pub tx_lt: i64,
-}
-
-#[derive(Clone, Debug)]
-pub struct NftPriceHistory {
-    pub source: Address,
-    pub source_type: NftPriceSource,
-    pub created_at: NaiveDateTime,
-    pub price: BigDecimal,
-    pub price_token: Option<Address>,
-    pub nft: Option<Address>,
-    pub collection: Option<Address>,
-}
-
-#[derive(Clone, Debug)]
-pub struct NftAttribute {
-    pub nft: Address,
-    pub collection: Option<Address>,
-    pub raw: serde_json::Value,
-    pub trait_type: String,
-    pub value: Option<serde_json::Value>,
-}
-
-impl NftAttribute {
-    pub fn new(nft: Address, collection: Option<Address>, raw: serde_json::Value) -> Self {
-        let trait_type = raw
-            .get("trait_type")
-            .cloned()
-            .unwrap_or_default()
-            .as_str()
-            .map(str::to_string)
-            .unwrap_or_default();
-
-        let value = if let Some(value) = raw.get("display_value").cloned() {
-            Some(value)
-        } else {
-            raw.get("value").cloned()
-        };
-
-        Self {
-            nft,
-            collection,
-            raw,
-            trait_type,
-            value,
-        }
-    }
-}
-
-#[derive(Clone, Debug)]
-pub struct EventRecord {
-    pub event_category: EventCategory,
-    pub event_type: EventType,
-
-    pub address: Address,
-    pub created_lt: i64,
-    pub created_at: i64,
-    pub message_hash: String,
-    pub nft: Option<Address>,
-    pub collection: Option<Address>,
-
-    pub raw_data: serde_json::Value,
-}
-
 #[derive(Debug, sqlx::Type, Deserialize, Clone, Copy)]
 #[sqlx(type_name = "bc_name", rename_all = "snake_case")]
 pub enum BcName {
@@ -365,95 +163,138 @@ pub enum BcName {
     Venom,
 }
 
-pub struct NftCreateDecoded {
-    pub address: String,
-    pub collection: String,
-    pub owner: String,
-    pub manager: String,
-    pub updated: NaiveDateTime,
-    pub owner_update_lt: i64,
-    pub manager_update_lt: i64,
-}
-
-pub struct NftBurnedDecoded {
+#[derive(Default, Clone, Debug)]
+pub struct NftCollectionMeta {
     pub address: String,
     pub owner: String,
-    pub manager: String,
-}
-
-pub struct AddressChangedDecoded {
-    pub id_address: String,
-    pub new_address: String,
-    pub timestamp: i64,
-}
-
-pub struct AuctionActiveDecoded {
-    pub address: String,
-    pub nft: String,
-    pub wallet_for_bids: String,
-    pub price_token: String,
-    pub start_price: BigDecimal,
-    pub min_bid: BigDecimal,
-    pub created_at: i64,
-    pub finished_at: i64,
-    pub tx_lt: i64,
-}
-
-pub struct AuctionBidDecoded {
-    pub address: String,
-    pub bid_value: BigDecimal,
-    pub next_value: BigDecimal,
-    pub buyer: String,
-    pub created_at: i64,
-    pub tx_lt: i64,
-    pub declined: bool,
-}
-
-pub struct AuctionCompleteDecoded {
-    pub address: String,
-    pub max_bid: BigDecimal,
-}
-
-pub struct AuctionCancelledDecoded {
-    pub address: String,
-}
-
-pub struct CollectionFeeDecoded {
-    pub address: String,
-    pub numerator: Option<i32>,
-    pub denominator: Option<i32>,
-}
-
-#[derive(Clone, Debug)]
-pub struct DirectBuyDecoded {
-    pub address: String,
-    pub nft: String,
-    pub collection: Option<String>,
-    pub price_token: String,
-    pub price: BigDecimal,
-    pub buy_price_usd: Option<BigDecimal>,
-    pub buyer: String,
-    pub finished_at: Option<NaiveDateTime>,
-    pub expired_at: NaiveDateTime,
-    pub state: DirectBuyState,
-    pub created: NaiveDateTime,
+    pub name: Option<String>,
+    pub description: Option<String>,
     pub updated: NaiveDateTime,
-    pub tx_lt: i64,
+    pub logo: Option<String>,
+    pub wallpaper: Option<String>,
 }
 
-#[derive(Clone, Debug)]
-pub struct DirectSellDecoded {
-    pub address: String,
-    pub nft: String,
-    pub collection: Option<String>,
-    pub price_token: String,
-    pub price: BigDecimal,
-    pub sell_price_usd: Option<BigDecimal>,
-    pub seller: String,
-    pub finished_at: Option<NaiveDateTime>,
-    pub expired_at: NaiveDateTime,
-    pub state: DirectSellState,
-    pub created: NaiveDateTime,
-    pub updated: NaiveDateTime,
-    pub tx_lt: i64,
+pub mod decoded {
+    use crate::types::{DirectBuyState, DirectSellState, EventCategory, EventType, NftPriceSource};
+    use chrono::NaiveDateTime;
+    use sqlx::types::BigDecimal;
+
+    #[derive(Clone, Debug)]
+    pub struct NftPriceHistory {
+        pub source: String,
+        pub source_type: NftPriceSource,
+        pub created_at: NaiveDateTime,
+        pub price: BigDecimal,
+        pub price_token: Option<String>,
+        pub nft: Option<String>,
+        pub collection: Option<String>,
+    }
+
+    #[derive(Clone, Debug)]
+    pub struct EventRecord {
+        pub event_category: EventCategory,
+        pub event_type: EventType,
+
+        pub address: String,
+        pub created_lt: i64,
+        pub created_at: i64,
+        pub message_hash: String,
+        pub nft: Option<String>,
+        pub collection: Option<String>,
+
+        pub raw_data: serde_json::Value,
+    }
+
+    pub struct NftCreated {
+        pub address: String,
+        pub collection: String,
+        pub owner: String,
+        pub manager: String,
+        pub updated: NaiveDateTime,
+        pub owner_update_lt: i64,
+        pub manager_update_lt: i64,
+    }
+
+    pub struct NftBurned {
+        pub address: String,
+        pub owner: String,
+        pub manager: String,
+    }
+
+    pub struct AddressChanged {
+        pub id_address: String,
+        pub new_address: String,
+        pub timestamp: i64,
+    }
+
+    pub struct AuctionActive {
+        pub address: String,
+        pub nft: String,
+        pub wallet_for_bids: String,
+        pub price_token: String,
+        pub start_price: BigDecimal,
+        pub min_bid: BigDecimal,
+        pub created_at: i64,
+        pub finished_at: i64,
+        pub tx_lt: i64,
+    }
+
+    pub struct AuctionBid {
+        pub address: String,
+        pub bid_value: BigDecimal,
+        pub next_value: BigDecimal,
+        pub buyer: String,
+        pub created_at: i64,
+        pub tx_lt: i64,
+        pub declined: bool,
+    }
+
+    pub struct AuctionComplete {
+        pub address: String,
+        pub max_bid: BigDecimal,
+    }
+
+    pub struct AuctionCancelled {
+        pub address: String,
+    }
+
+    pub struct CollectionFee {
+        pub address: String,
+        pub numerator: Option<i32>,
+        pub denominator: Option<i32>,
+    }
+
+    #[derive(Clone, Debug)]
+    pub struct DirectBuy {
+        pub address: String,
+        pub nft: String,
+        pub collection: Option<String>,
+        pub price_token: String,
+        pub price: BigDecimal,
+        pub buy_price_usd: Option<BigDecimal>,
+        pub buyer: String,
+        pub finished_at: Option<NaiveDateTime>,
+        pub expired_at: NaiveDateTime,
+        pub state: DirectBuyState,
+        pub created: NaiveDateTime,
+        pub updated: NaiveDateTime,
+        pub tx_lt: i64,
+    }
+
+    #[derive(Clone, Debug)]
+    pub struct DirectSell {
+        pub address: String,
+        pub nft: String,
+        pub collection: Option<String>,
+        pub price_token: String,
+        pub price: BigDecimal,
+        pub sell_price_usd: Option<BigDecimal>,
+        pub seller: String,
+        pub finished_at: Option<NaiveDateTime>,
+        pub expired_at: NaiveDateTime,
+        pub state: DirectSellState,
+        pub created: NaiveDateTime,
+        pub updated: NaiveDateTime,
+        pub tx_lt: i64,
+    }
 }

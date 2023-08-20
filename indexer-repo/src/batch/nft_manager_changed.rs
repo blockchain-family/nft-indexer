@@ -4,12 +4,9 @@ use anyhow::{anyhow, Result};
 use chrono::NaiveDateTime;
 use sqlx::PgPool;
 
-use crate::types::AddressChangedDecoded;
+use crate::types::decoded::AddressChanged;
 
-pub async fn save_nft_manager_changed(
-    pool: &PgPool,
-    mut data: Vec<AddressChangedDecoded>,
-) -> Result<()> {
+pub async fn save_nft_manager_changed(pool: &PgPool, mut data: Vec<AddressChanged>) -> Result<()> {
     data.sort_by(|a, b| b.timestamp.cmp(&a.timestamp));
     let mut last_addresses = HashMap::with_capacity(data.len());
 
