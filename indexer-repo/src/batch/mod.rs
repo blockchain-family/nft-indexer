@@ -1,7 +1,7 @@
 mod auc_active;
-mod auc_bid_declined;
 mod auc_bid_save;
 mod auc_complete_cancelled;
+mod auc_deployed;
 mod auc_update_prices;
 mod collection_fee;
 mod direct_buy_state_changed;
@@ -12,12 +12,12 @@ mod nft_manager_changed;
 mod nft_owner_changed;
 mod prices;
 mod raw_events;
-mod whitelist;
 
-pub use auc_active::save_auc_acitve;
+pub use auc_active::save_auc_active;
 pub use auc_bid_save::save_auc_bid;
 pub use auc_complete_cancelled::save_auc_cancelled;
 pub use auc_complete_cancelled::save_auc_complete;
+pub use auc_deployed::save_auc_deployed;
 pub use auc_update_prices::update_auc_maxmin;
 pub use collection_fee::update_collection_fee;
 pub use direct_buy_state_changed::save_direct_buy_state_changed;
@@ -28,4 +28,3 @@ pub use nft_manager_changed::save_nft_manager_changed;
 pub use nft_owner_changed::save_nft_owner_changed;
 pub use prices::save_price_history;
 pub use raw_events::save_raw_event;
-pub use whitelist::save_whitelist_address;

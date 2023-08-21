@@ -74,12 +74,13 @@ pub async fn update_collection_meta(
     .await
 }
 
-// TODO: refresh in queue
 pub async fn refresh_collection_owners_count(
     address: &str,
-    tx: &mut Transaction<'_, Postgres>,
-) -> Result<PgQueryResult, sqlx::Error> {
-    let owners_count = get_owners_count(address, tx).await;
+    pg_pool: &PgPool,
+) -> Result<(), sqlx::Error> {
+    let mut tx = pg_pool.begin().await?;
+
+    let owners_count = get_owners_count(address, &mut tx).await;
 
     sqlx::query!(
         r#"
@@ -90,24 +91,10 @@ pub async fn refresh_collection_owners_count(
         address as _,
         owners_count.unwrap_or_default() as _,
     )
-    .execute(tx)
-    .await
-}
+    .execute(&mut tx)
+    .await?;
 
-pub async fn add_whitelist_address(
-    address: &str,
-    tx: &mut Transaction<'_, Postgres>,
-) -> Result<PgQueryResult, sqlx::Error> {
-    sqlx::query!(
-        r#"
-        insert into events_whitelist (address)
-        values ($1)
-        on conflict (address) do nothing
-        "#,
-        address as _,
-    )
-    .execute(tx)
-    .await
+    tx.commit().await
 }
 
 pub async fn get_collections(limit: i64, pool: &PgPool) -> Result<Vec<String>, sqlx::Error> {

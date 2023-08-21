@@ -35,9 +35,6 @@ async fn main() -> Result<()> {
         .run(&pg_pool)
         .await?;
 
-    settings::whitelist::init_trusted_addresses(config.clone())?;
-    settings::whitelist::init_whitelist_addresses(&pg_pool).await?;
-
     let jrpc_client = settings::get_jrpc_client(&config).await?;
     log::info!("Connected to jrpc endpoint");
 

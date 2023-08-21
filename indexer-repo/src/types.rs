@@ -183,11 +183,10 @@ pub mod decoded {
     pub struct NftPriceHistory {
         pub source: String,
         pub source_type: NftPriceSource,
-        pub created_at: NaiveDateTime,
+        pub created_at: Option<NaiveDateTime>,
         pub price: BigDecimal,
         pub price_token: Option<String>,
         pub nft: Option<String>,
-        pub collection: Option<String>,
     }
 
     #[derive(Clone, Debug)]
@@ -211,8 +210,8 @@ pub mod decoded {
         pub owner: String,
         pub manager: String,
         pub updated: NaiveDateTime,
-        pub owner_update_lt: i64,
-        pub manager_update_lt: i64,
+        pub owner_update_lt: u64,
+        pub manager_update_lt: u64,
     }
 
     pub struct NftBurned {
@@ -224,7 +223,15 @@ pub mod decoded {
     pub struct AddressChanged {
         pub id_address: String,
         pub new_address: String,
+        pub logical_time: u64,
         pub timestamp: i64,
+    }
+
+    pub struct AuctionDeployed {
+        pub address: String,
+        pub root: String,
+        pub nft: String,
+        pub tx_lt: i64,
     }
 
     pub struct AuctionActive {
@@ -267,11 +274,10 @@ pub mod decoded {
     #[derive(Clone, Debug)]
     pub struct DirectBuy {
         pub address: String,
+        pub root: String,
         pub nft: String,
-        pub collection: Option<String>,
         pub price_token: String,
         pub price: BigDecimal,
-        pub buy_price_usd: Option<BigDecimal>,
         pub buyer: String,
         pub finished_at: Option<NaiveDateTime>,
         pub expired_at: NaiveDateTime,
@@ -284,11 +290,10 @@ pub mod decoded {
     #[derive(Clone, Debug)]
     pub struct DirectSell {
         pub address: String,
+        pub root: String,
         pub nft: String,
-        pub collection: Option<String>,
         pub price_token: String,
         pub price: BigDecimal,
-        pub sell_price_usd: Option<BigDecimal>,
         pub seller: String,
         pub finished_at: Option<NaiveDateTime>,
         pub expired_at: NaiveDateTime,

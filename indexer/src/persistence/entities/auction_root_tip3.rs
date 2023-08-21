@@ -1,9 +1,8 @@
 use anyhow::Result;
-use indexer_repo::types::{decoded::EventRecord, EventCategory, EventType};
+use indexer_repo::types::{decoded, EventCategory, EventType};
 
 use crate::{
     models::events::{AuctionDeclined, AuctionDeployed},
-    settings::whitelist::{OfferRootType, TRUSTED_ADDRESSES},
     utils::{DecodeContext, KeyInfo},
 };
 
@@ -11,18 +10,16 @@ use super::{Decode, Decoded};
 
 impl Decode for AuctionDeployed {
     fn decode(&self, ctx: &DecodeContext) -> Result<Decoded> {
-        let emitter_address = ctx.tx_data.get_account();
-
-        if TRUSTED_ADDRESSES.get().unwrap()[&OfferRootType::AuctionRoot].contains(&emitter_address)
-        {
-            Ok(Decoded::AuctionDeployed(self.offer.to_string()))
-        } else {
-            Ok(Decoded::ShouldSkip)
-        }
+        Ok(Decoded::AuctionDeployed(decoded::AuctionDeployed {
+            address: self.offer_info.offer.to_string(),
+            root: ctx.tx_data.get_account(),
+            nft: self.offer_info.nft.to_string(),
+            tx_lt: ctx.tx_data.logical_time() as i64,
+        }))
     }
 
     fn decode_event(&self, ctx: &DecodeContext) -> Result<Decoded> {
-        Ok(Decoded::RawEventRecord(EventRecord {
+        Ok(Decoded::RawEventRecord(decoded::EventRecord {
             event_category: EventCategory::Auction,
             event_type: EventType::AuctionDeployed,
             address: ctx.tx_data.get_account(),
@@ -43,7 +40,7 @@ impl Decode for AuctionDeclined {
     }
 
     fn decode_event(&self, ctx: &DecodeContext) -> Result<Decoded> {
-        Ok(Decoded::RawEventRecord(EventRecord {
+        Ok(Decoded::RawEventRecord(decoded::EventRecord {
             event_category: EventCategory::Auction,
             event_type: EventType::AuctionDeclined,
 

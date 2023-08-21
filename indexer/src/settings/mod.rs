@@ -13,8 +13,6 @@ use transaction_consumer::JrpcClientOptions;
 use transaction_consumer::{ConsumerOptions, TransactionConsumer};
 
 pub mod config;
-pub mod whitelist;
-
 pub async fn init_consumer(config: &Config) -> Result<Arc<TransactionConsumer>> {
     log::info!("initializing transaction consumer");
 

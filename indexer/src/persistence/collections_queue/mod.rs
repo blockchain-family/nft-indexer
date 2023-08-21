@@ -23,6 +23,7 @@ impl CollectionsQueue {
     }
 
     pub async fn add(&self, collection: String, nft_mint_ts: i64) -> Result<()> {
+        // TODO: hot check in hashmap, insert if absent <-> sync with fee
         self.tx
             .send((collection, nft_mint_ts))
             .await
@@ -41,8 +42,6 @@ impl CollectionsQueue {
         );
 
         while let Some((collection, nft_mint_ts)) = rx.recv().await {
-            // TODO: refresh collections owners count
-            // TODO: add fee here
             if let Some(last_used) = collections.get_mut(&collection) {
                 *last_used = chrono::Utc::now().timestamp();
             } else if let Err(e) = indexer_repo::actions::insert_collection(
@@ -59,7 +58,19 @@ impl CollectionsQueue {
                     collections.remove_entry(&key.clone());
                 }
 
-                collections.insert(collection, chrono::Utc::now().timestamp());
+                collections.insert(collection.clone(), chrono::Utc::now().timestamp());
+            }
+
+            if let Err(e) = indexer_repo::actions::refresh_collection_owners_count(
+                collection.as_str(),
+                &self.pg_pool,
+            )
+            .await
+            {
+                log::error!(
+                    "Error refreshing collection ({collection}) owners count: {:#?}",
+                    e
+                );
             }
         }
     }

@@ -23,11 +23,11 @@ pub async fn save_nft_created(pool: &PgPool, nft_created: Vec<NftCreated>) -> Re
     let updated = nft_created.iter().map(|n| n.updated).collect::<Vec<_>>();
     let owner_update_lt = nft_created
         .iter()
-        .map(|n| n.owner_update_lt)
+        .map(|n| n.owner_update_lt as i64)
         .collect::<Vec<_>>();
     let manager_update_lt = nft_created
         .iter()
-        .map(|n| n.manager_update_lt)
+        .map(|n| n.manager_update_lt as i64)
         .collect::<Vec<_>>();
 
     sqlx::query!(

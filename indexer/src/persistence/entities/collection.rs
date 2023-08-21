@@ -11,7 +11,7 @@ use super::{types::Decoded, Decode};
 
 impl Decode for NftCreated {
     fn decode(&self, ctx: &DecodeContext) -> Result<Decoded> {
-        let logical_time = ctx.tx_data.logical_time() as i64;
+        let logical_time = ctx.tx_data.logical_time();
         let event_time =
             NaiveDateTime::from_timestamp_opt(ctx.tx_data.get_timestamp(), 0).unwrap_or_default();
 
@@ -56,17 +56,17 @@ impl Decode for NftBurned {
         Ok(Decoded::BurnNft(record))
     }
 
-    fn decode_event(&self, msg_info: &DecodeContext) -> Result<Decoded> {
+    fn decode_event(&self, ctx: &DecodeContext) -> Result<Decoded> {
         Ok(Decoded::RawEventRecord(decoded::EventRecord {
             event_category: EventCategory::Collection,
             event_type: EventType::NftBurned,
 
-            address: msg_info.tx_data.get_account(),
-            created_lt: msg_info.tx_data.logical_time() as i64,
-            created_at: msg_info.tx_data.get_timestamp(),
-            message_hash: msg_info.message_hash.to_string(),
+            address: ctx.tx_data.get_account(),
+            created_lt: ctx.tx_data.logical_time() as i64,
+            created_at: ctx.tx_data.get_timestamp(),
+            message_hash: ctx.message_hash.to_string(),
             nft: Some(self.nft.to_string()),
-            collection: Some(msg_info.tx_data.get_account()),
+            collection: Some(ctx.tx_data.get_account()),
 
             raw_data: serde_json::to_value(self).unwrap_or_default(),
         }))

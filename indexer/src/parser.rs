@@ -110,8 +110,7 @@ async fn save_to_db(
     let mut nft_burned = Vec::with_capacity(EVENTS_PER_ITERATION);
     let mut nft_owner_changed = Vec::with_capacity(EVENTS_PER_ITERATION);
     let mut nft_manager_changed = Vec::with_capacity(EVENTS_PER_ITERATION);
-    let mut whitelist_insertion_addresses = Vec::with_capacity(EVENTS_PER_ITERATION);
-    // let mut auc_created = Vec::with_capacity(EVENTS_PER_ITERATION);
+    let mut auc_deployed = Vec::with_capacity(EVENTS_PER_ITERATION);
     let mut auc_active = Vec::with_capacity(EVENTS_PER_ITERATION);
     let mut prices = Vec::with_capacity(EVENTS_PER_ITERATION * 2);
     let mut auc_bid_placed = Vec::with_capacity(EVENTS_PER_ITERATION);
@@ -131,79 +130,60 @@ async fn save_to_db(
                     .await?;
                 nft_created.push(nft);
             }
-            Decoded::BurnNft(nft) => {
-                nft_burned.push(nft);
-            }
-            Decoded::OwnerChangedNft(addr) => {
-                nft_owner_changed.push(addr);
-            }
-            Decoded::ManagerChangedNft(addr) => {
-                nft_manager_changed.push(addr);
-            }
-            Decoded::ShouldSkip => (),
-            Decoded::AuctionDeployed(addr) => whitelist_insertion_addresses.push(addr),
-            Decoded::AuctionCreated(_) => (), //auc_created.push(a),
-            Decoded::AuctionActive((auc, price)) => {
-                auc_active.push(auc);
-                prices.push(price);
-            }
-            Decoded::AuctionBidPlaced((auc, price)) => {
-                auc_bid_placed.push(auc);
-                prices.push(price);
-            }
-            Decoded::AuctionBidDeclined(a) => {
-                auc_bid_declined.push(a);
-            }
-            Decoded::AuctionComplete(a) => {
+            Decoded::BurnNft(nft) => nft_burned.push(nft),
+            Decoded::OwnerChangedNft(addr) => nft_owner_changed.push(addr),
+            Decoded::ManagerChangedNft(addr) => nft_manager_changed.push(addr),
+            Decoded::AuctionDeployed(a) => auc_deployed.push(a),
+            Decoded::AuctionActive(auc) => auc_active.push(auc),
+            Decoded::AuctionBidPlaced(auc) => auc_bid_placed.push(auc),
+            Decoded::AuctionBidDeclined(a) => auc_bid_declined.push(a),
+            Decoded::AuctionComplete((a, price)) => {
                 auc_complete.push(a);
+                prices.push(price);
             }
-            Decoded::AuctionCancelled(a) => {
-                auc_cancelled.push(a);
-            }
-            Decoded::RawEventRecord(e) => {
-                raw_events.push(e);
-            }
-            Decoded::AuctionRulesChanged(rules) => {
-                auc_rules.push(rules);
-            }
+            Decoded::AuctionCancelled(a) => auc_cancelled.push(a),
+            Decoded::RawEventRecord(e) => raw_events.push(e),
+            Decoded::AuctionRulesChanged(rules) => auc_rules.push(rules),
             Decoded::DirectSellStateChanged((ds, price)) => {
                 dss.push(ds);
-                prices.push(price);
+                if price.is_some() {
+                    prices.push(price.unwrap());
+                }
             }
             Decoded::DirectBuyStateChanged((db, price)) => {
                 dbs.push(db);
-                prices.push(price);
+                if price.is_some() {
+                    prices.push(price.unwrap());
+                }
             }
-            Decoded::DirectSellDeployed(addr) => whitelist_insertion_addresses.push(addr),
-            Decoded::DirectBuyDeployed(addr) => whitelist_insertion_addresses.push(addr),
+            Decoded::ShouldSkip => (),
         }
     }
 
     log::info!(
         r#" 
         EVENTS:
-    nft_created: {},
-    nft_burned: {},
-    nft_owner_changed: {},
-    nft_manager_changed: {},
-    whitelist_insertion_addresses: {},
-    auc_active: {},
-    prices: {},
-    auc_bid_placed: {},
-    auc_bid_declined: {},
-    auc_complete: {},
-    auc_cancelled: {},
-    raw_events: {},
-    auc_rules: {},
-    dss: {},
-    dbs: {},
-
-    "#,
+        nft_created: {},
+        nft_burned: {},
+        nft_owner_changed: {},
+        nft_manager_changed: {},
+        auc_deployed: {},
+        auc_active: {},
+        prices: {},
+        auc_bid_placed: {},
+        auc_bid_declined: {},
+        auc_complete: {},
+        auc_cancelled: {},
+        raw_events: {},
+        auc_rules: {},
+        dss: {},
+        dbs: {},
+        "#,
         nft_created.len(),
         nft_burned.len(),
         nft_owner_changed.len(),
         nft_manager_changed.len(),
-        whitelist_insertion_addresses.len(),
+        auc_deployed.len(),
         auc_active.len(),
         prices.len(),
         auc_bid_placed.len(),
@@ -215,6 +195,8 @@ async fn save_to_db(
         dss.len(),
         dbs.len()
     );
+
+    // IMPORTANT: Order matters!
 
     if !raw_events.is_empty() {
         save_raw_event(pool, raw_events).await?;
@@ -236,22 +218,14 @@ async fn save_to_db(
         save_nft_manager_changed(pool, nft_manager_changed).await?;
     }
 
-    if !whitelist_insertion_addresses.is_empty() {
-        save_whitelist_address(pool, whitelist_insertion_addresses).await?;
+    if !auc_deployed.is_empty() {
+        save_auc_deployed(pool, auc_deployed).await?;
     }
-
-    // if !auc_created.is_empty() {
-    //     // Should we do something?
-    //     ();
-    // }
 
     if !auc_active.is_empty() {
-        save_auc_acitve(pool, auc_active).await?;
+        save_auc_active(pool, auc_active).await?;
     }
 
-    if !prices.is_empty() {
-        save_price_history(pool, prices).await?;
-    }
     if !auc_bid_placed.is_empty() {
         save_auc_bid(pool, &auc_bid_placed[..]).await?;
         update_auc_maxmin(pool, &auc_bid_placed[..]).await?;
@@ -275,6 +249,10 @@ async fn save_to_db(
 
     if !dbs.is_empty() {
         save_direct_buy_state_changed(pool, dbs).await?;
+    }
+
+    if !prices.is_empty() {
+        save_price_history(pool, prices).await?;
     }
 
     Ok(())

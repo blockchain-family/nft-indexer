@@ -13,6 +13,7 @@ impl Decode for OwnerChanged {
         let nft_new_owner = decoded::AddressChanged {
             id_address: ctx.tx_data.get_account(),
             new_address: self.new_owner.to_string(),
+            logical_time: ctx.tx_data.logical_time(),
             timestamp: ctx.tx_data.get_timestamp(),
         };
 
@@ -40,22 +41,23 @@ impl Decode for ManagerChanged {
         let nft_new_manager = decoded::AddressChanged {
             id_address: ctx.tx_data.get_account(),
             new_address: self.new_manager.to_string(),
+            logical_time: ctx.tx_data.logical_time(),
             timestamp: ctx.tx_data.get_timestamp(),
         };
 
         Ok(Decoded::ManagerChangedNft(nft_new_manager))
     }
 
-    fn decode_event(&self, msg_info: &DecodeContext) -> Result<Decoded> {
+    fn decode_event(&self, ctx: &DecodeContext) -> Result<Decoded> {
         Ok(Decoded::RawEventRecord(decoded::EventRecord {
             event_category: EventCategory::Nft,
             event_type: EventType::NftManagerChanged,
 
-            address: msg_info.tx_data.get_account(),
-            created_lt: msg_info.tx_data.logical_time() as i64,
-            created_at: msg_info.tx_data.get_timestamp(),
-            message_hash: msg_info.message_hash.to_string(),
-            nft: Some(msg_info.tx_data.get_account()),
+            address: ctx.tx_data.get_account(),
+            created_lt: ctx.tx_data.logical_time() as i64,
+            created_at: ctx.tx_data.get_timestamp(),
+            message_hash: ctx.message_hash.to_string(),
+            nft: Some(ctx.tx_data.get_account()),
             collection: None,
             raw_data: serde_json::to_value(self).unwrap_or_default(),
         }))
