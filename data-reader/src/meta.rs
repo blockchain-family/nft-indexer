@@ -228,7 +228,7 @@ pub async fn update_nft_meta(
         });
 
     if let Some(attr) = attr {
-        if let Err(e) = tx.update_nft_attributes(&attr[..]).await {
+        if let Err(e) = tx.update_nft_attributes(&attr).await {
             bail!(
                 "Nft address: {}, error while updating attributes: {:#?}",
                 &address_data.nft,

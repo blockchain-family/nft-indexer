@@ -3,7 +3,7 @@ use anyhow::{anyhow, Result};
 use sqlx::PgPool;
 use std::collections::HashMap;
 
-pub async fn save_direct_buy_state_changed(pool: &PgPool, dbs: Vec<DirectBuy>) -> Result<()> {
+pub async fn save_direct_buy_state_changed(pool: &PgPool, dbs: &[DirectBuy]) -> Result<()> {
     let mut to_insert = Vec::with_capacity(dbs.len());
     let mut for_update = Vec::with_capacity(dbs.len());
 
@@ -16,17 +16,17 @@ pub async fn save_direct_buy_state_changed(pool: &PgPool, dbs: Vec<DirectBuy>) -
     }
 
     if !to_insert.is_empty() {
-        insert_direct_buy(pool, to_insert).await?;
+        insert_direct_buy(pool, &to_insert).await?;
     }
 
     if !for_update.is_empty() {
-        update_direct_buy_state(pool, for_update).await?;
+        update_direct_buy_state(pool, &mut for_update).await?;
     }
 
     Ok(())
 }
 
-async fn insert_direct_buy(pool: &PgPool, dbs: Vec<DirectBuy>) -> Result<()> {
+async fn insert_direct_buy(pool: &PgPool, dbs: &[&DirectBuy]) -> Result<()> {
     let addresses = dbs.iter().map(|db| db.address.as_str()).collect::<Vec<_>>();
     let roots = dbs.iter().map(|db| db.root.as_str()).collect::<Vec<_>>();
     let nfts = dbs.iter().map(|db| db.nft.as_str()).collect::<Vec<_>>();
@@ -94,7 +94,7 @@ async fn insert_direct_buy(pool: &PgPool, dbs: Vec<DirectBuy>) -> Result<()> {
     .map(|_| ())
 }
 
-async fn update_direct_buy_state(pool: &PgPool, mut dbs: Vec<DirectBuy>) -> Result<()> {
+async fn update_direct_buy_state(pool: &PgPool, dbs: &mut [&DirectBuy]) -> Result<()> {
     dbs.sort_by(|a, b| b.tx_lt.cmp(&a.tx_lt));
     let mut last_state_change = HashMap::with_capacity(dbs.len());
 

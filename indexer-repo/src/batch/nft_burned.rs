@@ -3,7 +3,7 @@ use sqlx::PgPool;
 
 use crate::types::decoded::NftBurned;
 
-pub async fn save_nft_burned(pool: &PgPool, nft_burned: Vec<NftBurned>) -> Result<()> {
+pub async fn save_nft_burned(pool: &PgPool, nft_burned: &[NftBurned]) -> Result<()> {
     let addresses = nft_burned
         .iter()
         .map(|n| n.address.as_str())

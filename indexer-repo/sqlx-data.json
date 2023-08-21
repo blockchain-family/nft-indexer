@@ -70,6 +70,26 @@
     },
     "query": "\n                update nft_auction\n                set closing_price_usd = $1\n                where address = $2\n            "
   },
+  "1a8faf43e1567afeb374cc2c1d077d508b2b6df8cc0c30e59255d70c3f9ed835": {
+    "describe": {
+      "columns": [
+        {
+          "name": "address",
+          "ordinal": 0,
+          "type_info": "Varchar"
+        }
+      ],
+      "nullable": [
+        false
+      ],
+      "parameters": {
+        "Left": [
+          "Int8"
+        ]
+      }
+    },
+    "query": "\n        select address\n        from nft_collection\n        order by updated desc\n        limit $1\n        "
+  },
   "23dde169ba4c8c92dd329f563239e0d5cf62f4681814561c9b8da8da983e0800": {
     "describe": {
       "columns": [],
@@ -125,25 +145,30 @@
     },
     "query": "\n                select \n                    address as id,\n                    price_token as \"token_addr!\",\n                    min_bid as \"token_amount!\",\n                    created_at as \"created_at!\"\n                from nft_auction\n                where closing_price_usd is null\n                and created_at is not null\n                and min_bid is not null\n                and price_token is not null\n                and created_at <= $1\n                and created_at != $2 \n                and status = 'completed'\n                limit $3\n            "
   },
-  "2bbf7d6a7740e093595409521119e2e92dabc3cd603d3a338f4d5019af55bf42": {
+  "2af0ca6079fae6e23a8a33c8ff3ba2fbcac7398f445d9860e10d142ee4debaf4": {
     "describe": {
-      "columns": [
-        {
-          "name": "owners",
-          "ordinal": 0,
-          "type_info": "Int8"
-        }
-      ],
-      "nullable": [
-        null
-      ],
+      "columns": [],
+      "nullable": [],
       "parameters": {
         "Left": [
-          "Text"
+          "Text",
+          {
+            "Custom": {
+              "kind": {
+                "Domain": "Varchar"
+              },
+              "name": "t_address"
+            }
+          },
+          "Text",
+          "Text",
+          "Varchar",
+          "Varchar",
+          "Timestamp"
         ]
       }
     },
-    "query": "\n        select \n            count(distinct owner) as owners\n        from \n            nft\n        where \n            collection = $1\n        "
+    "query": "\n        update nft_collection\n        set \n            owner        = $2, \n            name         = coalesce($3, nft_collection.name),\n            description  = coalesce($4, nft_collection.description),\n            logo         = coalesce($5, nft_collection.logo),\n            wallpaper    = coalesce($6, nft_collection.wallpaper),\n            updated      = greatest($7, nft_collection.updated)\n        where address = $1\n        "
   },
   "42b3e8687219dcffe6d1e8d8d3aa1d80560628e87517c2a7d786da80f0a3f414": {
     "describe": {
@@ -241,6 +266,21 @@
     },
     "query": "\n                update nft_direct_buy\n                set buy_price_usd = $1\n                where address = $2\n            "
   },
+  "5e51b09eb38779001303cf4a7bd8e19970f8741eef32844e802cbed56ba5cd6d": {
+    "describe": {
+      "columns": [],
+      "nullable": [],
+      "parameters": {
+        "Left": [
+          "VarcharArray",
+          "Int4Array",
+          "Int4Array",
+          "TimestampArray"
+        ]
+      }
+    },
+    "query": "\n        update nft_collection set\n            fee_numerator   = data.num, \n            fee_denominator = data.den,\n            updated         = greatest(data.ts, nft_collection.updated)\n        from\n        (\n            select \n                unnest($1::varchar[]) as address,\n                unnest($2::integer[]) as num,\n                unnest($3::integer[]) as den,\n                unnest($4::timestamp[]) as ts\n        ) as data\n        where nft_collection.address = data.address\n    "
+  },
   "5f619b22c878e3bb0288ce9aa8ddae142b8d0d2e68580bbf4e3992d7bd8c6c07": {
     "describe": {
       "columns": [],
@@ -304,6 +344,19 @@
     },
     "query": "\n        update nft_direct_buy set\n            state = data.state,\n            finished_at = data.finished_at,\n            updated = data.updated,\n            tx_lt = data.tx_lt\n        from\n        (\n            select \n                unnest($1::varchar[]) as address,\n                unnest($2::direct_buy_state[]) as state,\n                unnest($3::timestamp[]) as finished_at,\n                unnest($4::timestamp[]) as updated,\n                unnest($5::bigint[]) as tx_lt\n        ) as data\n        where nft_direct_buy.address = data.address\n        "
   },
+  "676b63e324692022136dcd92309945b4fde8954170758d46b0898c50343399a5": {
+    "describe": {
+      "columns": [],
+      "nullable": [],
+      "parameters": {
+        "Left": [
+          "VarcharArray",
+          "TimestampArray"
+        ]
+      }
+    },
+    "query": "\n            insert into nft_collection(address, first_mint, created, updated)\n            select * from unnest(\n                $1::varchar[], \n                $2::timestamp[], \n                $2::timestamp[], \n                $2::timestamp[]) \n            on conflict(address) do nothing\n        "
+  },
   "6f0fa608f7d0b847580fae9efb25389e76c11f42489f5220447c4caa845430a5": {
     "describe": {
       "columns": [],
@@ -317,20 +370,6 @@
       }
     },
     "query": "\n                update nft\n                set name = $1,\n                    description = $2\n                where address = $3\n            "
-  },
-  "72fd506d9ae7f62408d15cf50ef9a3709d6770ad7ca6b3aef30263ae929ebd41": {
-    "describe": {
-      "columns": [],
-      "nullable": [],
-      "parameters": {
-        "Left": [
-          "VarcharArray",
-          "Int4Array",
-          "Int4Array"
-        ]
-      }
-    },
-    "query": "\n        update nft_collection set\n            fee_numerator   = data.num, \n            fee_denominator = data.den\n        from\n        (\n            select \n                unnest($1::varchar[]) as address,\n                unnest($2::integer[]) as num,\n                unnest($3::integer[]) as den\n        ) as data\n        where nft_collection.address = data.address\n    "
   },
   "735e0a811723e09c9a25be89683cce5b9de9f0463a33ab6760675277318235c9": {
     "describe": {
@@ -706,19 +745,6 @@
     },
     "query": "\n        update nft_auction set\n            max_bid = data.max_bid,\n            status = data.status\n        from\n        (\n            select \n                unnest($1::varchar[]) as address,\n                unnest($2::numeric[]) as max_bid,\n                $3::auction_status as status\n        ) as data\n        where nft_auction.address = data.address\n    "
   },
-  "b808a83b7b32970f4a83cf042616ecefb4db0522b0e9d568444996918ae92943": {
-    "describe": {
-      "columns": [],
-      "nullable": [],
-      "parameters": {
-        "Left": [
-          "Text",
-          "Int4"
-        ]
-      }
-    },
-    "query": "\n        update nft_collection\n        set owners_count = $2\n        where address = $1\n        "
-  },
   "c5e889b0b72d1c6b660997a023dd073cffd4f8dd68d29eaabaeb68d81c59600d": {
     "describe": {
       "columns": [],
@@ -755,31 +781,6 @@
     },
     "query": "\n        insert into nft_auction (\n            address, \n            root,\n            nft,\n            tx_lt,\n            status\n        )\n        select *\n        from unnest(\n            $1::varchar[],\n            $2::varchar[],\n            $3::varchar[],\n            $4::bigint[],\n            $5::auction_status[]\n        ) \n        on conflict(address) do nothing\n        "
   },
-  "c66bb817f45e75bcd20d6bf45fe5f1b4da994b9d823cb1ac8fcfdfbbe437deb9": {
-    "describe": {
-      "columns": [],
-      "nullable": [],
-      "parameters": {
-        "Left": [
-          "Text",
-          {
-            "Custom": {
-              "kind": {
-                "Domain": "Varchar"
-              },
-              "name": "t_address"
-            }
-          },
-          "Text",
-          "Text",
-          "Varchar",
-          "Varchar",
-          "Timestamp"
-        ]
-      }
-    },
-    "query": "\n        update nft_collection\n        set \n            owner        = $2, \n            name         = coalesce($3, nft_collection.name),\n            description  = coalesce($4, nft_collection.description),\n            logo         = coalesce($5, nft_collection.logo),\n            wallpaper    = coalesce($6, nft_collection.wallpaper),\n            updated      = $7\n        where address = $1\n        "
-  },
   "d0b2e695b98ac8d6a2ab63d6297cc530cd2c91e8ca9b323ee8a880c0ca595a60": {
     "describe": {
       "columns": [
@@ -813,48 +814,6 @@
       }
     },
     "query": "\n                update nft\n                set description = $1\n                where address = $2\n            "
-  },
-  "d46901ec8e46c0e62c9436981a1b62cd0c3c4f30dd4dc6964f23409ea6a94aaf": {
-    "describe": {
-      "columns": [],
-      "nullable": [],
-      "parameters": {
-        "Left": [
-          {
-            "Custom": {
-              "kind": {
-                "Domain": "Varchar"
-              },
-              "name": "t_address"
-            }
-          },
-          "Timestamp",
-          "Timestamp",
-          "Timestamp"
-        ]
-      }
-    },
-    "query": "\n        insert into nft_collection (\n            address, first_mint,\n            created, updated\n        ) values (\n            $1,       $2,\n            $3,       $4\n        )\n        on conflict do nothing\n        "
-  },
-  "df85b1a14d51617e4f3dc80faf38ec24f2058567b084f32d9f8ca267539e9511": {
-    "describe": {
-      "columns": [
-        {
-          "name": "address",
-          "ordinal": 0,
-          "type_info": "Varchar"
-        }
-      ],
-      "nullable": [
-        false
-      ],
-      "parameters": {
-        "Left": [
-          "Int8"
-        ]
-      }
-    },
-    "query": "\n        select address\n        from nft_collection\n        limit $1\n        "
   },
   "eea4dd6ea15b71a4325cf0a7ffd2d5f0f5b76c30bbd43efc3833294e178d9850": {
     "describe": {

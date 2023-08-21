@@ -1,5 +1,4 @@
 use crate::models::events::*;
-use crate::persistence::collections_queue;
 use crate::persistence::collections_queue::CollectionsQueue;
 use crate::persistence::entities::*;
 use crate::settings;
@@ -38,7 +37,7 @@ pub async fn run_nft_indexer(
 ) {
     log::info!("Start nft indexer...");
 
-    let collection_queue = collections_queue::create_and_run_queue(pool.clone()).await;
+    let mut collection_queue = CollectionsQueue::new(pool.clone()).await;
 
     while let Some(message) = rx_raw_transactions.next().await {
         let now_loop = std::time::Instant::now();
@@ -84,7 +83,7 @@ pub async fn run_nft_indexer(
         }
 
         let now = std::time::Instant::now();
-        if let Err(e) = save_to_db(&pool, data, &collection_queue).await {
+        if let Err(e) = save_to_db(&pool, data, &mut collection_queue).await {
             log::error!("Error saving to DB: {:#?}", e);
             std::process::exit(1);
         }
@@ -104,8 +103,9 @@ pub async fn run_nft_indexer(
 async fn save_to_db(
     pool: &PgPool,
     data: Vec<Decoded>,
-    collections_queue: &CollectionsQueue,
+    collections_queue: &mut CollectionsQueue,
 ) -> Result<()> {
+    let mut collections = Vec::with_capacity(EVENTS_PER_ITERATION);
     let mut nft_created = Vec::with_capacity(EVENTS_PER_ITERATION);
     let mut nft_burned = Vec::with_capacity(EVENTS_PER_ITERATION);
     let mut nft_owner_changed = Vec::with_capacity(EVENTS_PER_ITERATION);
@@ -118,16 +118,14 @@ async fn save_to_db(
     let mut auc_complete = Vec::with_capacity(EVENTS_PER_ITERATION);
     let mut auc_cancelled = Vec::with_capacity(EVENTS_PER_ITERATION);
     let mut raw_events = Vec::with_capacity(EVENTS_PER_ITERATION);
-    let mut auc_rules = Vec::with_capacity(EVENTS_PER_ITERATION);
+    let mut fees_update = Vec::with_capacity(EVENTS_PER_ITERATION);
     let mut dss = Vec::with_capacity(EVENTS_PER_ITERATION);
     let mut dbs = Vec::with_capacity(EVENTS_PER_ITERATION);
 
     for element in data {
         match element {
             Decoded::CreateNft(nft) => {
-                collections_queue
-                    .add(nft.collection.clone(), nft.updated.timestamp())
-                    .await?;
+                collections.push((nft.collection.clone(), nft.updated.timestamp()));
                 nft_created.push(nft);
             }
             Decoded::BurnNft(nft) => nft_burned.push(nft),
@@ -143,7 +141,7 @@ async fn save_to_db(
             }
             Decoded::AuctionCancelled(a) => auc_cancelled.push(a),
             Decoded::RawEventRecord(e) => raw_events.push(e),
-            Decoded::AuctionRulesChanged(rules) => auc_rules.push(rules),
+            Decoded::AuctionRulesChanged(rules) => fees_update.push(rules),
             Decoded::DirectSellStateChanged((ds, price)) => {
                 dss.push(ds);
                 if price.is_some() {
@@ -191,68 +189,74 @@ async fn save_to_db(
         auc_complete.len(),
         auc_cancelled.len(),
         raw_events.len(),
-        auc_rules.len(),
+        fees_update.len(),
         dss.len(),
         dbs.len()
     );
 
     // IMPORTANT: Order matters!
 
+    collections_queue.add_collections(collections).await?;
+
+    if !fees_update.is_empty() {
+        update_collection_fee(pool, &fees_update).await?;
+    }
+
     if !raw_events.is_empty() {
-        save_raw_event(pool, raw_events).await?;
+        save_raw_event(pool, &raw_events).await?;
     }
 
     if !nft_created.is_empty() {
-        save_nft_created(pool, nft_created).await?;
+        save_nft_created(pool, &nft_created).await?;
     };
 
     if !nft_burned.is_empty() {
-        save_nft_burned(pool, nft_burned).await?;
+        save_nft_burned(pool, &nft_burned).await?;
     }
 
     if !nft_owner_changed.is_empty() {
-        save_nft_owner_changed(pool, nft_owner_changed).await?;
+        save_nft_owner_changed(pool, &mut nft_owner_changed).await?;
     }
 
     if !nft_manager_changed.is_empty() {
-        save_nft_manager_changed(pool, nft_manager_changed).await?;
+        save_nft_manager_changed(pool, &mut nft_manager_changed).await?;
     }
 
     if !auc_deployed.is_empty() {
-        save_auc_deployed(pool, auc_deployed).await?;
+        save_auc_deployed(pool, &auc_deployed).await?;
     }
 
     if !auc_active.is_empty() {
-        save_auc_active(pool, auc_active).await?;
+        save_auc_active(pool, &auc_active).await?;
     }
 
     if !auc_bid_placed.is_empty() {
-        save_auc_bid(pool, &auc_bid_placed[..]).await?;
-        update_auc_maxmin(pool, &auc_bid_placed[..]).await?;
+        save_auc_bid(pool, &auc_bid_placed).await?;
+        update_auc_maxmin(pool, &auc_bid_placed).await?;
     }
+
     if !auc_bid_declined.is_empty() {
-        save_auc_bid(pool, &auc_bid_declined[..]).await?;
+        save_auc_bid(pool, &auc_bid_declined).await?;
     }
+
     if !auc_complete.is_empty() {
-        save_auc_complete(pool, &auc_complete[..]).await?;
+        save_auc_complete(pool, &auc_complete).await?;
     }
+
     if !auc_cancelled.is_empty() {
-        save_auc_cancelled(pool, &auc_cancelled[..]).await?;
-    }
-    if !auc_rules.is_empty() {
-        update_collection_fee(pool, auc_rules).await?;
+        save_auc_cancelled(pool, &auc_cancelled).await?;
     }
 
     if !dss.is_empty() {
-        save_direct_sell_state_changed(pool, dss).await?;
+        save_direct_sell_state_changed(pool, &dss).await?;
     }
 
     if !dbs.is_empty() {
-        save_direct_buy_state_changed(pool, dbs).await?;
+        save_direct_buy_state_changed(pool, &dbs).await?;
     }
 
     if !prices.is_empty() {
-        save_price_history(pool, prices).await?;
+        save_price_history(pool, &prices).await?;
     }
 
     Ok(())

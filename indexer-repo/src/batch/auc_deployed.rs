@@ -2,7 +2,7 @@ use crate::types::{decoded::AuctionDeployed, AuctionStatus};
 use anyhow::{anyhow, Result};
 use sqlx::PgPool;
 
-pub async fn save_auc_deployed(pool: &PgPool, data: Vec<AuctionDeployed>) -> Result<()> {
+pub async fn save_auc_deployed(pool: &PgPool, data: &[AuctionDeployed]) -> Result<()> {
     let addresses = data.iter().map(|a| a.address.as_str()).collect::<Vec<_>>();
     let roots = data.iter().map(|a| a.root.as_str()).collect::<Vec<_>>();
     let nfts = data.iter().map(|a| a.nft.as_str()).collect::<Vec<_>>();

@@ -54,6 +54,7 @@ async fn main() -> Result<()> {
         idle_after_loop: config.idle_after_price_loop_sec,
     };
 
+    // TODO: bulk update
     tokio::spawn(data_reader::run_price_reader(ctx));
 
     let socket_addr: SocketAddr =

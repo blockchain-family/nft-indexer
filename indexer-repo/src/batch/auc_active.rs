@@ -4,7 +4,7 @@ use sqlx::PgPool;
 
 use crate::types::{decoded::AuctionActive, AuctionStatus};
 
-pub async fn save_auc_active(pool: &PgPool, data: Vec<AuctionActive>) -> Result<()> {
+pub async fn save_auc_active(pool: &PgPool, data: &[AuctionActive]) -> Result<()> {
     let addresses = data.iter().map(|a| a.address.as_str()).collect::<Vec<_>>();
     let wallets = data
         .iter()

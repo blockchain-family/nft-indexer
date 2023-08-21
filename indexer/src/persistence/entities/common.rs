@@ -78,9 +78,10 @@ impl Decode for MarketFeeChanged {
 }
 
 impl Decode for AddCollectionRules {
-    fn decode(&self, _: &DecodeContext) -> Result<Decoded> {
+    fn decode(&self, ctx: &DecodeContext) -> Result<Decoded> {
         Ok(Decoded::AuctionRulesChanged(decoded::CollectionFee {
             address: self.collection.to_string(),
+            timestamp: ctx.tx_data.get_timestamp(),
             numerator: Some(self.collection_fee_info.numerator.try_into()?),
             denominator: Some(self.collection_fee_info.denominator.try_into()?),
         }))
@@ -104,9 +105,10 @@ impl Decode for AddCollectionRules {
 }
 
 impl Decode for RemoveCollectionRules {
-    fn decode(&self, _: &DecodeContext) -> Result<Decoded> {
+    fn decode(&self, ctx: &DecodeContext) -> Result<Decoded> {
         Ok(Decoded::AuctionRulesChanged(decoded::CollectionFee {
             address: self.collection.to_string(),
+            timestamp: ctx.tx_data.get_timestamp(),
             numerator: None,
             denominator: None,
         }))

@@ -6,7 +6,7 @@ use sqlx::PgPool;
 
 use crate::types::decoded::AddressChanged;
 
-pub async fn save_nft_owner_changed(pool: &PgPool, mut data: Vec<AddressChanged>) -> Result<()> {
+pub async fn save_nft_owner_changed(pool: &PgPool, data: &mut [AddressChanged]) -> Result<()> {
     data.sort_by(|a, b| b.logical_time.cmp(&a.logical_time));
     let mut last_addresses = HashMap::with_capacity(data.len());
 

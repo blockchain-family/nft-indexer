@@ -3,7 +3,7 @@ use sqlx::PgPool;
 
 use crate::types::decoded::NftCreated;
 
-pub async fn save_nft_created(pool: &PgPool, nft_created: Vec<NftCreated>) -> Result<()> {
+pub async fn save_nft_created(pool: &PgPool, nft_created: &[NftCreated]) -> Result<()> {
     let addresses = nft_created
         .iter()
         .map(|n| n.address.as_str())

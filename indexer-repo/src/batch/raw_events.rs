@@ -3,7 +3,7 @@ use sqlx::PgPool;
 
 use crate::types::decoded::EventRecord;
 
-pub async fn save_raw_event(pool: &PgPool, events: Vec<EventRecord>) -> Result<()> {
+pub async fn save_raw_event(pool: &PgPool, events: &[EventRecord]) -> Result<()> {
     let categories = events.iter().map(|e| e.event_category).collect::<Vec<_>>();
     let types = events.iter().map(|e| e.event_type).collect::<Vec<_>>();
     let addresses = events

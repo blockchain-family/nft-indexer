@@ -18,6 +18,8 @@ drop view nft_direct_buy_usd cascade;
 drop view nft_direct_sell_usd cascade;
 drop view nft_price_history_usd cascade;
 
+alter table nft_collection drop column owners_count;
+
 create or replace view nft_direct_buy_usd as
 select
     s.address,
@@ -311,7 +313,7 @@ select
     c.logo,
     c.total_price,
     c.max_price,
-    c.owners_count,
+    nft_counter.owners_cnt,
     c.verified,
     nft_counter.cnt as nft_count,
     least(direct_sell.usd, auction.usd) as floor_price_usd,
@@ -356,7 +358,7 @@ left join lateral (
            ds.expired_at > now()::timestamp)
 ) direct_sell on true
 left join lateral (
-    select count(1) as cnt
+    select count(1) as cnt, count(distinct owner) as owners_cnt
     from nft n
     where n.burned is false and
           n.collection::text = c.address::text

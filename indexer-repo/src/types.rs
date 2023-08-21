@@ -163,6 +163,11 @@ pub enum BcName {
     Venom,
 }
 
+pub struct NftCollection {
+    pub address: String,
+    pub nft_first_mint: i64,
+}
+
 #[derive(Default, Clone, Debug)]
 pub struct NftCollectionMeta {
     pub address: String,
@@ -267,6 +272,7 @@ pub mod decoded {
 
     pub struct CollectionFee {
         pub address: String,
+        pub timestamp: i64,
         pub numerator: Option<i32>,
         pub denominator: Option<i32>,
     }
