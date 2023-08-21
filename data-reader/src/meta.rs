@@ -10,8 +10,8 @@ use sqlx::{types::chrono, PgPool};
 use ton_block::MsgAddressInt;
 use transaction_consumer::JrpcClient;
 
-const NFT_PER_ITERATION: i64 = 100;
-const COLLECTION_PER_ITERATION: i64 = 100;
+const NFT_PER_ITERATION: i64 = 100_000;
+const COLLECTION_PER_ITERATION: i64 = 1_000;
 
 #[derive(Clone)]
 pub struct MetaReaderContext {
@@ -23,8 +23,8 @@ pub struct MetaReaderContext {
 
 pub async fn run_meta_reader(context: MetaReaderContext) -> Result<()> {
     log::info!("Run metadata reader");
-    let meta_jrpc_service = MetadataJrpcService::new(context.jrpc_client);
-    let meta_model_service = MetadataModelService::new(context.pool);
+    let meta_jrpc_service = MetadataJrpcService::new(context.jrpc_client.clone());
+    let meta_model_service = MetadataModelService::new(context.pool.clone());
 
     loop {
         let nft_addresses = meta_model_service
@@ -130,7 +130,6 @@ pub async fn update_collections_meta(
             .unwrap_or_default()
             .as_str()
             .map(str::to_string),
-        updated: now,
         logo: meta
             .get("preview")
             .cloned()
@@ -155,6 +154,7 @@ pub async fn update_collections_meta(
             .unwrap_or_default()
             .as_str()
             .map(|s| s.into()),
+        updated: now,
     };
 
     if let Err(e) = tx.update_collection(&collection).await {

@@ -46,7 +46,6 @@ async fn main() -> Result<()> {
     };
 
     tokio::spawn(data_reader::run_meta_reader(meta_reader_context.clone()));
-    tokio::spawn(parser::start_parsing(config.clone(), pg_pool.clone()));
 
     let ctx = PriceReaderContext {
         pool: pg_pool.clone(),
@@ -54,8 +53,9 @@ async fn main() -> Result<()> {
         idle_after_loop: config.idle_after_price_loop_sec,
     };
 
-    // TODO: bulk update
     tokio::spawn(data_reader::run_price_reader(ctx));
+
+    tokio::spawn(parser::start_parsing(config.clone(), pg_pool.clone()));
 
     let socket_addr: SocketAddr =
         SocketAddr::from_str(&config.server_api_url).expect("Invalid socket addr");

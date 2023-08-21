@@ -16,11 +16,20 @@ impl CollectionsQueue {
         let now = chrono::Utc::now().timestamp();
 
         let collections = HashMap::<String, i64>::from_iter(
-            indexer_repo::actions::get_collections(COLLECTIONS_CACHE_SIZE, &pg_pool)
-                .await
-                .expect("Can't pull collections from DB")
-                .into_iter()
-                .map(|c| (c, now)),
+            sqlx::query_scalar!(
+                r#"
+                select address
+                from nft_collection
+                order by updated desc
+                limit $1
+                "#,
+                COLLECTIONS_CACHE_SIZE
+            )
+            .fetch_all(&pg_pool)
+            .await
+            .expect("Failed fetching collections from DB")
+            .into_iter()
+            .map(|c| (c, now)),
         );
 
         Self {

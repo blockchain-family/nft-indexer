@@ -2,11 +2,14 @@ use actix_web::web::Json;
 use actix_web::{post, web, HttpResponse};
 use data_reader::MetadataJrpcService;
 use indexer_repo::meta::{MetadataModelService, NftAddressData};
+use opg::OpgModel;
 use serde::Deserialize;
 
-#[derive(Deserialize)]
+#[derive(Deserialize, OpgModel)]
 pub struct RefreshMetadataParams {
+    #[opg(optional, string)]
     nft: Option<String>,
+    #[opg(string)]
     collection: String,
 }
 

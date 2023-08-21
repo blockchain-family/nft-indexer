@@ -70,26 +70,6 @@
     },
     "query": "\n                update nft_auction\n                set closing_price_usd = $1\n                where address = $2\n            "
   },
-  "1a8faf43e1567afeb374cc2c1d077d508b2b6df8cc0c30e59255d70c3f9ed835": {
-    "describe": {
-      "columns": [
-        {
-          "name": "address",
-          "ordinal": 0,
-          "type_info": "Varchar"
-        }
-      ],
-      "nullable": [
-        false
-      ],
-      "parameters": {
-        "Left": [
-          "Int8"
-        ]
-      }
-    },
-    "query": "\n        select address\n        from nft_collection\n        order by updated desc\n        limit $1\n        "
-  },
   "23dde169ba4c8c92dd329f563239e0d5cf62f4681814561c9b8da8da983e0800": {
     "describe": {
       "columns": [],
@@ -144,31 +124,6 @@
       }
     },
     "query": "\n                select \n                    address as id,\n                    price_token as \"token_addr!\",\n                    min_bid as \"token_amount!\",\n                    created_at as \"created_at!\"\n                from nft_auction\n                where closing_price_usd is null\n                and created_at is not null\n                and min_bid is not null\n                and price_token is not null\n                and created_at <= $1\n                and created_at != $2 \n                and status = 'completed'\n                limit $3\n            "
-  },
-  "2af0ca6079fae6e23a8a33c8ff3ba2fbcac7398f445d9860e10d142ee4debaf4": {
-    "describe": {
-      "columns": [],
-      "nullable": [],
-      "parameters": {
-        "Left": [
-          "Text",
-          {
-            "Custom": {
-              "kind": {
-                "Domain": "Varchar"
-              },
-              "name": "t_address"
-            }
-          },
-          "Text",
-          "Text",
-          "Varchar",
-          "Varchar",
-          "Timestamp"
-        ]
-      }
-    },
-    "query": "\n        update nft_collection\n        set \n            owner        = $2, \n            name         = coalesce($3, nft_collection.name),\n            description  = coalesce($4, nft_collection.description),\n            logo         = coalesce($5, nft_collection.logo),\n            wallpaper    = coalesce($6, nft_collection.wallpaper),\n            updated      = greatest($7, nft_collection.updated)\n        where address = $1\n        "
   },
   "42b3e8687219dcffe6d1e8d8d3aa1d80560628e87517c2a7d786da80f0a3f414": {
     "describe": {
@@ -252,6 +207,27 @@
       }
     },
     "query": "\n            insert into nft_events (\n                event_cat,  \n                event_type, \n                address, \n                nft,\n                collection, \n                created_lt,\n                created_at, \n                args, \n                message_hash\n            )\n\n            select * \n            from unnest(\n                $1::event_category[], \n                $2::event_type[], \n                $3::varchar[], \n                $4::varchar[], \n                $5::varchar[],\n                $6::bigint[], \n                $7::bigint[],\n                $8::jsonb[],\n                $9::text[]\n            )\n            on conflict(message_hash) do nothing\n        "
+  },
+  "478f1843f03dcf85d5af47228054f4a477adb5eecc1ff594626de0dd3182c6b4": {
+    "describe": {
+      "columns": [
+        {
+          "name": "address",
+          "ordinal": 0,
+          "type_info": "Varchar"
+        }
+      ],
+      "nullable": [
+        false
+      ],
+      "parameters": {
+        "Left": [
+          "Int8",
+          "Numeric"
+        ]
+      }
+    },
+    "query": "\n                select c.address\n                from nft_collection c\n                left join meta_handled_addresses mha on mha.address = c.address\n                where \n                    (mha.address is null) or\n                    (extract(epoch from now()) - mha.updated_at > $2 and failed is true)\n                order by updated desc\n                limit $1\n                "
   },
   "5a254f39cdadfa8c4af29faaf92e64800cb9320c690bb4ac6407cd15592bd472": {
     "describe": {
@@ -718,6 +694,31 @@
     },
     "query": "\n                insert into meta_handled_addresses (\n                    address, \n                    updated_at,\n                    failed\n                )\n                values (\n                    $1, \n                    $2,\n                    $3\n                )\n                on conflict (address) do update \n                set\n                    updated_at = $2,\n                    failed = $3\n            "
   },
+  "ae19c988625abf5f56b681137b8ea3a0655f99ea4cd1eb82e17f30a61e6a7ded": {
+    "describe": {
+      "columns": [],
+      "nullable": [],
+      "parameters": {
+        "Left": [
+          "Text",
+          {
+            "Custom": {
+              "kind": {
+                "Domain": "Varchar"
+              },
+              "name": "t_address"
+            }
+          },
+          "Text",
+          "Text",
+          "Varchar",
+          "Varchar",
+          "Timestamp"
+        ]
+      }
+    },
+    "query": "\n            update nft_collection\n            set \n                owner        = $2, \n                name         = coalesce($3, nft_collection.name),\n                description  = coalesce($4, nft_collection.description),\n                logo         = coalesce($5, nft_collection.logo),\n                wallpaper    = coalesce($6, nft_collection.wallpaper),\n                updated      = greatest($7, nft_collection.updated)\n            where address = $1\n            "
+  },
   "b26379153f56804b980c102af4afc542ec8aeda91a7e11918c72a7690b4a67f5": {
     "describe": {
       "columns": [],
@@ -781,27 +782,6 @@
     },
     "query": "\n        insert into nft_auction (\n            address, \n            root,\n            nft,\n            tx_lt,\n            status\n        )\n        select *\n        from unnest(\n            $1::varchar[],\n            $2::varchar[],\n            $3::varchar[],\n            $4::bigint[],\n            $5::auction_status[]\n        ) \n        on conflict(address) do nothing\n        "
   },
-  "d0b2e695b98ac8d6a2ab63d6297cc530cd2c91e8ca9b323ee8a880c0ca595a60": {
-    "describe": {
-      "columns": [
-        {
-          "name": "address",
-          "ordinal": 0,
-          "type_info": "Varchar"
-        }
-      ],
-      "nullable": [
-        false
-      ],
-      "parameters": {
-        "Left": [
-          "Int8",
-          "Numeric"
-        ]
-      }
-    },
-    "query": "\n                select c.address\n                from nft_collection c\n                left join meta_handled_addresses mha on mha.address = c.address\n                where \n                    (mha.address is null) or\n                    (extract(epoch from now()) - mha.updated_at > $2 and failed is true)\n                limit $1\n                "
-  },
   "d217cc75431bc07f6d73cc321622078a260f0d1d330a2b244f07f2802708e486": {
     "describe": {
       "columns": [],
@@ -832,6 +812,33 @@
       }
     },
     "query": "\n            insert into nft(address, collection, owner, manager, updated, owner_update_lt, manager_update_lt)\n            select * from unnest(\n                $1::varchar[], \n                $2::varchar[], \n                $3::varchar[], \n                $4::varchar[], \n                $5::timestamp[],\n                $6::bigint[], \n                $7::bigint[]) \n            on conflict(address) do nothing\n        "
+  },
+  "f5a9f5b3bf62ee2760e221f20d0e93d40bc09371f7260c4b441785e603da250a": {
+    "describe": {
+      "columns": [
+        {
+          "name": "address",
+          "ordinal": 0,
+          "type_info": "Varchar"
+        },
+        {
+          "name": "collection",
+          "ordinal": 1,
+          "type_info": "Varchar"
+        }
+      ],
+      "nullable": [
+        false,
+        true
+      ],
+      "parameters": {
+        "Left": [
+          "Int8",
+          "Numeric"
+        ]
+      }
+    },
+    "query": "\n                select \n                    n.address,\n                    n.collection\n                from nft n\n                left join meta_handled_addresses mha on mha.address = n.address\n                where \n                    (mha.address is null) or\n                    (extract(epoch from now()) - mha.updated_at > $2 and failed is true)\n                order by updated desc\n                limit $1\n            "
   },
   "f5d588a0d28c4e9446b5ca4d7ea99ec0ad88afb1d7f48e71be86457eb9f9329a": {
     "describe": {
@@ -915,33 +922,6 @@
       }
     },
     "query": "\n                select \n                    address as id,\n                    price_token as token_addr,\n                    price as token_amount,\n                    created as created_at\n                from nft_direct_sell\n                where sell_price_usd is null\n                and created <= $1\n                and created != $2 \n                and state = 'filled'\n                limit $3\n            "
-  },
-  "fe0ac4841f4e933baa51d587ed2e0bb53cd9273df0fb9cbc26a6be9681bfd751": {
-    "describe": {
-      "columns": [
-        {
-          "name": "address",
-          "ordinal": 0,
-          "type_info": "Varchar"
-        },
-        {
-          "name": "collection",
-          "ordinal": 1,
-          "type_info": "Varchar"
-        }
-      ],
-      "nullable": [
-        false,
-        true
-      ],
-      "parameters": {
-        "Left": [
-          "Int8",
-          "Numeric"
-        ]
-      }
-    },
-    "query": "\n                select \n                    n.address,\n                    n.collection\n                from nft n\n                left join meta_handled_addresses mha on mha.address = n.address\n                where \n                    (mha.address is null) or\n                    (extract(epoch from now()) - mha.updated_at > $2 and failed is true)\n                limit $1\n            "
   },
   "fe6605371497cf9f59c6633361e1214b02d7eaa876274bdae69495cecaf96215": {
     "describe": {

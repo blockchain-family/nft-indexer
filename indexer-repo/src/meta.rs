@@ -9,7 +9,7 @@ pub struct MetadataModelService {
     pool: PgPool,
 }
 
-const FAILED_META_COOLDOWN_SECS: i64 = 30 * 60;
+const FAILED_META_COOLDOWN_SECS: i64 = 120 * 60;
 
 pub struct NftAddressData {
     pub nft: String,
@@ -107,6 +107,7 @@ impl MetadataModelService {
                 where 
                     (mha.address is null) or
                     (extract(epoch from now()) - mha.updated_at > $2 and failed is true)
+                order by updated desc
                 limit $1
             "#,
             items_per_page,
@@ -130,6 +131,7 @@ impl MetadataModelService {
                 where 
                     (mha.address is null) or
                     (extract(epoch from now()) - mha.updated_at > $2 and failed is true)
+                order by updated desc
                 limit $1
                 "#,
             items_per_page,
@@ -240,11 +242,31 @@ impl<'a> MetadataModelTransaction<'a> {
         .map_err(|e| anyhow!(e))
     }
 
-    pub async fn update_collection(&mut self, collection: &NftCollectionMeta) -> Result<()> {
-        crate::actions::update_collection_meta(collection, &mut self.tx)
-            .await
-            .map(|_| ())
-            .map_err(|e| anyhow!(e))
+    pub async fn update_collection(&mut self, meta: &NftCollectionMeta) -> Result<()> {
+        sqlx::query!(
+            r#"
+            update nft_collection
+            set 
+                owner        = $2, 
+                name         = coalesce($3, nft_collection.name),
+                description  = coalesce($4, nft_collection.description),
+                logo         = coalesce($5, nft_collection.logo),
+                wallpaper    = coalesce($6, nft_collection.wallpaper),
+                updated      = greatest($7, nft_collection.updated)
+            where address = $1
+            "#,
+            meta.address as _,
+            meta.owner as _,
+            meta.name,
+            meta.description,
+            meta.logo as _,
+            meta.wallpaper as _,
+            meta.updated,
+        )
+        .execute(&mut self.tx)
+        .await
+        .map(|_| ())
+        .map_err(|e| anyhow!(e))
     }
 
     pub async fn add_to_proceeded(&mut self, addr: &str, failed: Option<bool>) -> Result<()> {
