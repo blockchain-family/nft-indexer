@@ -32,7 +32,14 @@ select
     s.buyer,
     s.finished_at,
     s.expired_at,
-    s.state,
+    case
+        when s.state = 'active'::direct_buy_state and
+             to_timestamp(0) < s.finished_at and s.finished_at < now()::timestamp
+        then
+            'expired'::direct_buy_state
+        else
+            s.state
+    end as state,
     s.created,
     s.updated,
     s.tx_lt,
@@ -63,6 +70,7 @@ select distinct on (s.nft)
     s.buyer,
     s.finished_at,
     s.expired_at,
+    -- NOTE: state check in nft_direct_buy_usd
     s.state,
     s.created,
     s.updated,
@@ -71,9 +79,7 @@ select distinct on (s.nft)
 from nft_direct_buy_usd s
 join roots r on r.address::text = s.root::text
 join token_usd_prices p on s.price_token::text = p.token::text
-where (s.state = 'active'::direct_buy_state and
-       (s.expired_at = to_timestamp(0) or -- never expires
-       s.expired_at > now()::timestamp)) and
+where s.state = 'active'::direct_buy_state and
       s.usd_price is not null
 order by s.nft, s.usd_price desc;
 
@@ -156,7 +162,7 @@ from nft n
                 (a.finished_at = to_timestamp(0) or
                  a.finished_at > now()::timestamp))
         where a.nft::text = n.address::text and
-              (a.status = any(array['active'::auction_status, 'expired'::auction_status]))
+              a.status = 'active'::auction_status
         limit 1
     ) auc on true
     left join nft_metadata m on m.nft::text = n.address::text
@@ -174,7 +180,7 @@ from nft n
             (s.expired_at = to_timestamp(0) or
              s.expired_at > now()))
         where s.nft::text = n.address::text and
-              (s.state = any(array['active'::direct_sell_state, 'expired'::direct_sell_state]))
+              s.state = 'active'::direct_sell_state
         limit 1
     ) sale on true
 where not n.burned;
@@ -190,7 +196,14 @@ select
     s.seller,
     s.finished_at,
     s.expired_at,
-    s.state,
+    case
+        when s.state = 'active'::direct_sell_state and
+             to_timestamp(0) < s.finished_at and s.finished_at < now()::timestamp
+            then
+            'expired'::direct_sell_state
+        else
+            s.state
+    end as state,
     s.created,
     s.updated,
     s.tx_lt,
@@ -260,27 +273,35 @@ where b.declined is null or
 order by b.auction, b.created_at desc;
 
 create or replace view nft_auction_search as
-select a.address,
-       a.nft,
-       a.wallet_for_bids,
-       a.price_token,
-       a.start_price,
-       a.max_bid,
-       a.min_bid,
-       a.status                    as "status: _",
-       a.created_at,
-       a.finished_at,
-       a.tx_lt,
-       v.buyer                     as last_bid_from,
-       count(b.*)                  as bids_count,
-       max(b.price)                as last_bid_value,
-       max(b.price) * p.usd_price  as last_bid_usd_value,
-       max(b.created_at)           as last_bid_ts,
-       a.start_price * p.usd_price as start_usd_price,
-       a.max_bid * p.usd_price     as max_usd_bid,
-       a.min_bid * p.usd_price     as min_usd_bid,
-       ev.fee_numerator,
-       ev.fee_denominator
+select
+    a.address,
+    a.nft,
+    a.wallet_for_bids,
+    a.price_token,
+    a.start_price,
+    a.max_bid,
+    a.min_bid,
+    case
+        when a.status = 'active'::auction_status and
+             to_timestamp(0) < a.finished_at and a.finished_at < now()::timestamp
+            then
+            'expired'::auction_status
+        else
+            a.status
+    end as "status: _",
+    a.created_at,
+    a.finished_at,
+    a.tx_lt,
+    v.buyer                     as last_bid_from,
+    count(b.*)                  as bids_count,
+    max(b.price)                as last_bid_value,
+    max(b.price) * p.usd_price  as last_bid_usd_value,
+    max(b.created_at)           as last_bid_ts,
+    a.start_price * p.usd_price as start_usd_price,
+    a.max_bid * p.usd_price     as max_usd_bid,
+    a.min_bid * p.usd_price     as min_usd_bid,
+    ev.fee_numerator,
+    ev.fee_denominator
 from nft_auction a
 join roots r on r.address::text = a.root::text
 join nft n on n.address::text = a.nft::text and not n.burned
