@@ -334,7 +334,7 @@ select
     c.logo,
     c.total_price,
     c.max_price,
-    nft_counter.owners_cnt,
+    nft_counter.owners_count,
     c.verified,
     nft_counter.cnt as nft_count,
     least(direct_sell.usd, auction.usd) as floor_price_usd,
@@ -379,7 +379,9 @@ left join lateral (
            ds.expired_at > now()::timestamp)
 ) direct_sell on true
 left join lateral (
-    select count(1) as cnt, count(distinct owner) as owners_cnt
+    select
+        count(1) as cnt,
+        count(distinct owner) as owners_count
     from nft n
     where n.burned is false and
           n.collection::text = c.address::text
