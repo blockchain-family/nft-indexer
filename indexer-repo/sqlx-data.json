@@ -70,6 +70,26 @@
     },
     "query": "\n                update nft_auction\n                set closing_price_usd = $1\n                where address = $2\n            "
   },
+  "1a8faf43e1567afeb374cc2c1d077d508b2b6df8cc0c30e59255d70c3f9ed835": {
+    "describe": {
+      "columns": [
+        {
+          "name": "address",
+          "ordinal": 0,
+          "type_info": "Varchar"
+        }
+      ],
+      "nullable": [
+        false
+      ],
+      "parameters": {
+        "Left": [
+          "Int8"
+        ]
+      }
+    },
+    "query": "\n        select address\n        from nft_collection\n        order by updated desc\n        limit $1\n        "
+  },
   "23dde169ba4c8c92dd329f563239e0d5cf62f4681814561c9b8da8da983e0800": {
     "describe": {
       "columns": [],

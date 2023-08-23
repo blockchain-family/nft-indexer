@@ -117,72 +117,73 @@ select
     end as floor_price_token,
     nft_id.id as nft_id
 from nft n
-    left join lateral (
-        select max(ne.args ->> 'id')::text as id from nft_events ne
-        where ne.event_type = 'nft_created'
-            and ne.nft = n.address
-        group by ne.nft
-    ) nft_id on true
-    left join lateral (
-        select ag.price as last_price
-        from (
-            select s.price * tup.usd_price as price, s.created
-            from nft_direct_sell s
-            join token_usd_prices tup on tup.token::text = s.price_token::text
-            where s.state = 'filled'::direct_sell_state and
-                  s.nft::text = n.address::text
-            union all
-            select s.price * tup.usd_price, s.created
-            from nft_direct_buy s
-            join token_usd_prices tup on tup.token::text = s.price_token::text
-            where s.state = 'filled'::direct_buy_state and
-                  s.nft::text = n.address::text
-            union all
-            select s.max_bid * tup.usd_price, s.created_at
-            from nft_auction s
-            join token_usd_prices tup on tup.token::text = s.price_token::text
-            where s.status = 'completed'::auction_status and
-                  s.nft::text = n.address::text
-        ) ag
-        order by ag.created desc
-        limit 1
-    ) last_deal on true
-    left join lateral (
-        select a.address                 as auction,
-               a.status                  as "auction_status: _",
-               a.min_bid * tup.usd_price as price_usd,
-               tup.token,
-               a.min_bid
-        from nft_auction a
-        join roots r
-            on r.address::text = a.root::text
-        left join token_usd_prices tup
-            on tup.token::text = a.price_token::text and
-               (a.status = 'active'::auction_status and
-                (a.finished_at = to_timestamp(0) or
-                 a.finished_at > now()::timestamp))
-        where a.nft::text = n.address::text and
-              a.status = 'active'::auction_status
-        limit 1
-    ) auc on true
-    left join nft_metadata m on m.nft::text = n.address::text
-    left join lateral (
-        select s.address               as forsale,
-               s.state                 as "forsale_status: _",
-               s.price * tup.usd_price as price_usd,
-               s.price,
-               tup.token
+left join lateral (
+    select max(ne.args ->> 'id')::text as id from nft_events ne
+    where ne.event_type = 'nft_created'
+        and ne.nft = n.address
+    group by ne.nft
+) nft_id on true
+left join lateral (
+    select ag.price as last_price
+    from (
+        select s.price * tup.usd_price as price, s.created
         from nft_direct_sell s
-        join roots r on r.address::text = s.root::text
-        left join token_usd_prices tup
+        join token_usd_prices tup on tup.token::text = s.price_token::text
+        where s.state = 'filled'::direct_sell_state and
+              s.nft::text = n.address::text
+        union all
+        select s.price * tup.usd_price, s.created
+        from nft_direct_buy s
+        join token_usd_prices tup on tup.token::text = s.price_token::text
+        where s.state = 'filled'::direct_buy_state and
+              s.nft::text = n.address::text
+        union all
+        select s.max_bid * tup.usd_price, s.created_at
+        from nft_auction s
+        join token_usd_prices tup on tup.token::text = s.price_token::text
+        where s.status = 'completed'::auction_status and
+              s.nft::text = n.address::text
+    ) ag
+    order by ag.created desc
+    limit 1
+) last_deal on true
+left join lateral (
+    select a.address                 as auction,
+           a.status                  as "auction_status: _",
+           a.min_bid * tup.usd_price as price_usd,
+           tup.token,
+           a.min_bid
+    from nft_auction a
+    join roots r
+        on r.address::text = a.root::text
+    left join token_usd_prices tup
+        on tup.token::text = a.price_token::text and
+           (a.status = 'active'::auction_status and
+            (a.finished_at = to_timestamp(0) or
+             a.finished_at > now()::timestamp))
+    where a.nft::text = n.address::text and
+          a.status = 'active'::auction_status
+    limit 1
+) auc on true
+left join nft_metadata m on m.nft::text = n.address::text
+left join lateral (
+    select s.address               as forsale,
+           s.state                 as "forsale_status: _",
+           s.price * tup.usd_price as price_usd,
+           s.price,
+           tup.token
+    from nft_direct_sell s
+    join roots r
+        on r.address::text = s.root::text
+    left join token_usd_prices tup
         on tup.token::text = s.price_token::text and
-           (s.state = 'active'::direct_sell_state and
-            (s.expired_at = to_timestamp(0) or
-             s.expired_at > now()))
-        where s.nft::text = n.address::text and
-              s.state = 'active'::direct_sell_state
-        limit 1
-    ) sale on true
+           s.state = 'active'::direct_sell_state and
+           (s.expired_at = to_timestamp(0) or
+            s.expired_at > now())
+    where s.nft::text = n.address::text and
+          s.state = 'active'::direct_sell_state
+    limit 1
+) sale on true
 where not n.burned;
 
 create or replace view nft_direct_sell_usd as
