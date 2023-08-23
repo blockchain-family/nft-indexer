@@ -25,7 +25,7 @@ pub async fn save_auc_active(pool: &PgPool, data: &[AuctionActive]) -> Result<()
         .collect::<Vec<_>>();
     let finished = data
         .iter()
-        .map(|a| NaiveDateTime::from_timestamp_opt(a.finished_at, 0))
+        .map(|a| NaiveDateTime::from_timestamp_opt(a.finished_at, 0).unwrap_or_default())
         .collect::<Vec<_>>();
     let tx_lts = data.iter().map(|a| a.tx_lt).collect::<Vec<_>>();
 

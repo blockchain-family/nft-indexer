@@ -1,4 +1,5 @@
 use anyhow::{anyhow, Result};
+use chrono::NaiveDateTime;
 use sqlx::PgPool;
 
 use crate::types::decoded::CollectionFee;
@@ -7,7 +8,10 @@ pub async fn update_collection_fee(pool: &PgPool, data: &[CollectionFee]) -> Res
     let addresses = data.iter().map(|e| e.address.as_str()).collect::<Vec<_>>();
     let nums = data.iter().map(|e| e.numerator).collect::<Vec<_>>();
     let denoms = data.iter().map(|e| e.denominator).collect::<Vec<_>>();
-    let ts = data.iter().map(|e| e.timestamp).collect::<Vec<_>>();
+    let ts = data
+        .iter()
+        .map(|e| NaiveDateTime::from_timestamp_opt(e.timestamp, 0).unwrap_or_default())
+        .collect::<Vec<_>>();
 
     sqlx::query!(
         r#"

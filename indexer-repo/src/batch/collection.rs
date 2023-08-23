@@ -1,5 +1,6 @@
 use crate::types::NftCollection;
 use anyhow::{anyhow, Result};
+use chrono::NaiveDateTime;
 use sqlx::PgPool;
 
 pub async fn save_collections(pool: &PgPool, collections: &[NftCollection]) -> Result<()> {
@@ -9,7 +10,7 @@ pub async fn save_collections(pool: &PgPool, collections: &[NftCollection]) -> R
         .collect::<Vec<_>>();
     let mint_ts = collections
         .iter()
-        .map(|c| c.nft_first_mint)
+        .map(|c| NaiveDateTime::from_timestamp_opt(c.nft_first_mint, 0).unwrap_or_default())
         .collect::<Vec<_>>();
 
     sqlx::query!(
