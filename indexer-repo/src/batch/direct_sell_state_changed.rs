@@ -59,20 +59,19 @@ async fn insert_direct_sell(pool: &PgPool, dss: &[&DirectSell]) -> Result<()> {
                 updated,
                 tx_lt
             )
-            select * from unnest(
-                $1::varchar[], 
-                $2::varchar[],
-                $3::varchar[], 
-                $4::varchar[], 
-                $5::numeric[],
-                $6::varchar[],
-                $7::timestamp[],
-                $8::timestamp[],
-                $9::direct_sell_state[],
-                $10::timestamp[],
-                $11::timestamp[],
-                $12::bigint[]
-            ) 
+            select
+                unnest($1::varchar[]), 
+                unnest($2::varchar[]),
+                unnest($3::varchar[]), 
+                unnest($4::varchar[]), 
+                unnest($5::numeric[]),
+                unnest($6::varchar[]),
+                unnest($7::timestamp[]),
+                unnest($8::timestamp[]),
+                unnest($9::direct_sell_state[]),
+                unnest($10::timestamp[]),
+                unnest($11::timestamp[]),
+                unnest($12::bigint[])
             on conflict(address) do nothing
         "#,
         addresses as Vec<_>,

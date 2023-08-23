@@ -30,16 +30,14 @@ pub async fn save_auc_bid(pool: &PgPool, data: &[AuctionBid]) -> Result<()> {
                 tx_lt,
                 declined
             )
-            select *
-            from unnest(
-                $1::varchar[],
-                $2::varchar[],
-                $3::numeric[],
-                $4::numeric[],
-                $5::timestamp[],
-                $6::bigint[],
-                $7::boolean[]
-            ) 
+            select
+                unnest($1::varchar[]),
+                unnest($2::varchar[]),
+                unnest($3::numeric[]),
+                unnest($4::numeric[]),
+                unnest($5::timestamp[]),
+                unnest($6::bigint[]),
+                unnest($7::boolean[])
         "#,
         auctions as _,
         buyers as _,

@@ -50,7 +50,7 @@ pub async fn save_auc_active(pool: &PgPool, data: &[AuctionActive]) -> Result<()
                 unnest($6::timestamp[]) as created, 
                 unnest($7::timestamp[]) as finished,
                 unnest($8::bigint[]) as tx_lt,
-                unnest($9::auction_status[]) as status
+                $9::auction_status as status
         ) as data
         where nft_auction.address = data.address
         "#,

@@ -24,15 +24,13 @@ pub async fn save_price_history(pool: &PgPool, data: &[NftPriceHistory]) -> Resu
                 price_token, 
                 nft
             )
-            select *
-            from unnest(
-                $1::varchar[],
-                $2::nft_price_source[],
-                $3::timestamp[],
-                $4::numeric[],
-                $5::varchar[],
-                $6::varchar[]
-            ) 
+            select
+                unnest($1::varchar[]),
+                unnest($2::nft_price_source[]),
+                unnest($3::timestamp[]),
+                unnest($4::numeric[]),
+                unnest($5::varchar[]),
+                unnest($6::varchar[])
         "#,
         sources as _,
         source_types as _,

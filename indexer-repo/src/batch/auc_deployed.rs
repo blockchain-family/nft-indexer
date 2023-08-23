@@ -17,14 +17,12 @@ pub async fn save_auc_deployed(pool: &PgPool, data: &[AuctionDeployed]) -> Resul
             tx_lt,
             status
         )
-        select *
-        from unnest(
-            $1::varchar[],
-            $2::varchar[],
-            $3::varchar[],
-            $4::bigint[],
-            $5::auction_status[]
-        ) 
+        select 
+            unnest($1::varchar[]),
+            unnest($2::varchar[]),
+            unnest($3::varchar[]),
+            unnest($4::bigint[]),
+            $5::auction_status
         on conflict(address) do nothing
         "#,
         addresses as _,

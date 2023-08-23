@@ -15,12 +15,17 @@ pub async fn save_collections(pool: &PgPool, collections: &[NftCollection]) -> R
 
     sqlx::query!(
         r#"
-            insert into nft_collection(address, first_mint, created, updated)
-            select * from unnest(
-                $1::varchar[], 
-                $2::timestamp[], 
-                $2::timestamp[], 
-                $2::timestamp[]) 
+            insert into nft_collection(
+                address, 
+                first_mint, 
+                created, 
+                updated
+            )
+            select
+                unnest($1::varchar[]), 
+                unnest($2::timestamp[]), 
+                unnest($2::timestamp[]), 
+                unnest($2::timestamp[]) 
             on conflict(address) do nothing
         "#,
         addresses as _,

@@ -32,15 +32,23 @@ pub async fn save_nft_created(pool: &PgPool, nft_created: &[NftCreated]) -> Resu
 
     sqlx::query!(
         r#"
-            insert into nft(address, collection, owner, manager, updated, owner_update_lt, manager_update_lt)
-            select * from unnest(
-                $1::varchar[], 
-                $2::varchar[], 
-                $3::varchar[], 
-                $4::varchar[], 
-                $5::timestamp[],
-                $6::bigint[], 
-                $7::bigint[]) 
+            insert into nft(
+                address, 
+                collection, 
+                owner, 
+                manager, 
+                updated, 
+                owner_update_lt, 
+                manager_update_lt
+            )
+            select
+                unnest($1::varchar[]),
+                unnest($2::varchar[]), 
+                unnest($3::varchar[]), 
+                unnest($4::varchar[]), 
+                unnest($5::timestamp[]),
+                unnest($6::bigint[]),
+                unnest($7::bigint[]) 
             on conflict(address) do nothing
         "#,
         addresses as _,

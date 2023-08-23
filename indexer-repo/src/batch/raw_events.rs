@@ -39,19 +39,16 @@ pub async fn save_raw_event(pool: &PgPool, events: &[EventRecord]) -> Result<()>
                 args, 
                 message_hash
             )
-
-            select * 
-            from unnest(
-                $1::event_category[], 
-                $2::event_type[], 
-                $3::varchar[], 
-                $4::varchar[], 
-                $5::varchar[],
-                $6::bigint[], 
-                $7::bigint[],
-                $8::jsonb[],
-                $9::text[]
-            )
+            select 
+                unnest($1::event_category[]),
+                unnest($2::event_type[]), 
+                unnest($3::varchar[]), 
+                unnest($4::varchar[]), 
+                unnest($5::varchar[]),
+                unnest($6::bigint[]), 
+                unnest($7::bigint[]),
+                unnest($8::jsonb[]),
+                unnest($9::text[])
             on conflict(message_hash) do nothing
         "#,
         categories as _,
