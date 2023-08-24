@@ -12,7 +12,6 @@ pub struct Config {
     pub kafka_reset: Option<bool>,
     pub states_rpc_endpoints: Vec<Url>,
     pub kafka_settings: HashMap<String, String>,
-    pub reset: bool,
     pub server_api_url: String,
     pub terminate_open_connections: Option<bool>,
     pub jrpc_req_latency_millis: u64,
