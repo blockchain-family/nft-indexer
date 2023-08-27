@@ -6,6 +6,7 @@ use indexer_repo::{
     meta::{MetadataModelService, NftAddressData, NftMeta, NftMetaAttribute},
     types::NftCollectionMeta,
 };
+use serde_json::Value;
 use sqlx::{types::chrono, PgPool};
 use ton_block::MsgAddressInt;
 use transaction_consumer::JrpcClient;
@@ -99,15 +100,24 @@ pub async fn update_collections_meta(
         bail!("Error while converting collection address {} to MsgAddressInt", address);
     };
 
-    let Ok(collection_owner) = meta_jrpc_service.get_collection_owner(&collection_address).await else {
-        bail!("Error while reading collection owner. Skipping ${}", address);
+    let collection_owner = match meta_jrpc_service
+        .get_collection_owner(&collection_address)
+        .await
+    {
+        Ok(owner) => Some(owner),
+        Err(e) => {
+            log::error!("Error while reading {address} collection owner: {:#?}", e);
+            None
+        }
     };
 
-    let Ok(meta) = meta_jrpc_service
-        .fetch_metadata(&collection_address)
-        .await else {
-            bail!("Error while reading collection meta. Skipping ${}", address);
-        };
+    let meta = match meta_jrpc_service.fetch_metadata(&collection_address).await {
+        Ok(meta) => meta,
+        Err(e) => {
+            log::error!("Error while reading {address} collection meta: {:#?}", e);
+            Value::default()
+        }
+    };
 
     let Ok(mut tx) = meta_model_service.start_transaction().await else {
             bail!("Cant start transaction for saving metadata");
@@ -117,7 +127,7 @@ pub async fn update_collections_meta(
 
     let collection = NftCollectionMeta {
         address: address.into(),
-        owner: collection_owner,
+        owner: collection_owner.unwrap_or_default(),
         name: meta
             .get("name")
             .cloned()
