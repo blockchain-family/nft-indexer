@@ -755,7 +755,7 @@
     },
     "query": "\n                update nft\n                set description = $1\n                where address = $2\n            "
   },
-  "e66651fc61170e8a828b8a655fda5dcd2ae92fb675c83e812b6c2dd7b3d71ebf": {
+  "e9cf83918980558755dd53fa617f8b745f8b35451b82bdaaf69f55260d4c5973": {
     "describe": {
       "columns": [],
       "nullable": [],
@@ -766,7 +766,7 @@
         ]
       }
     },
-    "query": "\n            insert into deployed_offers (\n                address,\n                root\n            )\n            select\n                unnest($1::varchar[]),\n                unnest($2::varchar[])\n        "
+    "query": "\n            insert into deployed_offers (\n                address,\n                root\n            )\n            select\n                unnest($1::varchar[]),\n                unnest($2::varchar[])\n            on conflict (address) do nothing\n        "
   },
   "f105d57d64d074404767c4c9d677d892117426e5fb7e11d18c163ae5e2255ea0": {
     "describe": {

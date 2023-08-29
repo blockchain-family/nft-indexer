@@ -83,6 +83,7 @@ pub async fn save_deployed_offers(pool: &PgPool, offers: &[OfferDeployed]) -> Re
             select
                 unnest($1::varchar[]),
                 unnest($2::varchar[])
+            on conflict (address) do nothing
         "#,
         addresses as _,
         roots as _,
