@@ -1,32 +1,9 @@
-use crate::types::{decoded::DirectSell, DirectSellState};
+use crate::types::decoded::DirectSell;
 use anyhow::{anyhow, Result};
 use sqlx::PgPool;
 use std::collections::HashMap;
 
-pub async fn save_direct_sell_state_changed(pool: &PgPool, dss: &[DirectSell]) -> Result<()> {
-    let mut to_insert = Vec::with_capacity(dss.len());
-    let mut for_update = Vec::with_capacity(dss.len());
-
-    for db in dss {
-        if db.state == DirectSellState::Create {
-            to_insert.push(db);
-        } else {
-            for_update.push(db);
-        }
-    }
-
-    if !to_insert.is_empty() {
-        insert_direct_sell(pool, &to_insert).await?;
-    }
-
-    if !for_update.is_empty() {
-        update_direct_sell_state(pool, &mut for_update).await?;
-    }
-
-    Ok(())
-}
-
-async fn insert_direct_sell(pool: &PgPool, dss: &[&DirectSell]) -> Result<()> {
+pub async fn save_direct_sell(pool: &PgPool, dss: &[DirectSell]) -> Result<()> {
     let addresses = dss.iter().map(|ds| ds.address.as_str()).collect::<Vec<_>>();
     let roots = dss.iter().map(|ds| ds.root.as_str()).collect::<Vec<_>>();
     let nfts = dss.iter().map(|ds| ds.nft.as_str()).collect::<Vec<_>>();
@@ -93,7 +70,7 @@ async fn insert_direct_sell(pool: &PgPool, dss: &[&DirectSell]) -> Result<()> {
     .map(|_| ())
 }
 
-async fn update_direct_sell_state(pool: &PgPool, dss: &mut [&DirectSell]) -> Result<()> {
+pub async fn update_direct_sell_state(pool: &PgPool, dss: &mut [DirectSell]) -> Result<()> {
     dss.sort_by(|a, b| b.tx_lt.cmp(&a.tx_lt));
     let mut last_state_change = HashMap::with_capacity(dss.len());
 
@@ -104,16 +81,28 @@ async fn update_direct_sell_state(pool: &PgPool, dss: &mut [&DirectSell]) -> Res
     }
 
     let mut addresses = Vec::with_capacity(dss.len());
+    let mut nfts = Vec::with_capacity(dss.len());
+    let mut price_tokens = Vec::with_capacity(dss.len());
+    let mut prices = Vec::with_capacity(dss.len());
+    let mut sellers = Vec::with_capacity(dss.len());
+    let mut expired_at = Vec::with_capacity(dss.len());
     let mut finished_at = Vec::with_capacity(dss.len());
     let mut states = Vec::with_capacity(dss.len());
+    let mut created = Vec::with_capacity(dss.len());
     let mut updated = Vec::with_capacity(dss.len());
     let mut tx_lts = Vec::with_capacity(dss.len());
 
     for ds in last_state_change.values() {
         addresses.push(ds.address.as_str());
+        nfts.push(ds.nft.as_str());
+        price_tokens.push(ds.price_token.as_str());
+        prices.push(ds.price.clone());
+        sellers.push(ds.seller.as_str());
+        expired_at.push(ds.expired_at);
         finished_at.push(ds.finished_at);
         states.push(ds.state.clone());
         updated.push(ds.updated);
+        created.push(ds.created);
         tx_lts.push(ds.tx_lt);
     }
 
@@ -121,8 +110,14 @@ async fn update_direct_sell_state(pool: &PgPool, dss: &mut [&DirectSell]) -> Res
         r#"
         update nft_direct_sell set
             state = data.state,
+            nft = data.nft,
+            price_token = data.price_token,
+            price = data.price,
+            seller = data.seller,
+            expired_at = data.expired_at,
             finished_at = data.finished_at,
             updated = data.updated,
+            created = data.created,
             tx_lt = data.tx_lt
         from
         (
@@ -131,7 +126,13 @@ async fn update_direct_sell_state(pool: &PgPool, dss: &mut [&DirectSell]) -> Res
                 unnest($2::direct_sell_state[]) as state,
                 unnest($3::timestamp[]) as finished_at,
                 unnest($4::timestamp[]) as updated,
-                unnest($5::bigint[]) as tx_lt
+                unnest($5::bigint[]) as tx_lt,
+                unnest($6::varchar[]) as nft,
+                unnest($7::varchar[]) as price_token,
+                unnest($8::numeric[]) as price,
+                unnest($9::varchar[]) as seller,
+                unnest($10::timestamp[]) as expired_at,
+                unnest($11::timestamp[]) as created
         ) as data
         where nft_direct_sell.address = data.address
         "#,
@@ -140,6 +141,12 @@ async fn update_direct_sell_state(pool: &PgPool, dss: &mut [&DirectSell]) -> Res
         finished_at as _,
         updated as _,
         tx_lts as _,
+        nfts as _,
+        price_tokens as _,
+        prices as _,
+        sellers as _,
+        expired_at as _,
+        created as _,
     )
     .execute(pool)
     .await

@@ -308,4 +308,9 @@ pub mod decoded {
         pub updated: NaiveDateTime,
         pub tx_lt: i64,
     }
+
+    pub struct OfferDeployed {
+        pub address: String,
+        pub root: String,
+    }
 }

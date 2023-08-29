@@ -13,6 +13,10 @@ impl Decode for DirectSellStateChanged {
     fn decode(&self, ctx: &DecodeContext) -> Result<Decoded> {
         let state = self.to.into();
 
+        if state == DirectSellState::Create || state == DirectSellState::AwaitNft {
+            return Ok(Decoded::ShouldSkip);
+        }
+
         let finished_at = if state == DirectSellState::Filled {
             Some(
                 NaiveDateTime::from_timestamp_opt(ctx.tx_data.get_timestamp(), 0)

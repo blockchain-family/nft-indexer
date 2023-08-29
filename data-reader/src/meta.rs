@@ -100,6 +100,8 @@ pub async fn update_collections_meta(
         bail!("Error while converting collection address {} to MsgAddressInt", address);
     };
 
+    let mut failed = None;
+
     let collection_owner = match meta_jrpc_service
         .get_collection_owner(&collection_address)
         .await
@@ -107,6 +109,7 @@ pub async fn update_collections_meta(
         Ok(owner) => Some(owner),
         Err(e) => {
             log::error!("Error while reading {address} collection owner: {:#?}", e);
+            failed = Some(true);
             None
         }
     };
@@ -115,6 +118,7 @@ pub async fn update_collections_meta(
         Ok(meta) => meta,
         Err(e) => {
             log::error!("Error while reading {address} collection meta: {:#?}", e);
+            failed = Some(true);
             Value::default()
         }
     };
@@ -175,7 +179,7 @@ pub async fn update_collections_meta(
         );
     };
 
-    if let Err(e) = tx.add_to_proceeded(address, None).await {
+    if let Err(e) = tx.add_to_proceeded(address, failed).await {
         bail!(
             "Collection address: {}, error while adding to meta_handled_addresses table: {:#?}",
             address,

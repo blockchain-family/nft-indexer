@@ -13,7 +13,7 @@ const FAILED_META_COOLDOWN_SECS: i64 = 120 * 60;
 
 pub struct NftAddressData {
     pub nft: String,
-    pub collection: Option<String>,
+    pub collection: String,
 }
 
 pub struct NftMeta<'a> {
@@ -24,7 +24,7 @@ pub struct NftMeta<'a> {
 
 pub struct NftMetaAttribute<'a> {
     pub nft: &'a str,
-    pub collection: Option<&'a str>,
+    pub collection: &'a str,
     pub raw: &'a serde_json::Value,
     pub trait_type: &'a str,
     pub value: Option<&'a serde_json::Value>,
@@ -44,7 +44,7 @@ impl<'a> NftMetaAttribute<'a> {
 
         Self {
             nft: &address_data.nft,
-            collection: address_data.collection.as_deref(),
+            collection: &address_data.collection,
             raw,
             trait_type,
             value,
@@ -84,7 +84,7 @@ impl MetadataModelService {
     ) -> Result<Vec<NftAddressData>> {
         struct Row {
             address: String,
-            collection: Option<String>,
+            collection: String,
         }
 
         impl From<Row> for NftAddressData {

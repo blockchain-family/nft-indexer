@@ -32,7 +32,7 @@ pub async fn save_nft_created(pool: &PgPool, nft_created: &[NftCreated]) -> Resu
 
     sqlx::query!(
         r#"
-            insert into nft(
+            insert into nft (
                 address, 
                 collection, 
                 owner, 

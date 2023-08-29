@@ -15,7 +15,7 @@ pub async fn save_collections(pool: &PgPool, collections: &[NftCollection]) -> R
 
     sqlx::query!(
         r#"
-            insert into nft_collection(
+            insert into nft_collection (
                 address, 
                 first_mint, 
                 created, 

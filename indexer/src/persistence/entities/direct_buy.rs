@@ -13,6 +13,10 @@ impl Decode for DirectBuyStateChanged {
     fn decode(&self, ctx: &DecodeContext) -> Result<Decoded> {
         let state = self.to.into();
 
+        if state == DirectBuyState::Create || state == DirectBuyState::AwaitTokens {
+            return Ok(Decoded::ShouldSkip);
+        }
+
         let finished_at = if state == DirectBuyState::Filled {
             Some(
                 NaiveDateTime::from_timestamp_opt(ctx.tx_data.get_timestamp(), 0)

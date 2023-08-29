@@ -1,5 +1,23 @@
 {
   "db": "PostgreSQL",
+  "0d9f51334ecb761149b405cdd8db8437a812ae4a1e45a339f01fcc1e56aa2ff5": {
+    "describe": {
+      "columns": [],
+      "nullable": [],
+      "parameters": {
+        "Left": [
+          "VarcharArray",
+          "VarcharArray",
+          "VarcharArray",
+          "VarcharArray",
+          "TimestampArray",
+          "Int8Array",
+          "Int8Array"
+        ]
+      }
+    },
+    "query": "\n            insert into nft (\n                address, \n                collection, \n                owner, \n                manager, \n                updated, \n                owner_update_lt, \n                manager_update_lt\n            )\n            select\n                unnest($1::varchar[]),\n                unnest($2::varchar[]), \n                unnest($3::varchar[]), \n                unnest($4::varchar[]), \n                unnest($5::timestamp[]),\n                unnest($6::bigint[]),\n                unnest($7::bigint[]) \n            on conflict(address) do nothing\n        "
+  },
   "1068960c3648fcc7976b1db18efa700c069bb3e54ee1a50631221f3dbb51d9ec": {
     "describe": {
       "columns": [],
@@ -145,6 +163,19 @@
     },
     "query": "\n                select \n                    address as id,\n                    price_token as \"token_addr!\",\n                    min_bid as \"token_amount!\",\n                    created_at as \"created_at!\"\n                from nft_auction\n                where closing_price_usd is null\n                and created_at is not null\n                and min_bid is not null\n                and price_token is not null\n                and created_at <= $1\n                and created_at != $2 \n                and status = 'completed'\n                limit $3\n            "
   },
+  "37537384dd68dc8ab73ee774879598512b52a0de8d161443da42b3376fc01b5b": {
+    "describe": {
+      "columns": [],
+      "nullable": [],
+      "parameters": {
+        "Left": [
+          "VarcharArray",
+          "TimestampArray"
+        ]
+      }
+    },
+    "query": "\n            insert into nft_collection (\n                address, \n                first_mint, \n                created, \n                updated\n            )\n            select\n                unnest($1::varchar[]), \n                unnest($2::timestamp[]), \n                unnest($2::timestamp[]), \n                unnest($2::timestamp[]) \n            on conflict(address) do nothing\n        "
+  },
   "478f1843f03dcf85d5af47228054f4a477adb5eecc1ff594626de0dd3182c6b4": {
     "describe": {
       "columns": [
@@ -194,33 +225,7 @@
     },
     "query": "\n        update nft_collection set\n            fee_numerator   = data.num, \n            fee_denominator = data.den,\n            updated         = greatest(data.ts, nft_collection.updated)\n        from\n        (\n            select \n                unnest($1::varchar[]) as address,\n                unnest($2::integer[]) as num,\n                unnest($3::integer[]) as den,\n                unnest($4::timestamp[]) as ts\n        ) as data\n        where nft_collection.address = data.address\n    "
   },
-  "5f619b22c878e3bb0288ce9aa8ddae142b8d0d2e68580bbf4e3992d7bd8c6c07": {
-    "describe": {
-      "columns": [],
-      "nullable": [],
-      "parameters": {
-        "Left": [
-          "VarcharArray",
-          {
-            "Custom": {
-              "kind": {
-                "Enum": [
-                  "created",
-                  "active",
-                  "cancelled",
-                  "completed",
-                  "expired"
-                ]
-              },
-              "name": "auction_status"
-            }
-          }
-        ]
-      }
-    },
-    "query": "\n        update nft_auction set\n            status = data.status\n        from\n        (\n            select \n                unnest($1::varchar[]) as address,\n                $2::auction_status as status\n        ) as data\n        where nft_auction.address = data.address\n    "
-  },
-  "6608660ee3e71c3cb60a8054bc18cecdb23c57c4601ee4353a472145ce16b425": {
+  "5eb953cc5914b99497a9c19fbd407d3ec9be42cda925a69794a6445f75b4c626": {
     "describe": {
       "columns": [],
       "nullable": [],
@@ -251,11 +256,43 @@
           },
           "TimestampArray",
           "TimestampArray",
-          "Int8Array"
+          "Int8Array",
+          "VarcharArray",
+          "VarcharArray",
+          "NumericArray",
+          "VarcharArray",
+          "TimestampArray",
+          "TimestampArray"
         ]
       }
     },
-    "query": "\n        update nft_direct_buy set\n            state = data.state,\n            finished_at = data.finished_at,\n            updated = data.updated,\n            tx_lt = data.tx_lt\n        from\n        (\n            select \n                unnest($1::varchar[]) as address,\n                unnest($2::direct_buy_state[]) as state,\n                unnest($3::timestamp[]) as finished_at,\n                unnest($4::timestamp[]) as updated,\n                unnest($5::bigint[]) as tx_lt\n        ) as data\n        where nft_direct_buy.address = data.address\n        "
+    "query": "\n        update nft_direct_buy set\n            state = data.state,\n            nft = data.nft,\n            price_token = data.price_token,\n            price = data.price,\n            buyer = data.buyer,\n            expired_at = data.expired_at,\n            finished_at = data.finished_at,\n            created = data.created,\n            updated = data.updated,\n            tx_lt = data.tx_lt\n        from\n        (\n            select \n                unnest($1::varchar[]) as address,\n                unnest($2::direct_buy_state[]) as state,\n                unnest($3::timestamp[]) as finished_at,\n                unnest($4::timestamp[]) as updated,\n                unnest($5::bigint[]) as tx_lt,\n                unnest($6::varchar[]) as nft,\n                unnest($7::varchar[]) as price_token,\n                unnest($8::numeric[]) as price,\n                unnest($9::varchar[]) as buyer,\n                unnest($10::timestamp[]) as expired_at,\n                unnest($11::timestamp[]) as created\n        ) as data\n        where nft_direct_buy.address = data.address\n        "
+  },
+  "5f619b22c878e3bb0288ce9aa8ddae142b8d0d2e68580bbf4e3992d7bd8c6c07": {
+    "describe": {
+      "columns": [],
+      "nullable": [],
+      "parameters": {
+        "Left": [
+          "VarcharArray",
+          {
+            "Custom": {
+              "kind": {
+                "Enum": [
+                  "created",
+                  "active",
+                  "cancelled",
+                  "completed",
+                  "expired"
+                ]
+              },
+              "name": "auction_status"
+            }
+          }
+        ]
+      }
+    },
+    "query": "\n        update nft_auction set\n            status = data.status\n        from\n        (\n            select \n                unnest($1::varchar[]) as address,\n                $2::auction_status as status\n        ) as data\n        where nft_auction.address = data.address\n    "
   },
   "6f0fa608f7d0b847580fae9efb25389e76c11f42489f5220447c4caa845430a5": {
     "describe": {
@@ -368,37 +405,6 @@
     },
     "query": "\n                update nft_direct_sell\n                set sell_price_usd = $1\n                where address = $2\n            "
   },
-  "82e6dfb125d22addd77b4f987868785e3e618cbfd77a22d9810b6b7577a32986": {
-    "describe": {
-      "columns": [],
-      "nullable": [],
-      "parameters": {
-        "Left": [
-          "VarcharArray",
-          "VarcharArray",
-          "VarcharArray",
-          "VarcharArray",
-          "TimestampArray",
-          "Int8Array",
-          "Int8Array"
-        ]
-      }
-    },
-    "query": "\n            insert into nft(\n                address, \n                collection, \n                owner, \n                manager, \n                updated, \n                owner_update_lt, \n                manager_update_lt\n            )\n            select\n                unnest($1::varchar[]),\n                unnest($2::varchar[]), \n                unnest($3::varchar[]), \n                unnest($4::varchar[]), \n                unnest($5::timestamp[]),\n                unnest($6::bigint[]),\n                unnest($7::bigint[]) \n            on conflict(address) do nothing\n        "
-  },
-  "84e50ffbd9b17a2761c43c032e8027a6f1305aecf1967106abd9b95dba45101b": {
-    "describe": {
-      "columns": [],
-      "nullable": [],
-      "parameters": {
-        "Left": [
-          "VarcharArray",
-          "TimestampArray"
-        ]
-      }
-    },
-    "query": "\n            insert into nft_collection(\n                address, \n                first_mint, \n                created, \n                updated\n            )\n            select\n                unnest($1::varchar[]), \n                unnest($2::timestamp[]), \n                unnest($2::timestamp[]), \n                unnest($2::timestamp[]) \n            on conflict(address) do nothing\n        "
-  },
   "861d9c3757649d8f7d18e08fcfb77d3bfd31f92639ba779d8f8d7fdcacdc9e03": {
     "describe": {
       "columns": [],
@@ -481,43 +487,6 @@
       }
     },
     "query": "\n            insert into nft_events (\n                event_cat,  \n                event_type, \n                address, \n                nft,\n                collection, \n                created_lt,\n                created_at, \n                args, \n                message_hash\n            )\n            select \n                unnest($1::event_category[]),\n                unnest($2::event_type[]), \n                unnest($3::varchar[]), \n                unnest($4::varchar[]), \n                unnest($5::varchar[]),\n                unnest($6::bigint[]), \n                unnest($7::bigint[]),\n                unnest($8::jsonb[]),\n                unnest($9::text[])\n            on conflict(message_hash) do nothing\n        "
-  },
-  "87b2eaf1fcab8ab6d09ccc1f15b9c4feb19f1a8b109ba65357cf4c7f229894cd": {
-    "describe": {
-      "columns": [],
-      "nullable": [],
-      "parameters": {
-        "Left": [
-          "VarcharArray",
-          {
-            "Custom": {
-              "kind": {
-                "Array": {
-                  "Custom": {
-                    "kind": {
-                      "Enum": [
-                        "create",
-                        "await_nft",
-                        "active",
-                        "filled",
-                        "cancelled",
-                        "expired"
-                      ]
-                    },
-                    "name": "direct_sell_state"
-                  }
-                }
-              },
-              "name": "_direct_sell_state"
-            }
-          },
-          "TimestampArray",
-          "TimestampArray",
-          "Int8Array"
-        ]
-      }
-    },
-    "query": "\n        update nft_direct_sell set\n            state = data.state,\n            finished_at = data.finished_at,\n            updated = data.updated,\n            tx_lt = data.tx_lt\n        from\n        (\n            select \n                unnest($1::varchar[]) as address,\n                unnest($2::direct_sell_state[]) as state,\n                unnest($3::timestamp[]) as finished_at,\n                unnest($4::timestamp[]) as updated,\n                unnest($5::bigint[]) as tx_lt\n        ) as data\n        where nft_direct_sell.address = data.address\n        "
   },
   "8a642dcdfc996e0f497d5f513de2c10b51dab1884214351ab467e9f09979e531": {
     "describe": {
@@ -786,6 +755,62 @@
     },
     "query": "\n                update nft\n                set description = $1\n                where address = $2\n            "
   },
+  "e66651fc61170e8a828b8a655fda5dcd2ae92fb675c83e812b6c2dd7b3d71ebf": {
+    "describe": {
+      "columns": [],
+      "nullable": [],
+      "parameters": {
+        "Left": [
+          "VarcharArray",
+          "VarcharArray"
+        ]
+      }
+    },
+    "query": "\n            insert into deployed_offers (\n                address,\n                root\n            )\n            select\n                unnest($1::varchar[]),\n                unnest($2::varchar[])\n        "
+  },
+  "f105d57d64d074404767c4c9d677d892117426e5fb7e11d18c163ae5e2255ea0": {
+    "describe": {
+      "columns": [],
+      "nullable": [],
+      "parameters": {
+        "Left": [
+          "VarcharArray",
+          {
+            "Custom": {
+              "kind": {
+                "Array": {
+                  "Custom": {
+                    "kind": {
+                      "Enum": [
+                        "create",
+                        "await_nft",
+                        "active",
+                        "filled",
+                        "cancelled",
+                        "expired"
+                      ]
+                    },
+                    "name": "direct_sell_state"
+                  }
+                }
+              },
+              "name": "_direct_sell_state"
+            }
+          },
+          "TimestampArray",
+          "TimestampArray",
+          "Int8Array",
+          "VarcharArray",
+          "VarcharArray",
+          "NumericArray",
+          "VarcharArray",
+          "TimestampArray",
+          "TimestampArray"
+        ]
+      }
+    },
+    "query": "\n        update nft_direct_sell set\n            state = data.state,\n            nft = data.nft,\n            price_token = data.price_token,\n            price = data.price,\n            seller = data.seller,\n            expired_at = data.expired_at,\n            finished_at = data.finished_at,\n            updated = data.updated,\n            created = data.created,\n            tx_lt = data.tx_lt\n        from\n        (\n            select \n                unnest($1::varchar[]) as address,\n                unnest($2::direct_sell_state[]) as state,\n                unnest($3::timestamp[]) as finished_at,\n                unnest($4::timestamp[]) as updated,\n                unnest($5::bigint[]) as tx_lt,\n                unnest($6::varchar[]) as nft,\n                unnest($7::varchar[]) as price_token,\n                unnest($8::numeric[]) as price,\n                unnest($9::varchar[]) as seller,\n                unnest($10::timestamp[]) as expired_at,\n                unnest($11::timestamp[]) as created\n        ) as data\n        where nft_direct_sell.address = data.address\n        "
+  },
   "f5a9f5b3bf62ee2760e221f20d0e93d40bc09371f7260c4b441785e603da250a": {
     "describe": {
       "columns": [
@@ -802,7 +827,7 @@
       ],
       "nullable": [
         false,
-        true
+        false
       ],
       "parameters": {
         "Left": [

@@ -119,8 +119,11 @@ async fn save_to_db(
     let mut auc_cancelled = Vec::with_capacity(EVENTS_PER_ITERATION);
     let mut raw_events = Vec::with_capacity(EVENTS_PER_ITERATION);
     let mut fees_update = Vec::with_capacity(EVENTS_PER_ITERATION);
-    let mut dss = Vec::with_capacity(EVENTS_PER_ITERATION);
-    let mut dbs = Vec::with_capacity(EVENTS_PER_ITERATION);
+    let mut direct_sell_deployed = Vec::with_capacity(EVENTS_PER_ITERATION);
+    let mut direct_sell_state_changed = Vec::with_capacity(EVENTS_PER_ITERATION);
+    let mut direct_buy_deployed = Vec::with_capacity(EVENTS_PER_ITERATION);
+    let mut direct_buy_state_changed = Vec::with_capacity(EVENTS_PER_ITERATION);
+    let mut deployed_offers = Vec::with_capacity(EVENTS_PER_ITERATION);
 
     for element in data {
         match element {
@@ -131,7 +134,10 @@ async fn save_to_db(
             Decoded::BurnNft(nft) => nft_burned.push(nft),
             Decoded::OwnerChangedNft(addr) => nft_owner_changed.push(addr),
             Decoded::ManagerChangedNft(addr) => nft_manager_changed.push(addr),
-            Decoded::AuctionDeployed(a) => auc_deployed.push(a),
+            Decoded::AuctionDeployed((a, offer)) => {
+                auc_deployed.push(a);
+                deployed_offers.push(offer);
+            }
             Decoded::AuctionActive(auc) => auc_active.push(auc),
             Decoded::AuctionBidPlaced(auc) => auc_bid_placed.push(auc),
             Decoded::AuctionBidDeclined(a) => auc_bid_declined.push(a),
@@ -142,14 +148,22 @@ async fn save_to_db(
             Decoded::AuctionCancelled(a) => auc_cancelled.push(a),
             Decoded::RawEventRecord(e) => raw_events.push(e),
             Decoded::AuctionRulesChanged(rules) => fees_update.push(rules),
+            Decoded::DirectSellDeployed((ds, offer)) => {
+                direct_sell_deployed.push(ds);
+                deployed_offers.push(offer);
+            }
             Decoded::DirectSellStateChanged((ds, price)) => {
-                dss.push(ds);
+                direct_sell_state_changed.push(ds);
                 if price.is_some() {
                     prices.push(price.unwrap());
                 }
             }
+            Decoded::DirectBuyDeployed((db, offer)) => {
+                direct_buy_deployed.push(db);
+                deployed_offers.push(offer);
+            }
             Decoded::DirectBuyStateChanged((db, price)) => {
-                dbs.push(db);
+                direct_buy_state_changed.push(db);
                 if price.is_some() {
                     prices.push(price.unwrap());
                 }
@@ -190,8 +204,8 @@ async fn save_to_db(
         auc_cancelled.len(),
         raw_events.len(),
         fees_update.len(),
-        dss.len(),
-        dbs.len()
+        direct_sell_state_changed.len(),
+        direct_buy_state_changed.len()
     );
 
     // IMPORTANT: Order matters!
@@ -222,6 +236,10 @@ async fn save_to_db(
         save_nft_manager_changed(pool, &mut nft_manager_changed).await?;
     }
 
+    if !deployed_offers.is_empty() {
+        save_deployed_offers(pool, &deployed_offers).await?;
+    }
+
     if !auc_deployed.is_empty() {
         save_auc_deployed(pool, &auc_deployed).await?;
     }
@@ -247,12 +265,20 @@ async fn save_to_db(
         save_auc_cancelled(pool, &auc_cancelled).await?;
     }
 
-    if !dss.is_empty() {
-        save_direct_sell_state_changed(pool, &dss).await?;
+    if !direct_buy_deployed.is_empty() {
+        save_direct_buy(pool, &direct_buy_deployed).await?;
     }
 
-    if !dbs.is_empty() {
-        save_direct_buy_state_changed(pool, &dbs).await?;
+    if !direct_sell_deployed.is_empty() {
+        save_direct_sell(pool, &direct_sell_deployed).await?;
+    }
+
+    if !direct_sell_state_changed.is_empty() {
+        update_direct_sell_state(pool, &mut direct_sell_state_changed).await?;
+    }
+
+    if !direct_buy_state_changed.is_empty() {
+        update_direct_buy_state(pool, &mut direct_buy_state_changed).await?;
     }
 
     if !prices.is_empty() {

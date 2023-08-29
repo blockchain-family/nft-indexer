@@ -10,12 +10,18 @@ use super::{Decode, Decoded};
 
 impl Decode for AuctionDeployed {
     fn decode(&self, ctx: &DecodeContext) -> Result<Decoded> {
-        Ok(Decoded::AuctionDeployed(decoded::AuctionDeployed {
-            address: self.offer_info.offer.to_string(),
-            root: ctx.tx_data.get_account(),
-            nft: self.offer_info.nft.to_string(),
-            tx_lt: ctx.tx_data.logical_time() as i64,
-        }))
+        Ok(Decoded::AuctionDeployed((
+            decoded::AuctionDeployed {
+                address: self.offer_info.offer.to_string(),
+                root: ctx.tx_data.get_account(),
+                nft: self.offer_info.nft.to_string(),
+                tx_lt: ctx.tx_data.logical_time() as i64,
+            },
+            decoded::OfferDeployed {
+                address: self.offer_info.offer.to_string(),
+                root: ctx.tx_data.get_account(),
+            },
+        )))
     }
 
     fn decode_event(&self, ctx: &DecodeContext) -> Result<Decoded> {

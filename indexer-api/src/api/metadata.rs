@@ -41,7 +41,7 @@ pub async fn refresh_metadata_by_nft(
                             if let Err(e) = data_reader::update_nft_meta(
                                 &NftAddressData {
                                     nft,
-                                    collection: Some(path.0.collection.clone()),
+                                    collection: path.0.collection.clone(),
                                 },
                                 &meta_model_service,
                                 &meta_jrpc_service,
@@ -63,7 +63,7 @@ pub async fn refresh_metadata_by_nft(
             data_reader::update_nft_meta(
                 &NftAddressData {
                     nft,
-                    collection: Some(path.0.collection),
+                    collection: path.0.collection,
                 },
                 &meta_model_service,
                 &meta_jrpc_service,

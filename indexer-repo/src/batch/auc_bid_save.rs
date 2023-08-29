@@ -14,7 +14,7 @@ pub async fn save_auc_bid(pool: &PgPool, data: &[AuctionBid]) -> Result<()> {
         .collect::<Vec<_>>();
     let created_at = data
         .iter()
-        .map(|e| NaiveDateTime::from_timestamp_opt(e.created_at, 0))
+        .map(|e| NaiveDateTime::from_timestamp_opt(e.created_at, 0).unwrap_or_default())
         .collect::<Vec<_>>();
     let tx_lts = data.iter().map(|e| e.tx_lt).collect::<Vec<_>>();
     let declined = data.iter().map(|e| e.declined).collect::<Vec<_>>();
