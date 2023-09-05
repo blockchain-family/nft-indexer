@@ -29,10 +29,10 @@ impl CollectionsQueue {
         }
     }
 
-    pub async fn add_collections(&mut self, new_collections: Vec<(String, i64)>) -> Result<()> {
+    pub async fn add_collections(&mut self, new_collections: Vec<NftCollection>) -> Result<()> {
         let mut to_insert = Vec::with_capacity(new_collections.len());
-        for (collection, nft_mint_ts) in new_collections {
-            if let Some(last_used) = self.collections.get_mut(&collection) {
+        for collection in new_collections {
+            if let Some(last_used) = self.collections.get_mut(&collection.address) {
                 *last_used = chrono::Utc::now().timestamp();
             } else {
                 if self.collections.len() == COLLECTIONS_CACHE_SIZE as usize {
@@ -41,12 +41,9 @@ impl CollectionsQueue {
                 }
 
                 self.collections
-                    .insert(collection.clone(), chrono::Utc::now().timestamp());
+                    .insert(collection.address.clone(), chrono::Utc::now().timestamp());
 
-                to_insert.push(NftCollection {
-                    address: collection,
-                    nft_first_mint: nft_mint_ts,
-                });
+                to_insert.push(collection);
             }
         }
 

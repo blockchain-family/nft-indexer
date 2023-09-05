@@ -6,6 +6,10 @@ pub async fn save_auc_deployed(pool: &PgPool, data: &[AuctionDeployed]) -> Resul
     let addresses = data.iter().map(|a| a.address.as_str()).collect::<Vec<_>>();
     let roots = data.iter().map(|a| a.root.as_str()).collect::<Vec<_>>();
     let nfts = data.iter().map(|a| a.nft.as_str()).collect::<Vec<_>>();
+    let collections = data
+        .iter()
+        .map(|c| c.collection.as_str())
+        .collect::<Vec<_>>();
     let tx_lts = data.iter().map(|a| a.tx_lt).collect::<Vec<_>>();
 
     sqlx::query!(
@@ -14,6 +18,7 @@ pub async fn save_auc_deployed(pool: &PgPool, data: &[AuctionDeployed]) -> Resul
             address, 
             root,
             nft,
+            collection,
             tx_lt,
             status
         )
@@ -21,13 +26,15 @@ pub async fn save_auc_deployed(pool: &PgPool, data: &[AuctionDeployed]) -> Resul
             unnest($1::varchar[]),
             unnest($2::varchar[]),
             unnest($3::varchar[]),
-            unnest($4::bigint[]),
-            $5::auction_status
+            unnest($4::varchar[]),
+            unnest($5::bigint[]),
+            $6::auction_status
         on conflict(address) do nothing
         "#,
         addresses as _,
         roots as _,
         nfts as _,
+        collections as _,
         tx_lts as _,
         AuctionStatus::Created as _,
     )

@@ -12,9 +12,6 @@ path = "../indexer-api"
 [dependencies.indexer_repo]
 path = "../indexer-repo"
 
-[dependencies.rpc]
-path = "../rpc"
-
 [dependencies]
 anyhow = "^1.0.44"
 async-trait = "0.1.57"

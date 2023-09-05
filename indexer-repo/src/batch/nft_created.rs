@@ -4,6 +4,7 @@ use sqlx::PgPool;
 use crate::types::decoded::NftCreated;
 
 pub async fn save_nft_created(pool: &PgPool, nft_created: &[NftCreated]) -> Result<()> {
+    let ids = nft_created.iter().map(|n| n.id.clone()).collect::<Vec<_>>();
     let addresses = nft_created
         .iter()
         .map(|n| n.address.as_str())
@@ -33,6 +34,7 @@ pub async fn save_nft_created(pool: &PgPool, nft_created: &[NftCreated]) -> Resu
     sqlx::query!(
         r#"
             insert into nft (
+                id,
                 address, 
                 collection, 
                 owner, 
@@ -42,15 +44,17 @@ pub async fn save_nft_created(pool: &PgPool, nft_created: &[NftCreated]) -> Resu
                 manager_update_lt
             )
             select
-                unnest($1::varchar[]),
-                unnest($2::varchar[]), 
+                unnest($1::numeric[]),
+                unnest($2::varchar[]),
                 unnest($3::varchar[]), 
                 unnest($4::varchar[]), 
-                unnest($5::timestamp[]),
-                unnest($6::bigint[]),
-                unnest($7::bigint[]) 
+                unnest($5::varchar[]), 
+                unnest($6::timestamp[]),
+                unnest($7::bigint[]),
+                unnest($8::bigint[]) 
             on conflict(address) do nothing
         "#,
+        ids as _,
         addresses as _,
         collections as _,
         owners as _,

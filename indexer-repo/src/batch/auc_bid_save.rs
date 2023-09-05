@@ -1,5 +1,4 @@
 use anyhow::{anyhow, Result};
-use chrono::NaiveDateTime;
 use sqlx::PgPool;
 
 use crate::types::decoded::AuctionBid;
@@ -12,12 +11,22 @@ pub async fn save_auc_bid(pool: &PgPool, data: &[AuctionBid]) -> Result<()> {
         .iter()
         .map(|e| e.next_value.clone())
         .collect::<Vec<_>>();
-    let created_at = data
-        .iter()
-        .map(|e| NaiveDateTime::from_timestamp_opt(e.created_at, 0).unwrap_or_default())
-        .collect::<Vec<_>>();
+    let created_at = data.iter().map(|e| e.created_at).collect::<Vec<_>>();
     let tx_lts = data.iter().map(|e| e.tx_lt).collect::<Vec<_>>();
     let declined = data.iter().map(|e| e.declined).collect::<Vec<_>>();
+    let nfts = data.iter().map(|e| e.nft.as_str()).collect::<Vec<_>>();
+    let nfts_owners = data
+        .iter()
+        .map(|e| e.nft_owner.as_str())
+        .collect::<Vec<_>>();
+    let collections = data
+        .iter()
+        .map(|e| e.collection.as_str())
+        .collect::<Vec<_>>();
+    let price_tokens = data
+        .iter()
+        .map(|e| e.price_token.as_str())
+        .collect::<Vec<_>>();
 
     sqlx::query!(
         r#"
@@ -28,7 +37,11 @@ pub async fn save_auc_bid(pool: &PgPool, data: &[AuctionBid]) -> Result<()> {
                 next_bid_value, 
                 created_at,
                 tx_lt,
-                declined
+                declined,
+                nft,
+                nft_owner,
+                collection,
+                price_token
             )
             select
                 unnest($1::varchar[]),
@@ -37,7 +50,12 @@ pub async fn save_auc_bid(pool: &PgPool, data: &[AuctionBid]) -> Result<()> {
                 unnest($4::numeric[]),
                 unnest($5::timestamp[]),
                 unnest($6::bigint[]),
-                unnest($7::boolean[])
+                unnest($7::boolean[]),
+                unnest($8::varchar[]),
+                unnest($9::varchar[]),
+                unnest($10::varchar[]),
+                unnest($11::varchar[])
+            on conflict (auction, buyer, price, created_at) do nothing
         "#,
         auctions as _,
         buyers as _,
@@ -46,6 +64,10 @@ pub async fn save_auc_bid(pool: &PgPool, data: &[AuctionBid]) -> Result<()> {
         created_at as _,
         tx_lts as _,
         declined as _,
+        nfts as _,
+        nfts_owners as _,
+        collections as _,
+        price_tokens as _,
     )
     .execute(pool)
     .await

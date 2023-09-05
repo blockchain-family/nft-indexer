@@ -11,8 +11,8 @@ use sqlx::{types::chrono, PgPool};
 use ton_block::MsgAddressInt;
 use transaction_consumer::JrpcClient;
 
-const NFT_PER_ITERATION: i64 = 100_000;
-const COLLECTION_PER_ITERATION: i64 = 1_000;
+const NFT_PER_ITERATION: i64 = 1_000;
+const COLLECTION_PER_ITERATION: i64 = 100;
 
 #[derive(Clone)]
 pub struct MetaReaderContext {
@@ -102,24 +102,15 @@ pub async fn update_collections_meta(
 
     let mut failed = None;
 
-    let collection_owner = match meta_jrpc_service
-        .get_collection_owner(&collection_address)
+    let (owner, meta) = match meta_jrpc_service
+        .get_collection_meta(collection_address)
         .await
     {
-        Ok(owner) => Some(owner),
-        Err(e) => {
-            log::error!("Error while reading {address} collection owner: {:#?}", e);
-            failed = Some(true);
-            None
-        }
-    };
-
-    let meta = match meta_jrpc_service.fetch_metadata(&collection_address).await {
         Ok(meta) => meta,
         Err(e) => {
             log::error!("Error while reading {address} collection meta: {:#?}", e);
             failed = Some(true);
-            Value::default()
+            (None, Value::default())
         }
     };
 
@@ -131,7 +122,7 @@ pub async fn update_collections_meta(
 
     let collection = NftCollectionMeta {
         address: address.into(),
-        owner: collection_owner.unwrap_or_default(),
+        owner,
         name: meta
             .get("name")
             .cloned()
@@ -207,7 +198,7 @@ pub async fn update_nft_meta(
                 bail!("Error while converting nft address {} to MsgAddressInt", address_data.nft);
             };
 
-    let Ok(meta) = meta_jrpc_service.fetch_metadata(&nft_address).await else {
+    let Ok(meta) = meta_jrpc_service.get_nft_meta(&nft_address).await else {
                 bail!("Error while reading nft meta. Skipping ${}", address_data.nft);
             };
 
@@ -284,10 +275,10 @@ pub async fn update_nft_meta(
     Ok(())
 }
 
-fn extract_name_from_meta(meta: &serde_json::Value) -> Option<&str> {
+fn extract_name_from_meta(meta: &Value) -> Option<&str> {
     meta.get("name").and_then(|d| d.as_str())
 }
 
-fn extract_description_from_meta(meta: &serde_json::Value) -> Option<&str> {
+fn extract_description_from_meta(meta: &Value) -> Option<&str> {
     meta.get("description").and_then(|d| d.as_str())
 }

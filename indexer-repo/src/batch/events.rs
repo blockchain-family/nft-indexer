@@ -73,20 +73,24 @@ pub async fn save_deployed_offers(pool: &PgPool, offers: &[OfferDeployed]) -> Re
         .map(|of| of.address.as_str())
         .collect::<Vec<_>>();
     let roots = offers.iter().map(|of| of.root.as_str()).collect::<Vec<_>>();
+    let created = offers.iter().map(|of| of.created).collect::<Vec<_>>();
 
     sqlx::query!(
         r#"
             insert into deployed_offers (
                 address,
-                root
+                root,
+                created
             )
             select
                 unnest($1::varchar[]),
-                unnest($2::varchar[])
+                unnest($2::varchar[]),
+                unnest($3::timestamp[])
             on conflict (address) do nothing
         "#,
         addresses as _,
         roots as _,
+        created as _,
     )
     .execute(pool)
     .await

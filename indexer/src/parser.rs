@@ -4,17 +4,24 @@ use crate::persistence::entities::*;
 use crate::settings;
 use crate::utils::DecodeContext;
 use anyhow::Result;
+use data_reader::PriceReader;
 use futures::channel::mpsc::{Receiver, Sender};
 use futures::{future, SinkExt, StreamExt};
 use indexer_repo::batch::*;
+use indexer_repo::types::NftCollection;
 use nekoton_abi::transaction_parser::{ExtractedOwned, ParsedType};
 use nekoton_abi::UnpackAbiPlain;
 use sqlx::PgPool;
+use std::sync::Arc;
 use transaction_buffer::models::{BufferedConsumerChannels, RawTransaction};
 
 const EVENTS_PER_ITERATION: usize = 1000;
 
-pub async fn start_parsing(config: settings::config::Config, pg_pool: PgPool) -> Result<()> {
+pub async fn start_parsing(
+    config: settings::config::Config,
+    pg_pool: PgPool,
+    price_reader: Arc<PriceReader>,
+) -> Result<()> {
     let BufferedConsumerChannels {
         rx_parsed_events,
         tx_commit,
@@ -23,7 +30,12 @@ pub async fn start_parsing(config: settings::config::Config, pg_pool: PgPool) ->
 
     log::info!("Connected to kafka");
 
-    tokio::spawn(run_nft_indexer(rx_parsed_events, tx_commit, pg_pool));
+    tokio::spawn(run_nft_indexer(
+        rx_parsed_events,
+        tx_commit,
+        pg_pool,
+        price_reader,
+    ));
 
     notify_for_services.notified().await;
 
@@ -34,6 +46,7 @@ pub async fn run_nft_indexer(
     mut rx_raw_transactions: Receiver<Vec<(Vec<ExtractedOwned>, RawTransaction)>>,
     mut tx_commit: Sender<()>,
     pool: PgPool,
+    price_reader: Arc<PriceReader>,
 ) {
     log::info!("Start nft indexer...");
 
@@ -83,7 +96,7 @@ pub async fn run_nft_indexer(
         }
 
         let now = std::time::Instant::now();
-        if let Err(e) = save_to_db(&pool, data, &mut collection_queue).await {
+        if let Err(e) = save_to_db(&pool, &price_reader, data, &mut collection_queue).await {
             log::error!("Error saving to DB: {:#?}", e);
             std::process::exit(1);
         }
@@ -102,6 +115,7 @@ pub async fn run_nft_indexer(
 
 async fn save_to_db(
     pool: &PgPool,
+    price_reader: &PriceReader,
     data: Vec<Decoded>,
     collections_queue: &mut CollectionsQueue,
 ) -> Result<()> {
@@ -128,7 +142,10 @@ async fn save_to_db(
     for element in data {
         match element {
             Decoded::CreateNft(nft) => {
-                collections.push((nft.collection.clone(), nft.updated.timestamp()));
+                collections.push(NftCollection {
+                    address: nft.collection.clone(),
+                    nft_first_mint: nft.updated,
+                });
                 nft_created.push(nft);
             }
             Decoded::BurnNft(nft) => nft_burned.push(nft),
@@ -171,42 +188,6 @@ async fn save_to_db(
             Decoded::ShouldSkip => (),
         }
     }
-
-    log::info!(
-        r#" 
-        EVENTS:
-        nft_created: {},
-        nft_burned: {},
-        nft_owner_changed: {},
-        nft_manager_changed: {},
-        auc_deployed: {},
-        auc_active: {},
-        prices: {},
-        auc_bid_placed: {},
-        auc_bid_declined: {},
-        auc_complete: {},
-        auc_cancelled: {},
-        raw_events: {},
-        auc_rules: {},
-        dss: {},
-        dbs: {},
-        "#,
-        nft_created.len(),
-        nft_burned.len(),
-        nft_owner_changed.len(),
-        nft_manager_changed.len(),
-        auc_deployed.len(),
-        auc_active.len(),
-        prices.len(),
-        auc_bid_placed.len(),
-        auc_bid_declined.len(),
-        auc_complete.len(),
-        auc_cancelled.len(),
-        raw_events.len(),
-        fees_update.len(),
-        direct_sell_state_changed.len(),
-        direct_buy_state_changed.len()
-    );
 
     // IMPORTANT: Order matters!
 
@@ -282,6 +263,14 @@ async fn save_to_db(
     }
 
     if !prices.is_empty() {
+        for price in prices.iter_mut() {
+            price.usd_price = price_reader
+                .get_current_usd_price(
+                    price.price_token.as_str(),
+                    price.created_at.timestamp() as u64,
+                )
+                .await;
+        }
         save_price_history(pool, &prices).await?;
     }
 
@@ -302,10 +291,10 @@ macro_rules! try_unpack_entity {
 fn unpack_entity(event: &ExtractedOwned) -> Result<Option<Box<dyn Decode>>> {
     try_unpack_entity!(
         event,
-        /* AuctionRootTip3 */
+        /* FactoryAuction */
         AuctionDeployed,
         AuctionDeclined,
-        /* AuctionTip3 */
+        /* Auction */
         AuctionCreated,
         AuctionActive,
         BidPlaced,
@@ -412,9 +401,9 @@ mod test {
         let mut total_events_parsed = 0;
 
         let auction_root_tip3_contract =
-            ton_abi::Contract::load(include_str!("abi/json/AuctionRootTip3.abi.json")).unwrap();
+            ton_abi::Contract::load(include_str!("abi/json/FactoryAuction.abi.json")).unwrap();
         let auction_tip3_contract =
-            ton_abi::Contract::load(include_str!("abi/json/AuctionTip3.abi.json")).unwrap();
+            ton_abi::Contract::load(include_str!("abi/json/Auction.abi.json")).unwrap();
         let callbacks_contract =
             ton_abi::Contract::load(include_str!("abi/json/Callbacks.abi.json")).unwrap();
         let collection_contract =
@@ -485,10 +474,10 @@ mod test {
                 let packed_event = repack_event!(
                     name,
                     event_raw,
-                    /* AuctionRootTip3 */
+                    /* FactoryAuction */
                     AuctionDeployed,
                     AuctionDeclined,
-                    /* AuctionTip3 */
+                    /* Auction */
                     AuctionCreated,
                     AuctionActive,
                     BidPlaced,

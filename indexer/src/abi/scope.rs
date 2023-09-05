@@ -1,9 +1,9 @@
 pub fn events() -> Vec<&'static str> {
     vec![
-        /* AuctionRootTip3 */
+        /* FactoryAuction */
         "AuctionDeployed",
         "AuctionDeclined",
-        /* AuctionTip3 */
+        /* Auction */
         "AuctionCreated",
         "AuctionActive",
         "BidPlaced",

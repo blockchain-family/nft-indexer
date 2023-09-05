@@ -4,12 +4,12 @@ use crate::utils::DecodeContext;
 
 pub use self::types::Decoded;
 
-mod auction_root_tip3;
-mod auction_tip3;
+mod auction;
 mod collection;
 mod common;
 mod direct_buy;
 mod direct_sell;
+mod factory_auction;
 mod factory_direct_buy;
 mod factory_direct_sell;
 mod nft;

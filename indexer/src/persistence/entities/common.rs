@@ -1,6 +1,7 @@
 use anyhow::Result;
 use indexer_repo::types::{decoded, EventCategory, EventType};
 
+use crate::utils::timestamp_to_datetime;
 use crate::{
     models::events::{
         AddCollectionRules, MarketFeeChanged, MarketFeeDefaultChanged, OwnershipTransferred,
@@ -81,7 +82,7 @@ impl Decode for AddCollectionRules {
     fn decode(&self, ctx: &DecodeContext) -> Result<Decoded> {
         Ok(Decoded::AuctionRulesChanged(decoded::CollectionFee {
             address: self.collection.to_string(),
-            timestamp: ctx.tx_data.get_timestamp(),
+            timestamp: timestamp_to_datetime(ctx.tx_data.get_timestamp()),
             numerator: Some(self.collection_fee_info.numerator.try_into()?),
             denominator: Some(self.collection_fee_info.denominator.try_into()?),
         }))
@@ -108,7 +109,7 @@ impl Decode for RemoveCollectionRules {
     fn decode(&self, ctx: &DecodeContext) -> Result<Decoded> {
         Ok(Decoded::AuctionRulesChanged(decoded::CollectionFee {
             address: self.collection.to_string(),
-            timestamp: ctx.tx_data.get_timestamp(),
+            timestamp: timestamp_to_datetime(ctx.tx_data.get_timestamp()),
             numerator: None,
             denominator: None,
         }))

@@ -247,16 +247,14 @@ impl<'a> MetadataModelTransaction<'a> {
             r#"
             update nft_collection
             set 
-                owner        = $2, 
-                name         = coalesce($3, nft_collection.name),
-                description  = coalesce($4, nft_collection.description),
-                logo         = coalesce($5, nft_collection.logo),
-                wallpaper    = coalesce($6, nft_collection.wallpaper),
-                updated      = greatest($7, nft_collection.updated)
+                name         = coalesce($2, nft_collection.name),
+                description  = coalesce($3, nft_collection.description),
+                logo         = coalesce($4, nft_collection.logo),
+                wallpaper    = coalesce($5, nft_collection.wallpaper),
+                updated      = greatest($6, nft_collection.updated)
             where address = $1
             "#,
             meta.address as _,
-            meta.owner as _,
             meta.name,
             meta.description,
             meta.logo as _,

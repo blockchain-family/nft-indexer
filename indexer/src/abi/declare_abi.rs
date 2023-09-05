@@ -11,8 +11,8 @@ macro_rules! declare_abi {
 }
 
 declare_abi! {
-    auction_root_tip3 => "json/AuctionRootTip3.abi.json",
-    auction_tip3 => "json/AuctionTip3.abi.json",
+    auction_root_tip3 => "json/FactoryAuction.abi.json",
+    auction_tip3 => "json/Auction.abi.json",
     callbacks => "json/Callbacks.abi.json",
     collection => "json/Collection.abi.json",
     direct_buy => "json/DirectBuy.abi.json",

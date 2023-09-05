@@ -5,7 +5,7 @@ use ton_block::MsgAddressInt;
 use crate::{models::types::*, utils::serialize_msg_address_int};
 
 /*
-   AuctionRootTip3,
+   FactoryAuction,
    Collection,
    FactoryDirectBuy,
    FactoryDirectSell,
@@ -22,7 +22,7 @@ pub struct OwnershipTransferred {
 }
 
 /*
-   AuctionRootTip3,
+   FactoryAuction,
    FactoryDirectBuy,
    FactoryDirectSell,
 */
@@ -33,8 +33,8 @@ pub struct MarketFeeDefaultChanged {
 }
 
 /*
-   AuctionRootTip3,
-   AuctionTip3,
+   FactoryAuction,
+   Auction,
    DirectBuy,
    DirectSell,
    FactoryDirectBuy,
@@ -50,7 +50,7 @@ pub struct MarketFeeChanged {
 }
 
 /*
-   AuctionRootTip3,
+   FactoryAuction,
    FactoryDirectBuy,
    FactoryDirectSell,
 */
@@ -64,7 +64,7 @@ pub struct AddCollectionRules {
 }
 
 /*
-   AuctionRootTip3,
+   FactoryAuction,
    FactoryDirectBuy,
    FactoryDirectSell,
 */

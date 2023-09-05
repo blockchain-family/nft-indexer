@@ -1,5 +1,7 @@
 use anyhow::Result;
+use bigdecimal::num_bigint::Sign;
 use bigdecimal::BigDecimal;
+use chrono::NaiveDateTime;
 use num::BigInt;
 use serde::Serializer;
 use ton_block::{GetRepresentationHash, MsgAddressInt};
@@ -28,7 +30,7 @@ impl KeyInfo for ton_block::Transaction {
     }
 
     fn get_timestamp(&self) -> i64 {
-        self.now as i64
+        self.now.try_into().expect("Timestamp overflow")
     }
 }
 
@@ -49,9 +51,17 @@ pub fn serialize_uint256<S>(v: &UInt256, s: S) -> Result<S::Ok, S::Error>
 where
     S: Serializer,
 {
-    s.serialize_str(&v.as_hex_string())
+    s.serialize_str(u256_to_bigdecimal(v).to_string().as_str())
 }
 
 pub fn u128_to_bigdecimal(i: u128) -> BigDecimal {
     BigDecimal::new(BigInt::from(i), 0)
+}
+
+pub fn u256_to_bigdecimal(i: &UInt256) -> BigDecimal {
+    BigDecimal::new(BigInt::from_bytes_be(Sign::Plus, i.as_slice()), 0)
+}
+
+pub fn timestamp_to_datetime(ts: i64) -> NaiveDateTime {
+    NaiveDateTime::from_timestamp_opt(ts, 0).unwrap_or_default()
 }

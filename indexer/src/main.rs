@@ -1,6 +1,6 @@
 use crate::settings::config::Config;
 use anyhow::Result;
-use data_reader::{MetaReaderContext, PriceReaderContext};
+use data_reader::{MetaReaderContext, PriceReader};
 use indexer_api::run_api;
 use std::net::SocketAddr;
 use std::str::FromStr;
@@ -46,15 +46,21 @@ async fn main() -> Result<()> {
 
     tokio::spawn(data_reader::run_meta_reader(meta_reader_context.clone()));
 
-    let ctx = PriceReaderContext {
-        pool: pg_pool.clone(),
-        bc: config.bc_name,
-        idle_after_loop: config.idle_after_price_loop_sec,
-    };
+    let price_reader = PriceReader::new(
+        pg_pool.clone(),
+        config.bc_name,
+        config.idle_after_price_loop_sec,
+        config.price_update_frequency_sec,
+    )
+    .await;
 
-    tokio::spawn(data_reader::run_price_reader(ctx));
+    tokio::spawn(price_reader.clone().run_db_updater());
 
-    tokio::spawn(parser::start_parsing(config.clone(), pg_pool.clone()));
+    tokio::spawn(parser::start_parsing(
+        config.clone(),
+        pg_pool.clone(),
+        price_reader,
+    ));
 
     let socket_addr: SocketAddr =
         SocketAddr::from_str(&config.server_api_url).expect("Invalid socket addr");

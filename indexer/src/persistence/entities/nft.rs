@@ -1,6 +1,7 @@
 use anyhow::Result;
 use indexer_repo::types::{decoded, EventCategory, EventType};
 
+use crate::utils::timestamp_to_datetime;
 use crate::{
     models::events::{ManagerChanged, OwnerChanged},
     utils::{DecodeContext, KeyInfo},
@@ -14,7 +15,7 @@ impl Decode for OwnerChanged {
             id_address: ctx.tx_data.get_account(),
             new_address: self.new_owner.to_string(),
             logical_time: ctx.tx_data.logical_time(),
-            timestamp: ctx.tx_data.get_timestamp(),
+            timestamp: timestamp_to_datetime(ctx.tx_data.get_timestamp()),
         };
 
         Ok(Decoded::OwnerChangedNft(nft_new_owner))
@@ -42,7 +43,7 @@ impl Decode for ManagerChanged {
             id_address: ctx.tx_data.get_account(),
             new_address: self.new_manager.to_string(),
             logical_time: ctx.tx_data.logical_time(),
-            timestamp: ctx.tx_data.get_timestamp(),
+            timestamp: timestamp_to_datetime(ctx.tx_data.get_timestamp()),
         };
 
         Ok(Decoded::ManagerChangedNft(nft_new_manager))

@@ -18,6 +18,7 @@ pub struct Config {
     pub bc_name: BcName,
     pub idle_after_price_loop_sec: u64,
     pub idle_after_meta_loop_sec: u64,
+    pub price_update_frequency_sec: u64,
 }
 
 impl Default for Config {

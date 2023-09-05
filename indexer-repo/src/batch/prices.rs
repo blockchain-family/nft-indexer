@@ -10,9 +10,9 @@ pub async fn save_price_history(pool: &PgPool, data: &[NftPriceHistory]) -> Resu
     let prices = data.iter().map(|e| e.price.clone()).collect::<Vec<_>>();
     let price_tokens = data
         .iter()
-        .map(|e| e.price_token.as_deref())
+        .map(|e| e.price_token.as_str())
         .collect::<Vec<_>>();
-    let nft = data.iter().map(|e| e.nft.as_deref()).collect::<Vec<_>>();
+    let nft = data.iter().map(|e| e.nft.as_str()).collect::<Vec<_>>();
 
     sqlx::query!(
         r#"

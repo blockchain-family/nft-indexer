@@ -1,6 +1,7 @@
 use anyhow::Result;
 use indexer_repo::types::{decoded, EventCategory, EventType};
 
+use crate::utils::timestamp_to_datetime;
 use crate::{
     models::events::{AuctionDeclined, AuctionDeployed},
     utils::{DecodeContext, KeyInfo},
@@ -15,11 +16,13 @@ impl Decode for AuctionDeployed {
                 address: self.offer_info.offer.to_string(),
                 root: ctx.tx_data.get_account(),
                 nft: self.offer_info.nft.to_string(),
+                collection: self.offer_info.collection.to_string(),
                 tx_lt: ctx.tx_data.logical_time() as i64,
             },
             decoded::OfferDeployed {
                 address: self.offer_info.offer.to_string(),
                 root: ctx.tx_data.get_account(),
+                created: timestamp_to_datetime(ctx.tx_data.get_timestamp()),
             },
         )))
     }

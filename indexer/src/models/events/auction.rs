@@ -25,6 +25,8 @@ pub struct BidPlaced {
     pub value: u128,
     #[abi(name = "nextBidValue")]
     pub next_bid_value: u128,
+    #[abi]
+    pub value3: AuctionDetails,
 }
 
 #[derive(Clone, UnpackAbiPlain, PackAbiPlain, PartialEq, Eq, Debug, Serialize)]
@@ -34,19 +36,23 @@ pub struct BidDeclined {
     pub buyer: MsgAddressInt,
     #[abi]
     pub value: u128,
+    #[abi]
+    pub value2: AuctionDetails,
 }
 
 #[derive(Clone, UnpackAbiPlain, PackAbiPlain, PartialEq, Eq, Debug, Serialize)]
 pub struct AuctionComplete {
     #[abi]
     #[serde(serialize_with = "serialize_msg_address_int")]
-    pub seller: MsgAddressInt,
-    #[abi]
-    #[serde(serialize_with = "serialize_msg_address_int")]
     pub buyer: MsgAddressInt,
     #[abi]
     pub value: u128,
+    #[abi]
+    pub value2: AuctionDetails,
 }
 
 #[derive(Clone, UnpackAbiPlain, PackAbiPlain, PartialEq, Eq, Debug, Serialize)]
-pub struct AuctionCancelled {}
+pub struct AuctionCancelled {
+    #[abi]
+    pub value0: AuctionDetails,
+}

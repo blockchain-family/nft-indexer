@@ -65,9 +65,9 @@ pub struct AuctionDetails {
     #[abi(name = "subjectOwner")]
     #[serde(serialize_with = "serialize_msg_address_int")]
     pub subject_owner: MsgAddressInt,
-    #[abi(name = "_paymentToken")]
+    #[abi(name = "paymentToken")]
     #[serde(serialize_with = "serialize_msg_address_int")]
-    pub _payment_token: MsgAddressInt,
+    pub payment_token: MsgAddressInt,
     #[abi(name = "walletForBids")]
     #[serde(serialize_with = "serialize_msg_address_int")]
     pub wallet_for_bids: MsgAddressInt,
@@ -75,14 +75,17 @@ pub struct AuctionDetails {
     pub start_time: u64,
     #[abi]
     pub duration: u64,
-    #[abi(name = "finishTime")]
-    pub finish_time: u64,
+    #[abi(name = "endTime")]
+    pub end_time: u64,
     #[abi]
-    pub _price: u128,
+    pub price: u128,
     #[abi]
-    pub _nonce: u64,
+    pub nonce: u64,
     #[abi]
     pub status: AuctionStatus,
+    #[abi]
+    #[serde(serialize_with = "serialize_msg_address_int")]
+    pub collection: MsgAddressInt,
 }
 
 #[derive(UnpackAbi, PackAbi, PartialEq, Eq, Clone, Debug, Serialize)]
@@ -114,6 +117,9 @@ pub struct DirectBuyInfo {
     pub duration_time_buy: u64,
     #[abi(name = "endTimeBuy")]
     pub end_time_buy: u64,
+    #[abi]
+    #[serde(serialize_with = "serialize_msg_address_int")]
+    pub collection: MsgAddressInt,
 }
 
 #[derive(UnpackAbi, PackAbi, PartialEq, Eq, Clone, Debug, Serialize)]
@@ -143,6 +149,9 @@ pub struct DirectSellInfo {
     pub wallet: MsgAddressInt,
     #[abi]
     pub status: u8,
+    #[abi]
+    #[serde(serialize_with = "serialize_msg_address_int")]
+    pub collection: MsgAddressInt,
 }
 
 #[derive(UnpackAbi, PackAbi, PartialEq, Eq, Clone, Debug, Serialize)]

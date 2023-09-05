@@ -7,6 +7,10 @@ pub async fn save_direct_sell(pool: &PgPool, dss: &[DirectSell]) -> Result<()> {
     let addresses = dss.iter().map(|ds| ds.address.as_str()).collect::<Vec<_>>();
     let roots = dss.iter().map(|ds| ds.root.as_str()).collect::<Vec<_>>();
     let nfts = dss.iter().map(|ds| ds.nft.as_str()).collect::<Vec<_>>();
+    let collections = dss
+        .iter()
+        .map(|ds| ds.collection.as_deref())
+        .collect::<Vec<_>>();
     let price_tokens = dss
         .iter()
         .map(|ds| ds.price_token.as_str())
@@ -26,6 +30,7 @@ pub async fn save_direct_sell(pool: &PgPool, dss: &[DirectSell]) -> Result<()> {
                 address,
                 root,
                 nft, 
+                collection,
                 price_token, 
                 price, 
                 seller,
@@ -40,29 +45,31 @@ pub async fn save_direct_sell(pool: &PgPool, dss: &[DirectSell]) -> Result<()> {
                 unnest($1::varchar[]), 
                 unnest($2::varchar[]),
                 unnest($3::varchar[]), 
-                unnest($4::varchar[]), 
-                unnest($5::numeric[]),
-                unnest($6::varchar[]),
-                unnest($7::timestamp[]),
+                unnest($4::varchar[]),
+                unnest($5::varchar[]), 
+                unnest($6::numeric[]),
+                unnest($7::varchar[]),
                 unnest($8::timestamp[]),
-                unnest($9::direct_sell_state[]),
-                unnest($10::timestamp[]),
+                unnest($9::timestamp[]),
+                unnest($10::direct_sell_state[]),
                 unnest($11::timestamp[]),
-                unnest($12::bigint[])
+                unnest($12::timestamp[]),
+                unnest($13::bigint[])
             on conflict(address) do nothing
         "#,
-        addresses as Vec<_>,
-        roots as Vec<_>,
-        nfts as Vec<_>,
-        price_tokens as Vec<_>,
-        prices as Vec<_>,
-        sellers as Vec<_>,
-        finished_at as Vec<_>,
-        expired_at as Vec<_>,
-        states as Vec<_>,
-        created as Vec<_>,
-        updated as Vec<_>,
-        tx_lt as Vec<_>,
+        addresses as _,
+        roots as _,
+        nfts as _,
+        collections as _,
+        price_tokens as _,
+        prices as _,
+        sellers as _,
+        finished_at as _,
+        expired_at as _,
+        states as _,
+        created as _,
+        updated as _,
+        tx_lt as _,
     )
     .execute(pool)
     .await
@@ -82,6 +89,7 @@ pub async fn update_direct_sell_state(pool: &PgPool, dss: &mut [DirectSell]) -> 
 
     let mut addresses = Vec::with_capacity(dss.len());
     let mut nfts = Vec::with_capacity(dss.len());
+    let mut collections = Vec::with_capacity(dss.len());
     let mut price_tokens = Vec::with_capacity(dss.len());
     let mut prices = Vec::with_capacity(dss.len());
     let mut sellers = Vec::with_capacity(dss.len());
@@ -95,6 +103,7 @@ pub async fn update_direct_sell_state(pool: &PgPool, dss: &mut [DirectSell]) -> 
     for ds in last_state_change.values() {
         addresses.push(ds.address.as_str());
         nfts.push(ds.nft.as_str());
+        collections.push(ds.collection.as_deref());
         price_tokens.push(ds.price_token.as_str());
         prices.push(ds.price.clone());
         sellers.push(ds.seller.as_str());
@@ -111,6 +120,7 @@ pub async fn update_direct_sell_state(pool: &PgPool, dss: &mut [DirectSell]) -> 
         update nft_direct_sell set
             state = data.state,
             nft = data.nft,
+            collection = data.collection,
             price_token = data.price_token,
             price = data.price,
             seller = data.seller,
@@ -128,11 +138,12 @@ pub async fn update_direct_sell_state(pool: &PgPool, dss: &mut [DirectSell]) -> 
                 unnest($4::timestamp[]) as updated,
                 unnest($5::bigint[]) as tx_lt,
                 unnest($6::varchar[]) as nft,
-                unnest($7::varchar[]) as price_token,
-                unnest($8::numeric[]) as price,
-                unnest($9::varchar[]) as seller,
-                unnest($10::timestamp[]) as expired_at,
-                unnest($11::timestamp[]) as created
+                unnest($7::varchar[]) as collection,
+                unnest($8::varchar[]) as price_token,
+                unnest($9::numeric[]) as price,
+                unnest($10::varchar[]) as seller,
+                unnest($11::timestamp[]) as expired_at,
+                unnest($12::timestamp[]) as created
         ) as data
         where nft_direct_sell.address = data.address
         "#,
@@ -142,6 +153,7 @@ pub async fn update_direct_sell_state(pool: &PgPool, dss: &mut [DirectSell]) -> 
         updated as _,
         tx_lts as _,
         nfts as _,
+        collections as _,
         price_tokens as _,
         prices as _,
         sellers as _,

@@ -1,5 +1,4 @@
 use anyhow::{anyhow, Result};
-use chrono::NaiveDateTime;
 use sqlx::PgPool;
 
 use crate::types::{decoded::AuctionActive, AuctionStatus};
@@ -19,14 +18,8 @@ pub async fn save_auc_active(pool: &PgPool, data: &[AuctionActive]) -> Result<()
         .map(|a| a.start_price.clone())
         .collect::<Vec<_>>();
     let min_bids = data.iter().map(|a| a.min_bid.clone()).collect::<Vec<_>>();
-    let created = data
-        .iter()
-        .map(|a| NaiveDateTime::from_timestamp_opt(a.created_at, 0).unwrap_or_default())
-        .collect::<Vec<_>>();
-    let finished = data
-        .iter()
-        .map(|a| NaiveDateTime::from_timestamp_opt(a.finished_at, 0).unwrap_or_default())
-        .collect::<Vec<_>>();
+    let created = data.iter().map(|a| a.created_at).collect::<Vec<_>>();
+    let finished = data.iter().map(|a| a.finished_at).collect::<Vec<_>>();
     let tx_lts = data.iter().map(|a| a.tx_lt).collect::<Vec<_>>();
 
     sqlx::query!(

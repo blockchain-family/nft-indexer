@@ -2,7 +2,7 @@ use anyhow::Result;
 use indexer_repo::types::{decoded, DirectBuyState, EventCategory, EventType};
 
 use crate::persistence::entities::{Decode, Decoded};
-use crate::utils::u128_to_bigdecimal;
+use crate::utils::{timestamp_to_datetime, u128_to_bigdecimal};
 use crate::{
     models::events::{DirectBuyDeclined, DirectBuyDeployed},
     utils::{DecodeContext, KeyInfo},
@@ -15,6 +15,7 @@ impl Decode for DirectBuyDeployed {
                 address: self.direct_buy.to_string(),
                 root: ctx.tx_data.get_account(),
                 nft: self.nft.to_string(),
+                collection: None,
                 price_token: self.token.to_string(),
                 price: u128_to_bigdecimal(self.amount),
                 buyer: self.sender.to_string(),
@@ -28,6 +29,7 @@ impl Decode for DirectBuyDeployed {
             decoded::OfferDeployed {
                 address: self.direct_buy.to_string(),
                 root: ctx.tx_data.get_account(),
+                created: timestamp_to_datetime(ctx.tx_data.get_timestamp()),
             },
         )))
     }

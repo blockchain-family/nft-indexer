@@ -1,7 +1,6 @@
 use std::collections::HashMap;
 
 use anyhow::{anyhow, Result};
-use chrono::NaiveDateTime;
 use sqlx::PgPool;
 
 use crate::types::decoded::AddressChanged;
@@ -23,7 +22,7 @@ pub async fn save_nft_manager_changed(pool: &PgPool, data: &mut [AddressChanged]
     for val in last_addresses.values() {
         addresses.push(val.id_address.as_str());
         new_managers.push(val.new_address.as_str());
-        timestamps.push(NaiveDateTime::from_timestamp_opt(val.timestamp, 0).unwrap_or_default());
+        timestamps.push(val.timestamp);
     }
 
     sqlx::query!(

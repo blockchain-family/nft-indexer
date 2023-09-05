@@ -4,21 +4,15 @@ use sqlx::{types::BigDecimal, PgPool};
 
 use crate::types::BcName;
 
+#[derive(Clone)]
 pub struct NftPriceModel {
     pool: PgPool,
-}
-
-pub enum RowWithoutUsdPriceSource {
-    DirSell,
-    DirBuy,
-    Auc,
 }
 
 pub struct RowWithoutUsdPrice {
     pub id: String,
     pub token_addr: String,
     pub token_amount: BigDecimal,
-    pub source: RowWithoutUsdPriceSource,
     pub created_at: i64,
 }
 
@@ -33,9 +27,9 @@ impl NftPriceModel {
         Self { pool }
     }
 
-    pub async fn get_auction_without_price_usd(
+    pub async fn get_offers_without_price_usd(
         &self,
-        elements_number: i64,
+        limit: i64,
     ) -> Result<Vec<RowWithoutUsdPrice>> {
         struct Row {
             id: String,
@@ -49,7 +43,6 @@ impl NftPriceModel {
                     token_addr: value.token_addr,
                     id: value.id,
                     token_amount: value.token_amount,
-                    source: RowWithoutUsdPriceSource::Auc,
                     created_at: value.created_at.timestamp(),
                 }
             }
@@ -58,29 +51,23 @@ impl NftPriceModel {
         let now = Local::now().naive_local();
         let zero_time = NaiveDateTime::from_timestamp_opt(0, 0).unwrap();
 
-        // INFO: It looks like there is a mistake with price parsing. The 'min_bid' column always greater
-        // than the 'max_bid'. Until this issue is clarified, I'll be using min_bid.
         sqlx::query_as!(
             Row,
             r#"
-                select 
-                    address as id,
+                select
+                    source as id,
                     price_token as "token_addr!",
-                    min_bid as "token_amount!",
-                    created_at as "created_at!"
-                from nft_auction
-                where closing_price_usd is null
-                and created_at is not null
-                and min_bid is not null
-                and price_token is not null
-                and created_at <= $1
-                and created_at != $2 
-                and status = 'completed'
+                    price as "token_amount!",
+                    ts as "created_at!"
+                from nft_price_history
+                where usd_price is null
+                and ts <= $1
+                and ts != $2
                 limit $3
             "#,
             now,
             zero_time,
-            elements_number
+            limit
         )
         .fetch_all(&self.pool)
         .await
@@ -88,157 +75,12 @@ impl NftPriceModel {
         .map_err(|e| anyhow!(e))
     }
 
-    pub async fn get_direct_sell_without_price_usd(
-        &self,
-        elements_number: i64,
-    ) -> Result<Vec<RowWithoutUsdPrice>> {
-        struct Row {
-            id: String,
-            token_addr: String,
-            token_amount: BigDecimal,
-            created_at: NaiveDateTime,
-        }
-        impl From<Row> for RowWithoutUsdPrice {
-            fn from(value: Row) -> Self {
-                Self {
-                    token_addr: value.token_addr,
-                    id: value.id,
-                    token_amount: value.token_amount,
-                    source: RowWithoutUsdPriceSource::DirSell,
-                    created_at: value.created_at.timestamp(),
-                }
-            }
-        }
-
-        let now = Local::now().naive_local();
-        let zero_time = NaiveDateTime::from_timestamp_opt(0, 0).unwrap();
-
-        sqlx::query_as!(
-            Row,
-            r#"
-                select 
-                    address as id,
-                    price_token as token_addr,
-                    price as token_amount,
-                    created as created_at
-                from nft_direct_sell
-                where sell_price_usd is null
-                and created <= $1
-                and created != $2 
-                and state = 'filled'
-                limit $3
-            "#,
-            now,
-            zero_time,
-            elements_number
-        )
-        .fetch_all(&self.pool)
-        .await
-        .map(|v| v.into_iter().map(|r| r.into()).collect())
-        .map_err(|e| anyhow!(e))
-    }
-
-    pub async fn get_direct_buy_without_price_usd(
-        &self,
-        elements_number: i64,
-    ) -> Result<Vec<RowWithoutUsdPrice>> {
-        struct Row {
-            id: String,
-            token_addr: String,
-            token_amount: BigDecimal,
-            created_at: NaiveDateTime,
-        }
-        impl From<Row> for RowWithoutUsdPrice {
-            fn from(value: Row) -> Self {
-                Self {
-                    token_addr: value.token_addr,
-                    id: value.id,
-                    token_amount: value.token_amount,
-                    source: RowWithoutUsdPriceSource::DirBuy,
-                    created_at: value.created_at.timestamp(),
-                }
-            }
-        }
-
-        let now = Local::now().naive_local();
-        let zero_time = NaiveDateTime::from_timestamp_opt(0, 0).unwrap();
-
-        sqlx::query_as!(
-            Row,
-            r#"
-                select 
-                    address as id,
-                    price_token as token_addr,
-                    price as token_amount,
-                    created as created_at
-                from nft_direct_buy
-                where buy_price_usd is null
-                and created <= $1
-                and created != $2 
-                and state = 'filled'
-                limit $3
-            "#,
-            now,
-            zero_time,
-            elements_number
-        )
-        .fetch_all(&self.pool)
-        .await
-        .map(|v| v.into_iter().map(|r| r.into()).collect())
-        .map_err(|e| anyhow!(e))
-    }
-
-    pub async fn update_usd_price(
-        &self,
-        id: &str,
-        price: &BigDecimal,
-        source: &RowWithoutUsdPriceSource,
-    ) -> Result<()> {
-        match source {
-            RowWithoutUsdPriceSource::DirSell => self.update_direct_sell_usd_price(id, price).await,
-            RowWithoutUsdPriceSource::DirBuy => self.update_direct_buy_usd_price(id, price).await,
-            RowWithoutUsdPriceSource::Auc => self.update_auction_usd_price(id, price).await,
-        }
-    }
-
-    async fn update_auction_usd_price(&self, id: &str, price: &BigDecimal) -> Result<()> {
+    pub async fn update_usd_price(&self, id: &str, price: &BigDecimal) -> Result<()> {
         sqlx::query!(
             r#"
-                update nft_auction
-                set closing_price_usd = $1
-                where address = $2
-            "#,
-            price,
-            id
-        )
-        .execute(&self.pool)
-        .await
-        .map_err(|e| anyhow!(e))
-        .map(|_| ())
-    }
-
-    async fn update_direct_buy_usd_price(&self, id: &str, price: &BigDecimal) -> Result<()> {
-        sqlx::query!(
-            r#"
-                update nft_direct_buy
-                set buy_price_usd = $1
-                where address = $2
-            "#,
-            price,
-            id
-        )
-        .execute(&self.pool)
-        .await
-        .map_err(|e| anyhow!(e))
-        .map(|_| ())
-    }
-
-    async fn update_direct_sell_usd_price(&self, id: &str, price: &BigDecimal) -> Result<()> {
-        sqlx::query!(
-            r#"
-                update nft_direct_sell
-                set sell_price_usd = $1
-                where address = $2
+                update nft_price_history
+                set usd_price = $1
+                where source = $2
             "#,
             price,
             id
@@ -254,6 +96,20 @@ impl NftPriceModel {
             BcName::Everscale => self.get_pair_address(token_addr, BcName::Everscale).await,
             BcName::Venom => self.get_pair_address(token_addr, BcName::Venom).await,
         }
+    }
+
+    pub async fn get_tokens_with_dex_pair(&self, source: BcName) -> Result<Vec<String>> {
+        sqlx::query_scalar!(
+            r#"
+                select token
+                from token_to_dex
+                where source = $1
+            "#,
+            source as _
+        )
+        .fetch_all(&self.pool)
+        .await
+        .map_err(|e| anyhow!(e))
     }
 
     async fn get_pair_address(&self, token_addr: &str, source: BcName) -> Result<DexPoolInfo> {

@@ -1,7 +1,7 @@
 use anyhow::Result;
 use indexer_repo::types::{decoded, EventCategory, EventType, NftPriceSource};
 
-use crate::utils::u128_to_bigdecimal;
+use crate::utils::{timestamp_to_datetime, u128_to_bigdecimal};
 use crate::{
     models::events::{
         AuctionActive, AuctionCancelled, AuctionComplete, AuctionCreated, BidDeclined, BidPlaced,
@@ -26,7 +26,7 @@ impl Decode for AuctionCreated {
             created_at: ctx.tx_data.get_timestamp(),
             message_hash: ctx.message_hash.to_string(),
             nft: Some(self.value0.auction_subject.to_string()),
-            collection: None,
+            collection: Some(self.value0.collection.to_string()),
             raw_data: serde_json::to_value(self).unwrap_or_default(),
         }))
     }
@@ -38,12 +38,12 @@ impl Decode for AuctionActive {
             address: ctx.tx_data.get_account(),
             nft: self.value0.auction_subject.to_string(),
             wallet_for_bids: self.value0.wallet_for_bids.to_string(),
-            price_token: self.value0._payment_token.to_string(),
-            start_price: u128_to_bigdecimal(self.value0._price),
-            min_bid: u128_to_bigdecimal(self.value0._price),
-            created_at: self.value0.start_time.try_into()?,
-            finished_at: self.value0.finish_time.try_into()?,
-            tx_lt: ctx.tx_data.logical_time().try_into()?,
+            price_token: self.value0.payment_token.to_string(),
+            start_price: u128_to_bigdecimal(self.value0.price),
+            min_bid: u128_to_bigdecimal(self.value0.price),
+            created_at: timestamp_to_datetime(self.value0.start_time.try_into()?),
+            finished_at: timestamp_to_datetime(self.value0.end_time.try_into()?),
+            tx_lt: ctx.tx_data.logical_time() as i64,
         };
 
         Ok(Decoded::AuctionActive(auction))
@@ -59,7 +59,7 @@ impl Decode for AuctionActive {
             created_at: ctx.tx_data.get_timestamp(),
             message_hash: ctx.message_hash.to_string(),
             nft: Some(self.value0.auction_subject.to_string()),
-            collection: None,
+            collection: Some(self.value0.collection.to_string()),
             raw_data: serde_json::to_value(self).unwrap_or_default(),
         }))
     }
@@ -69,10 +69,14 @@ impl Decode for BidPlaced {
     fn decode(&self, ctx: &DecodeContext) -> Result<Decoded> {
         let bid = decoded::AuctionBid {
             address: ctx.tx_data.get_account(),
+            collection: self.value3.collection.to_string(),
+            nft: self.value3.auction_subject.to_string(),
+            nft_owner: self.value3.subject_owner.to_string(),
+            price_token: self.value3.payment_token.to_string(),
             bid_value: u128_to_bigdecimal(self.value),
             next_value: u128_to_bigdecimal(self.next_bid_value),
             buyer: self.buyer.to_string(),
-            created_at: ctx.tx_data.get_timestamp(),
+            created_at: timestamp_to_datetime(ctx.tx_data.get_timestamp()),
             tx_lt: ctx.tx_data.logical_time().try_into()?,
             declined: false,
         };
@@ -89,8 +93,8 @@ impl Decode for BidPlaced {
             created_lt: ctx.tx_data.logical_time() as i64,
             created_at: ctx.tx_data.get_timestamp(),
             message_hash: ctx.message_hash.to_string(),
-            nft: None,
-            collection: None,
+            nft: Some(self.value3.auction_subject.to_string()),
+            collection: Some(self.value3.collection.to_string()),
 
             raw_data: serde_json::to_value(self).unwrap_or_default(),
         }))
@@ -101,10 +105,14 @@ impl Decode for BidDeclined {
     fn decode(&self, ctx: &DecodeContext) -> Result<Decoded> {
         let bid = decoded::AuctionBid {
             address: ctx.tx_data.get_account(),
+            collection: self.value2.collection.to_string(),
+            nft: self.value2.auction_subject.to_string(),
+            nft_owner: self.value2.subject_owner.to_string(),
+            price_token: self.value2.payment_token.to_string(),
             bid_value: u128_to_bigdecimal(self.value),
             next_value: Default::default(),
             buyer: self.buyer.to_string(),
-            created_at: ctx.tx_data.get_timestamp(),
+            created_at: timestamp_to_datetime(ctx.tx_data.get_timestamp()),
             tx_lt: ctx.tx_data.logical_time().try_into()?,
             declined: true,
         };
@@ -121,8 +129,8 @@ impl Decode for BidDeclined {
             created_lt: ctx.tx_data.logical_time() as i64,
             created_at: ctx.tx_data.get_timestamp(),
             message_hash: ctx.message_hash.to_string(),
-            nft: None,
-            collection: None,
+            nft: Some(self.value2.auction_subject.to_string()),
+            collection: Some(self.value2.collection.to_string()),
 
             raw_data: serde_json::to_value(self).unwrap_or_default(),
         }))
@@ -139,10 +147,11 @@ impl Decode for AuctionComplete {
         let price_hist = decoded::NftPriceHistory {
             source: ctx.tx_data.get_account(),
             source_type: NftPriceSource::AuctionBid,
-            created_at: None,
+            created_at: timestamp_to_datetime(self.value2.start_time.try_into()?),
             price: u128_to_bigdecimal(self.value),
-            price_token: None,
-            nft: None,
+            price_token: self.value2.payment_token.to_string(),
+            usd_price: None,
+            nft: self.value2.auction_subject.to_string(),
         };
 
         Ok(Decoded::AuctionComplete((auc, price_hist)))
@@ -157,8 +166,8 @@ impl Decode for AuctionComplete {
             created_lt: ctx.tx_data.logical_time() as i64,
             created_at: ctx.tx_data.get_timestamp(),
             message_hash: ctx.message_hash.to_string(),
-            nft: None,
-            collection: None,
+            nft: Some(self.value2.auction_subject.to_string()),
+            collection: Some(self.value2.collection.to_string()),
 
             raw_data: serde_json::to_value(self).unwrap_or_default(),
         }))
@@ -183,8 +192,8 @@ impl Decode for AuctionCancelled {
             created_lt: ctx.tx_data.logical_time() as i64,
             created_at: ctx.tx_data.get_timestamp(),
             message_hash: ctx.message_hash.to_string(),
-            nft: None,
-            collection: None,
+            nft: Some(self.value0.auction_subject.to_string()),
+            collection: Some(self.value0.collection.to_string()),
 
             raw_data: serde_json::to_value(self).unwrap_or_default(),
         }))

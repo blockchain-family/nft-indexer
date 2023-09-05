@@ -165,13 +165,13 @@ pub enum BcName {
 
 pub struct NftCollection {
     pub address: String,
-    pub nft_first_mint: i64,
+    pub nft_first_mint: NaiveDateTime,
 }
 
 #[derive(Default, Clone, Debug)]
 pub struct NftCollectionMeta {
     pub address: String,
-    pub owner: String,
+    pub owner: Option<String>,
     pub name: Option<String>,
     pub description: Option<String>,
     pub updated: NaiveDateTime,
@@ -188,10 +188,11 @@ pub mod decoded {
     pub struct NftPriceHistory {
         pub source: String,
         pub source_type: NftPriceSource,
-        pub created_at: Option<NaiveDateTime>,
+        pub created_at: NaiveDateTime,
         pub price: BigDecimal,
-        pub price_token: Option<String>,
-        pub nft: Option<String>,
+        pub price_token: String,
+        pub usd_price: Option<BigDecimal>,
+        pub nft: String,
     }
 
     #[derive(Clone, Debug)]
@@ -210,6 +211,7 @@ pub mod decoded {
     }
 
     pub struct NftCreated {
+        pub id: BigDecimal,
         pub address: String,
         pub collection: String,
         pub owner: String,
@@ -229,13 +231,14 @@ pub mod decoded {
         pub id_address: String,
         pub new_address: String,
         pub logical_time: u64,
-        pub timestamp: i64,
+        pub timestamp: NaiveDateTime,
     }
 
     pub struct AuctionDeployed {
         pub address: String,
         pub root: String,
         pub nft: String,
+        pub collection: String,
         pub tx_lt: i64,
     }
 
@@ -246,17 +249,21 @@ pub mod decoded {
         pub price_token: String,
         pub start_price: BigDecimal,
         pub min_bid: BigDecimal,
-        pub created_at: i64,
-        pub finished_at: i64,
+        pub created_at: NaiveDateTime,
+        pub finished_at: NaiveDateTime,
         pub tx_lt: i64,
     }
 
     pub struct AuctionBid {
         pub address: String,
+        pub collection: String,
+        pub nft: String,
+        pub nft_owner: String,
+        pub price_token: String,
         pub bid_value: BigDecimal,
         pub next_value: BigDecimal,
         pub buyer: String,
-        pub created_at: i64,
+        pub created_at: NaiveDateTime,
         pub tx_lt: i64,
         pub declined: bool,
     }
@@ -272,16 +279,16 @@ pub mod decoded {
 
     pub struct CollectionFee {
         pub address: String,
-        pub timestamp: i64,
+        pub timestamp: NaiveDateTime,
         pub numerator: Option<i32>,
         pub denominator: Option<i32>,
     }
 
-    #[derive(Clone, Debug)]
     pub struct DirectBuy {
         pub address: String,
         pub root: String,
         pub nft: String,
+        pub collection: Option<String>,
         pub price_token: String,
         pub price: BigDecimal,
         pub buyer: String,
@@ -293,11 +300,11 @@ pub mod decoded {
         pub tx_lt: i64,
     }
 
-    #[derive(Clone, Debug)]
     pub struct DirectSell {
         pub address: String,
         pub root: String,
         pub nft: String,
+        pub collection: Option<String>,
         pub price_token: String,
         pub price: BigDecimal,
         pub seller: String,
@@ -312,5 +319,6 @@ pub mod decoded {
     pub struct OfferDeployed {
         pub address: String,
         pub root: String,
+        pub created: NaiveDateTime,
     }
 }

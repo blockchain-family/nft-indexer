@@ -1,6 +1,5 @@
 use crate::types::NftCollection;
 use anyhow::{anyhow, Result};
-use chrono::NaiveDateTime;
 use sqlx::PgPool;
 
 pub async fn save_collections(pool: &PgPool, collections: &[NftCollection]) -> Result<()> {
@@ -10,7 +9,7 @@ pub async fn save_collections(pool: &PgPool, collections: &[NftCollection]) -> R
         .collect::<Vec<_>>();
     let mint_ts = collections
         .iter()
-        .map(|c| NaiveDateTime::from_timestamp_opt(c.nft_first_mint, 0).unwrap_or_default())
+        .map(|c| c.nft_first_mint)
         .collect::<Vec<_>>();
 
     sqlx::query!(
@@ -19,13 +18,13 @@ pub async fn save_collections(pool: &PgPool, collections: &[NftCollection]) -> R
                 address, 
                 first_mint, 
                 created, 
-                updated
+                updated            
             )
             select
                 unnest($1::varchar[]), 
                 unnest($2::timestamp[]), 
                 unnest($2::timestamp[]), 
-                unnest($2::timestamp[]) 
+                unnest($2::timestamp[])
             on conflict(address) do nothing
         "#,
         addresses as _,
