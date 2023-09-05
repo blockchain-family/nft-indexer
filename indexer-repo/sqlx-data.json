@@ -409,41 +409,6 @@
     },
     "query": "\n                insert into nft_metadata (nft, meta, updated)\n                values ($1, $2, $3)\n                on conflict (nft) where updated < $3 do update\n                set meta = coalesce($2, nft_metadata.meta), updated = $3\n            "
   },
-  "8cac0bb103dd3db03a60cf0eaac7213dc4c63b8655d1dd07055bd6a8a9596e04": {
-    "describe": {
-      "columns": [],
-      "nullable": [],
-      "parameters": {
-        "Left": [
-          "VarcharArray",
-          {
-            "Custom": {
-              "kind": {
-                "Array": {
-                  "Custom": {
-                    "kind": {
-                      "Enum": [
-                        "auctionBid",
-                        "directBuy",
-                        "directSell"
-                      ]
-                    },
-                    "name": "nft_price_source"
-                  }
-                }
-              },
-              "name": "_nft_price_source"
-            }
-          },
-          "TimestampArray",
-          "NumericArray",
-          "VarcharArray",
-          "VarcharArray"
-        ]
-      }
-    },
-    "query": "\n            insert into nft_price_history (\n                source, \n                source_type, \n                ts, \n                price,\n                price_token, \n                nft\n            )\n            select\n                unnest($1::varchar[]),\n                unnest($2::nft_price_source[]),\n                unnest($3::timestamp[]),\n                unnest($4::numeric[]),\n                unnest($5::varchar[]),\n                unnest($6::varchar[])\n        "
-  },
   "9e785ebcd70336f018a5c52a32816eb3c26a5dc439344d691ef9cdcef0584381": {
     "describe": {
       "columns": [],
@@ -880,6 +845,42 @@
       }
     },
     "query": "\n        update nft_direct_sell set\n            state = data.state,\n            nft = data.nft,\n            collection = data.collection,\n            price_token = data.price_token,\n            price = data.price,\n            seller = data.seller,\n            expired_at = data.expired_at,\n            finished_at = data.finished_at,\n            updated = data.updated,\n            created = data.created,\n            tx_lt = data.tx_lt\n        from\n        (\n            select \n                unnest($1::varchar[]) as address,\n                unnest($2::direct_sell_state[]) as state,\n                unnest($3::timestamp[]) as finished_at,\n                unnest($4::timestamp[]) as updated,\n                unnest($5::bigint[]) as tx_lt,\n                unnest($6::varchar[]) as nft,\n                unnest($7::varchar[]) as collection,\n                unnest($8::varchar[]) as price_token,\n                unnest($9::numeric[]) as price,\n                unnest($10::varchar[]) as seller,\n                unnest($11::timestamp[]) as expired_at,\n                unnest($12::timestamp[]) as created\n        ) as data\n        where nft_direct_sell.address = data.address\n        "
+  },
+  "fe31a01e76596043fa034f4ba7213146c4b4e4cc63007187ebcd8463121e9cd6": {
+    "describe": {
+      "columns": [],
+      "nullable": [],
+      "parameters": {
+        "Left": [
+          "VarcharArray",
+          {
+            "Custom": {
+              "kind": {
+                "Array": {
+                  "Custom": {
+                    "kind": {
+                      "Enum": [
+                        "auctionBid",
+                        "directBuy",
+                        "directSell"
+                      ]
+                    },
+                    "name": "nft_price_source"
+                  }
+                }
+              },
+              "name": "_nft_price_source"
+            }
+          },
+          "TimestampArray",
+          "NumericArray",
+          "VarcharArray",
+          "VarcharArray",
+          "NumericArray"
+        ]
+      }
+    },
+    "query": "\n            insert into nft_price_history (\n                source, \n                source_type, \n                ts, \n                price,\n                price_token, \n                nft,\n                usd_price\n            )\n            select\n                unnest($1::varchar[]),\n                unnest($2::nft_price_source[]),\n                unnest($3::timestamp[]),\n                unnest($4::numeric[]),\n                unnest($5::varchar[]),\n                unnest($6::varchar[]),\n                unnest($7::numeric[])\n        "
   },
   "fe6605371497cf9f59c6633361e1214b02d7eaa876274bdae69495cecaf96215": {
     "describe": {
