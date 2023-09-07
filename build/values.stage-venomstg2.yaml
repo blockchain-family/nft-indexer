@@ -2,7 +2,7 @@ env:
   RUST_LOG: debug
   RUST_BACKTRACE: 1
 
-  DATABASE_URL: postgresql://$(BACKEND_API_USER):$(BACKEND_API_PASSWORD)@cloudsqlproxy.default:5432/indexer-venom-stg-2
+  DATABASE_URL: postgresql://$(BACKEND_DEV_USER):$(BACKEND_DEV_PASSWORD)@$(BACKEND_DEV_HOST):5432/indexator
   DATABASE_MAX_CONNECTIONS: 5
   KAFKA_CONSUMER_GROUP: temp-venom-stg2-1
   KAFKA_TOPIC: rest-transactions
