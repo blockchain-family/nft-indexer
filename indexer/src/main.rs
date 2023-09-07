@@ -20,9 +20,9 @@ async fn main() -> Result<()> {
     dotenv::dotenv().ok();
     stackdriver_logger::init_with_cargo!();
     log::info!("Indexer is preparing to start");
-    log::info!("DB URL {:?}", &config.database_url);
 
     let config = Config::new();
+    log::info!("DB URL {:?}", &config.database_url);
 
     let pg_pool = indexer_repo::utils::init_pg_pool(
         &config.database_url,
