@@ -22,7 +22,6 @@ async fn main() -> Result<()> {
     log::info!("Indexer is preparing to start");
 
     let config = Config::new();
-    log::info!("PG URL {:?}", &config.database_url);
     let pg_pool = indexer_repo::utils::init_pg_pool(
         &config.database_url,
         config.database_max_connections,
