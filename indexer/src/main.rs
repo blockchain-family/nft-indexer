@@ -17,17 +17,11 @@ extern crate num_derive;
 
 #[tokio::main]
 async fn main() -> Result<()> {
-    println!("1");
     dotenv::dotenv().ok();
-    println!("2");
     stackdriver_logger::init_with_cargo!();
-    println!("3");
     log::info!("Indexer is preparing to start");
 
     let config = Config::new();
-    println!("4");
-    panic!("DB URL {:?}", &config.database_url);
-
     let pg_pool = indexer_repo::utils::init_pg_pool(
         &config.database_url,
         config.database_max_connections,
