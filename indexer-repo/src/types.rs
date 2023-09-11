@@ -193,6 +193,7 @@ pub mod decoded {
         pub price_token: String,
         pub usd_price: Option<BigDecimal>,
         pub nft: String,
+        pub collection: String,
     }
 
     #[derive(Clone, Debug)]
@@ -239,6 +240,7 @@ pub mod decoded {
         pub root: String,
         pub nft: String,
         pub collection: String,
+        pub nft_owner: String,
         pub tx_lt: i64,
     }
 

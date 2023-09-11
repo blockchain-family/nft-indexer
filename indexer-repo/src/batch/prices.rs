@@ -14,6 +14,10 @@ pub async fn save_price_history(pool: &PgPool, data: &[NftPriceHistory]) -> Resu
         .collect::<Vec<_>>();
     let nft = data.iter().map(|e| e.nft.as_str()).collect::<Vec<_>>();
     let usd_prices = data.iter().map(|e| e.usd_price.clone()).collect::<Vec<_>>();
+    let collections = data
+        .iter()
+        .map(|e| e.collection.as_str())
+        .collect::<Vec<_>>();
 
     sqlx::query!(
         r#"
@@ -24,7 +28,8 @@ pub async fn save_price_history(pool: &PgPool, data: &[NftPriceHistory]) -> Resu
                 price,
                 price_token, 
                 nft,
-                usd_price
+                usd_price,
+                collection
             )
             select
                 unnest($1::varchar[]),
@@ -33,7 +38,8 @@ pub async fn save_price_history(pool: &PgPool, data: &[NftPriceHistory]) -> Resu
                 unnest($4::numeric[]),
                 unnest($5::varchar[]),
                 unnest($6::varchar[]),
-                unnest($7::numeric[])
+                unnest($7::numeric[]),
+                unnest($8::varchar[])
         "#,
         sources as _,
         source_types as _,
@@ -42,6 +48,7 @@ pub async fn save_price_history(pool: &PgPool, data: &[NftPriceHistory]) -> Resu
         price_tokens as _,
         nft as _,
         usd_prices as _,
+        collections as _,
     )
     .execute(pool)
     .await

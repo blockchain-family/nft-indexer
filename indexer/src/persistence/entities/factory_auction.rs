@@ -17,6 +17,7 @@ impl Decode for AuctionDeployed {
                 root: ctx.tx_data.get_account(),
                 nft: self.offer_info.nft.to_string(),
                 collection: self.offer_info.collection.to_string(),
+                nft_owner: self.offer_info.nft_owner.to_string(),
                 tx_lt: ctx.tx_data.logical_time() as i64,
             },
             decoded::OfferDeployed {

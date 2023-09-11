@@ -152,6 +152,7 @@ impl Decode for AuctionComplete {
             price_token: self.value2.payment_token.to_string(),
             usd_price: None,
             nft: self.value2.auction_subject.to_string(),
+            collection: self.value2.collection.to_string(),
         };
 
         Ok(Decoded::AuctionComplete((auc, price_hist)))

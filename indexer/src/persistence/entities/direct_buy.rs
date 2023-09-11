@@ -31,6 +31,7 @@ impl Decode for DirectBuyStateChanged {
                 price_token: self.value2.spent_token.to_string(),
                 usd_price: None,
                 nft: self.value2.nft.to_string(),
+                collection: self.value2.collection.to_string(),
             })
         } else {
             None
