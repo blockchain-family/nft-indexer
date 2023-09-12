@@ -58,6 +58,33 @@
     },
     "query": "\n            insert into nft_direct_sell(\n                address,\n                root,\n                nft, \n                collection,\n                price_token, \n                price, \n                seller,\n                finished_at,\n                expired_at,\n                state,\n                created,\n                updated,\n                tx_lt\n            )\n            select\n                unnest($1::varchar[]), \n                unnest($2::varchar[]),\n                unnest($3::varchar[]), \n                unnest($4::varchar[]),\n                unnest($5::varchar[]), \n                unnest($6::numeric[]),\n                unnest($7::varchar[]),\n                unnest($8::timestamp[]),\n                unnest($9::timestamp[]),\n                unnest($10::direct_sell_state[]),\n                unnest($11::timestamp[]),\n                unnest($12::timestamp[]),\n                unnest($13::bigint[])\n            on conflict(address) do nothing\n        "
   },
+  "15600f3daaa025aab8bdccd688a8be927aeb167d643ff9064fea1f0c57f5a9db": {
+    "describe": {
+      "columns": [
+        {
+          "name": "address",
+          "ordinal": 0,
+          "type_info": "Varchar"
+        },
+        {
+          "name": "collection",
+          "ordinal": 1,
+          "type_info": "Varchar"
+        }
+      ],
+      "nullable": [
+        false,
+        false
+      ],
+      "parameters": {
+        "Left": [
+          "Int8",
+          "Numeric"
+        ]
+      }
+    },
+    "query": "\n                select n.address,\n                       n.collection\n                from nft n\n                         join nft_collection nc\n                              on nc.address = n.collection and nc.verified\n                         left join meta_handled_addresses mha on mha.address = n.address\n                where (mha.address is null)\n                   or (mha.updated_at > extract(epoch from now()) - $2 and failed is true)\n                limit $1\n            "
+  },
   "1a8faf43e1567afeb374cc2c1d077d508b2b6df8cc0c30e59255d70c3f9ed835": {
     "describe": {
       "columns": [
@@ -160,27 +187,6 @@
       }
     },
     "query": "\n        insert into nft_auction (\n            address, \n            root,\n            nft,\n            collection,\n            tx_lt,\n            nft_owner,\n            status\n        )\n        select \n            unnest($1::varchar[]),\n            unnest($2::varchar[]),\n            unnest($3::varchar[]),\n            unnest($4::varchar[]),\n            unnest($5::bigint[]),\n            unnest($6::varchar[]),\n            $7::auction_status\n        on conflict(address) do nothing\n        "
-  },
-  "478f1843f03dcf85d5af47228054f4a477adb5eecc1ff594626de0dd3182c6b4": {
-    "describe": {
-      "columns": [
-        {
-          "name": "address",
-          "ordinal": 0,
-          "type_info": "Varchar"
-        }
-      ],
-      "nullable": [
-        false
-      ],
-      "parameters": {
-        "Left": [
-          "Int8",
-          "Numeric"
-        ]
-      }
-    },
-    "query": "\n                select c.address\n                from nft_collection c\n                left join meta_handled_addresses mha on mha.address = c.address\n                where \n                    (mha.address is null) or\n                    (extract(epoch from now()) - mha.updated_at > $2 and failed is true)\n                order by updated desc\n                limit $1\n                "
   },
   "52b1d58d04ad88f604ad3ca173a796ff6d3087b137f1cf2379fe307692b0c6d7": {
     "describe": {
@@ -737,22 +743,16 @@
     },
     "query": "\n            insert into nft_collection (\n                address, \n                first_mint, \n                created, \n                updated            \n            )\n            select\n                unnest($1::varchar[]), \n                unnest($2::timestamp[]), \n                unnest($2::timestamp[]), \n                unnest($2::timestamp[])\n            on conflict(address) do nothing\n        "
   },
-  "f5a9f5b3bf62ee2760e221f20d0e93d40bc09371f7260c4b441785e603da250a": {
+  "ee32332abf8f633c8ba328dedb51df06588e1d44701b5d232a4862d6e12b6bf5": {
     "describe": {
       "columns": [
         {
           "name": "address",
           "ordinal": 0,
           "type_info": "Varchar"
-        },
-        {
-          "name": "collection",
-          "ordinal": 1,
-          "type_info": "Varchar"
         }
       ],
       "nullable": [
-        false,
         false
       ],
       "parameters": {
@@ -762,7 +762,7 @@
         ]
       }
     },
-    "query": "\n                select \n                    n.address,\n                    n.collection\n                from nft n\n                left join meta_handled_addresses mha on mha.address = n.address\n                where \n                    (mha.address is null) or\n                    (extract(epoch from now()) - mha.updated_at > $2 and failed is true)\n                order by updated desc\n                limit $1\n            "
+    "query": "\n                select c.address\n                from nft_collection c\n                left join meta_handled_addresses mha on mha.address = c.address\n                where\n                    c.verified and\n                    ((mha.address is null) or (mha.updated_at > extract(epoch from now()) - $2 and failed is true))\n                order by updated desc\n                limit $1\n                "
   },
   "f5d588a0d28c4e9446b5ca4d7ea99ec0ad88afb1d7f48e71be86457eb9f9329a": {
     "describe": {
