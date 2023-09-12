@@ -41,9 +41,6 @@ alter table nft_auction_bid
 alter table nft_auction_bid
     alter column price_token drop default;
 
-alter table nft_auction_bid
-    add primary key (auction, buyer, price, created_at);
-
 alter table nft
     add column id numeric not null default 0;
 alter table nft
