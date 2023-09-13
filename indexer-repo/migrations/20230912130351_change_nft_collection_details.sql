@@ -1,6 +1,6 @@
 create or replace view nft_collection_details as
 select coalesce(ncc.address, c.address) as "address!",
-       coalesce(ncc.owner, c.owner) as "owner!",
+       c.owner as "owner!",
        coalesce(ncc.name, c.name) as "name",
        coalesce(ncc.description, c.description) as "description",
        c.created,
