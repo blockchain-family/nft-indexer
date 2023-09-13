@@ -37,15 +37,6 @@ async fn main() -> Result<()> {
     let jrpc_client = settings::get_jrpc_client(&config).await?;
     log::info!("Connected to jrpc endpoint");
 
-    let meta_reader_context = MetaReaderContext {
-        jrpc_client: jrpc_client.clone(),
-        pool: pg_pool.clone(),
-        jrpc_req_latency_millis: config.jrpc_req_latency_millis,
-        idle_after_loop: config.idle_after_meta_loop_sec,
-    };
-
-    tokio::spawn(data_reader::run_meta_reader(meta_reader_context.clone()));
-
     let price_reader = PriceReader::new(
         pg_pool.clone(),
         config.bc_name,
@@ -55,6 +46,15 @@ async fn main() -> Result<()> {
     .await;
 
     tokio::spawn(price_reader.clone().run_db_updater());
+
+    let meta_reader_context = MetaReaderContext {
+        jrpc_client: jrpc_client.clone(),
+        pool: pg_pool.clone(),
+        jrpc_req_latency_millis: config.jrpc_req_latency_millis,
+        idle_after_loop: config.idle_after_meta_loop_sec,
+    };
+
+    tokio::spawn(data_reader::run_meta_reader(meta_reader_context.clone()));
 
     tokio::spawn(parser::start_parsing(
         config.clone(),
