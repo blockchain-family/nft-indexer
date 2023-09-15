@@ -55,7 +55,6 @@ pub async fn save_auc_bid(pool: &PgPool, data: &[AuctionBid]) -> Result<()> {
                 unnest($9::varchar[]),
                 unnest($10::varchar[]),
                 unnest($11::varchar[])
-            on conflict (auction, buyer, price, created_at) do nothing
         "#,
         auctions as _,
         buyers as _,

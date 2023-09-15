@@ -467,28 +467,6 @@
     },
     "query": "\n        update nft set\n            owner = data.owner,\n            updated = data.time\n        from\n        (\n            select \n                unnest($1::varchar[]) as address,\n                unnest($2::varchar[]) as owner,\n                unnest($3::timestamp[]) as time\n        ) as data\n        where nft.address = data.address\n    "
   },
-  "a55b3c5896b7c6a9038fd18dac4ff46ef0740087e2ae5fffae657435e12fd42e": {
-    "describe": {
-      "columns": [],
-      "nullable": [],
-      "parameters": {
-        "Left": [
-          "VarcharArray",
-          "VarcharArray",
-          "NumericArray",
-          "NumericArray",
-          "TimestampArray",
-          "Int8Array",
-          "BoolArray",
-          "VarcharArray",
-          "VarcharArray",
-          "VarcharArray",
-          "VarcharArray"
-        ]
-      }
-    },
-    "query": "\n            insert into nft_auction_bid (\n                auction,\n                buyer,\n                price,\n                next_bid_value, \n                created_at,\n                tx_lt,\n                declined,\n                nft,\n                nft_owner,\n                collection,\n                price_token\n            )\n            select\n                unnest($1::varchar[]),\n                unnest($2::varchar[]),\n                unnest($3::numeric[]),\n                unnest($4::numeric[]),\n                unnest($5::timestamp[]),\n                unnest($6::bigint[]),\n                unnest($7::boolean[]),\n                unnest($8::varchar[]),\n                unnest($9::varchar[]),\n                unnest($10::varchar[]),\n                unnest($11::varchar[])\n            on conflict (auction, buyer, price, created_at) do nothing\n        "
-  },
   "a67d814a4385ec4491085a66462c167d4904413f5eff84e3e06ce094527cb552": {
     "describe": {
       "columns": [
@@ -742,6 +720,28 @@
       }
     },
     "query": "\n            insert into nft_collection (\n                address, \n                first_mint, \n                created, \n                updated            \n            )\n            select\n                unnest($1::varchar[]), \n                unnest($2::timestamp[]), \n                unnest($2::timestamp[]), \n                unnest($2::timestamp[])\n            on conflict(address) do nothing\n        "
+  },
+  "e7ab6800f3f0a8306c63bd3fea837c0a5f59c0efe571190ea5657f15ef2d7497": {
+    "describe": {
+      "columns": [],
+      "nullable": [],
+      "parameters": {
+        "Left": [
+          "VarcharArray",
+          "VarcharArray",
+          "NumericArray",
+          "NumericArray",
+          "TimestampArray",
+          "Int8Array",
+          "BoolArray",
+          "VarcharArray",
+          "VarcharArray",
+          "VarcharArray",
+          "VarcharArray"
+        ]
+      }
+    },
+    "query": "\n            insert into nft_auction_bid (\n                auction,\n                buyer,\n                price,\n                next_bid_value, \n                created_at,\n                tx_lt,\n                declined,\n                nft,\n                nft_owner,\n                collection,\n                price_token\n            )\n            select\n                unnest($1::varchar[]),\n                unnest($2::varchar[]),\n                unnest($3::numeric[]),\n                unnest($4::numeric[]),\n                unnest($5::timestamp[]),\n                unnest($6::bigint[]),\n                unnest($7::boolean[]),\n                unnest($8::varchar[]),\n                unnest($9::varchar[]),\n                unnest($10::varchar[]),\n                unnest($11::varchar[])\n        "
   },
   "ee32332abf8f633c8ba328dedb51df06588e1d44701b5d232a4862d6e12b6bf5": {
     "describe": {
