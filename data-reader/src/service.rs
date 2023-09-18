@@ -71,6 +71,14 @@ impl MetadataJrpcService {
                     .map(|a| a.to_string())
             })
             .transpose()
+            .map_err(|e| {
+                log::error!(
+                    "Can't get collection {} owner with 'owner' method: {:#?}",
+                    collection.to_string(),
+                    e
+                );
+                e
+            })
             .ok();
 
         if let Some(Some(owner)) = owner {
@@ -87,6 +95,14 @@ impl MetadataJrpcService {
                         .map(|a| a.to_string())
                 })
                 .transpose()
+                .map_err(|e| {
+                    log::error!(
+                        "Can't get collection {} owner with 'getOwner' method: {:#?}",
+                        collection.to_string(),
+                        e
+                    );
+                    e
+                })
                 .ok();
 
             Ok((owner.unwrap_or_default(), meta))
