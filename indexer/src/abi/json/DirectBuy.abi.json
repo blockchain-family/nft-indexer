@@ -10,8 +10,8 @@
 				{"name":"_startTime","type":"uint64"},
 				{"name":"_durationTime","type":"uint64"},
 				{"components":[{"name":"numerator","type":"uint32"},{"name":"denominator","type":"uint32"}],"name":"_fee","type":"tuple"},
-				{"name":"_weverVault","type":"address"},
-				{"name":"_weverRoot","type":"address"},
+				{"components":[{"name":"numerator","type":"uint32"},{"name":"denominator","type":"uint32"},{"name":"project","type":"address"},{"name":"burnRecipient","type":"address"}],"name":"_burnFee","type":"optional(tuple)"},
+				{"name":"_wnativeRoot","type":"address"},
 				{"components":[{"name":"gasK","type":"uint128"},{"components":[{"name":"fixedValue","type":"uint128"},{"name":"dynamicGas","type":"uint128"}],"name":"deployWallet","type":"tuple"},{"components":[{"name":"fixedValue","type":"uint128"},{"name":"dynamicGas","type":"uint128"}],"name":"royalty","type":"tuple"},{"components":[{"name":"fixedValue","type":"uint128"},{"name":"dynamicGas","type":"uint128"}],"name":"deployDirectBuy","type":"tuple"},{"components":[{"name":"fixedValue","type":"uint128"},{"name":"dynamicGas","type":"uint128"}],"name":"make","type":"tuple"},{"components":[{"name":"fixedValue","type":"uint128"},{"name":"dynamicGas","type":"uint128"}],"name":"accept","type":"tuple"},{"components":[{"name":"fixedValue","type":"uint128"},{"name":"dynamicGas","type":"uint128"}],"name":"cancel","type":"tuple"}],"name":"_directBuyGas","type":"tuple"},
 				{"components":[{"name":"collection","type":"address"},{"name":"nftId","type":"uint256"},{"components":[{"name":"codeHash","type":"uint256"},{"name":"codeDepth","type":"uint16"},{"name":"numerator","type":"uint32"},{"name":"denominator","type":"uint32"}],"name":"feeInfo","type":"tuple"}],"name":"_discountOpt","type":"optional(tuple)"}
 			],
@@ -87,6 +87,18 @@
 			]
 		},
 		{
+			"name": "onAcceptTokensBurn",
+			"inputs": [
+				{"name":"amount","type":"uint128"},
+				{"name":"value1","type":"address"},
+				{"name":"value2","type":"address"},
+				{"name":"user","type":"address"},
+				{"name":"payload","type":"cell"}
+			],
+			"outputs": [
+			]
+		},
+		{
 			"name": "upgrade",
 			"inputs": [
 				{"name":"newCode","type":"cell"},
@@ -134,19 +146,7 @@
 			]
 		},
 		{
-			"name": "onAcceptTokensBurn",
-			"inputs": [
-				{"name":"amount","type":"uint128"},
-				{"name":"value1","type":"address"},
-				{"name":"value2","type":"address"},
-				{"name":"user","type":"address"},
-				{"name":"payload","type":"cell"}
-			],
-			"outputs": [
-			]
-		},
-		{
-			"name": "weverRoot",
+			"name": "wnativeRoot",
 			"inputs": [
 			],
 			"outputs": [
@@ -154,11 +154,20 @@
 			]
 		},
 		{
-			"name": "weverVault",
+			"name": "setMarketBurnFee",
+			"inputs": [
+				{"components":[{"name":"numerator","type":"uint32"},{"name":"denominator","type":"uint32"},{"name":"project","type":"address"},{"name":"burnRecipient","type":"address"}],"name":"_fee","type":"tuple"},
+				{"name":"_remainingGasTo","type":"address"}
+			],
+			"outputs": [
+			]
+		},
+		{
+			"name": "marketBurnFee",
 			"inputs": [
 			],
 			"outputs": [
-				{"name":"value0","type":"address"}
+				{"components":[{"name":"numerator","type":"uint32"},{"name":"denominator","type":"uint32"},{"name":"project","type":"address"},{"name":"burnRecipient","type":"address"}],"name":"value0","type":"optional(tuple)"}
 			]
 		},
 		{
@@ -219,7 +228,9 @@
 			"inputs": [
 				{"name":"from","type":"uint8"},
 				{"name":"to","type":"uint8"},
-				{"components":[{"name":"factory","type":"address"},{"name":"creator","type":"address"},{"name":"spentToken","type":"address"},{"name":"nft","type":"address"},{"name":"_timeTx","type":"uint64"},{"name":"_price","type":"uint128"},{"name":"spentWallet","type":"address"},{"name":"status","type":"uint8"},{"name":"startTimeBuy","type":"uint64"},{"name":"durationTimeBuy","type":"uint64"},{"name":"endTimeBuy","type":"uint64"},{"name":"collection","type":"address"}],"name":"value2","type":"tuple"}
+				{"components":[{"name":"factory","type":"address"},{"name":"creator","type":"address"},{"name":"spentToken","type":"address"},{"name":"nft","type":"address"},{"name":"_timeTx","type":"uint64"},{"name":"_price","type":"uint128"},{"name":"spentWallet","type":"address"},{"name":"status","type":"uint8"},{"name":"startTimeBuy","type":"uint64"},{"name":"durationTimeBuy","type":"uint64"},{"name":"endTimeBuy","type":"uint64"},{"name":"collection","type":"address"}],"name":"value2","type":"tuple"},
+				{"name":"old_owner","type":"address"},
+				{"name":"new_owner","type":"address"}
 			],
 			"outputs": [
 			]
@@ -259,10 +270,29 @@
 			]
 		},
 		{
+			"name": "MarketBurnFeeChanged",
+			"inputs": [
+				{"name":"auction","type":"address"},
+				{"components":[{"name":"numerator","type":"uint32"},{"name":"denominator","type":"uint32"},{"name":"project","type":"address"},{"name":"burnRecipient","type":"address"}],"name":"fee","type":"tuple"}
+			],
+			"outputs": [
+			]
+		},
+		{
 			"name": "MarketFeeWithheld",
 			"inputs": [
 				{"name":"amount","type":"uint128"},
 				{"name":"tokenRoot","type":"address"}
+			],
+			"outputs": [
+			]
+		},
+		{
+			"name": "MarketFeeBurn",
+			"inputs": [
+				{"name":"auction","type":"address"},
+				{"name":"burnRecipient","type":"address"},
+				{"name":"project","type":"address"}
 			],
 			"outputs": [
 			]
@@ -279,8 +309,8 @@
 		{"name":"nonce_","type":"uint64"},
 		{"name":"collection_","type":"address"},
 		{"components":[{"name":"numerator","type":"uint32"},{"name":"denominator","type":"uint32"}],"name":"fee_","type":"tuple"},
-		{"name":"weverRoot_","type":"address"},
-		{"name":"weverVault_","type":"address"},
+		{"components":[{"name":"numerator","type":"uint32"},{"name":"denominator","type":"uint32"},{"name":"project","type":"address"},{"name":"burnRecipient","type":"address"}],"name":"burnFee_","type":"optional(tuple)"},
+		{"name":"wnativeRoot_","type":"address"},
 		{"components":[{"name":"collection","type":"address"},{"name":"nftId","type":"uint256"},{"components":[{"name":"codeHash","type":"uint256"},{"name":"codeDepth","type":"uint16"},{"name":"numerator","type":"uint32"},{"name":"denominator","type":"uint32"}],"name":"feeInfo","type":"tuple"}],"name":"discountOpt_","type":"optional(tuple)"},
 		{"name":"discountNft_","type":"optional(address)"},
 		{"components":[{"name":"numerator","type":"uint128"},{"name":"denominator","type":"uint128"},{"name":"receiver","type":"address"}],"name":"royalty_","type":"optional(tuple)"},
