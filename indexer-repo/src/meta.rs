@@ -250,7 +250,8 @@ impl<'a> MetadataModelTransaction<'a> {
                 description  = coalesce($3, nft_collection.description),
                 logo         = coalesce($4, nft_collection.logo),
                 wallpaper    = coalesce($5, nft_collection.wallpaper),
-                updated      = greatest($6, nft_collection.updated)
+                updated      = greatest($6, nft_collection.updated),
+                owner        = coalesce($7, nft_collection.owner)
             where address = $1
             "#,
             meta.address as _,
@@ -259,6 +260,7 @@ impl<'a> MetadataModelTransaction<'a> {
             meta.logo as _,
             meta.wallpaper as _,
             meta.updated,
+            meta.owner as _,
         )
         .execute(&mut self.tx)
         .await

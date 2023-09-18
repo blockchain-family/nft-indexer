@@ -188,6 +188,24 @@
     },
     "query": "\n        insert into nft_auction (\n            address, \n            root,\n            nft,\n            collection,\n            tx_lt,\n            nft_owner,\n            status\n        )\n        select \n            unnest($1::varchar[]),\n            unnest($2::varchar[]),\n            unnest($3::varchar[]),\n            unnest($4::varchar[]),\n            unnest($5::bigint[]),\n            unnest($6::varchar[]),\n            $7::auction_status\n        on conflict(address) do nothing\n        "
   },
+  "4d8bdf44fff7b8084a723bdd773f5a9cfb0f7d119adce12a059643490f8d1f16": {
+    "describe": {
+      "columns": [],
+      "nullable": [],
+      "parameters": {
+        "Left": [
+          "Text",
+          "Text",
+          "Text",
+          "Varchar",
+          "Varchar",
+          "Timestamp",
+          "Varchar"
+        ]
+      }
+    },
+    "query": "\n            update nft_collection\n            set \n                name         = coalesce($2, nft_collection.name),\n                description  = coalesce($3, nft_collection.description),\n                logo         = coalesce($4, nft_collection.logo),\n                wallpaper    = coalesce($5, nft_collection.wallpaper),\n                updated      = greatest($6, nft_collection.updated),\n                owner        = coalesce($7, nft_collection.owner)\n            where address = $1\n            "
+  },
   "52b1d58d04ad88f604ad3ca173a796ff6d3087b137f1cf2379fe307692b0c6d7": {
     "describe": {
       "columns": [],
@@ -201,23 +219,6 @@
       }
     },
     "query": "\n            insert into deployed_offers (\n                address,\n                root,\n                created\n            )\n            select\n                unnest($1::varchar[]),\n                unnest($2::varchar[]),\n                unnest($3::timestamp[])\n            on conflict (address) do nothing\n        "
-  },
-  "5e1a697834dc22332ed1931c723640bec447615b3fa58add59ec04b89a3a438b": {
-    "describe": {
-      "columns": [],
-      "nullable": [],
-      "parameters": {
-        "Left": [
-          "Text",
-          "Text",
-          "Text",
-          "Varchar",
-          "Varchar",
-          "Timestamp"
-        ]
-      }
-    },
-    "query": "\n            update nft_collection\n            set \n                name         = coalesce($2, nft_collection.name),\n                description  = coalesce($3, nft_collection.description),\n                logo         = coalesce($4, nft_collection.logo),\n                wallpaper    = coalesce($5, nft_collection.wallpaper),\n                updated      = greatest($6, nft_collection.updated)\n            where address = $1\n            "
   },
   "5e51b09eb38779001303cf4a7bd8e19970f8741eef32844e802cbed56ba5cd6d": {
     "describe": {
