@@ -63,12 +63,6 @@ impl MetadataJrpcService {
         let owner_contract =
             MetadataJrpcService::owner().run_local(&SimpleClock, contract.account.clone(), &[])?;
 
-        log::info!(
-            "Collection {}, 'owner' output: {:?}",
-            collection.to_string(),
-            owner_contract
-        );
-
         let owner = owner_contract
             .tokens
             .map(|t| {
@@ -92,12 +86,6 @@ impl MetadataJrpcService {
         } else {
             let get_owner_contract =
                 MetadataJrpcService::get_owner().run_local(&SimpleClock, contract.account, &[])?;
-
-            log::info!(
-                "Collection {}, 'getOwner' output: {:?}",
-                collection.to_string(),
-                get_owner_contract
-            );
 
             let owner = get_owner_contract
                 .tokens
