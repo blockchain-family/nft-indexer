@@ -102,8 +102,8 @@ impl MetadataModelService {
                 select n.address,
                        n.collection
                 from nft n
-                         join nft_collection nc
-                              on nc.address = n.collection and nc.verified
+                         /*join nft_collection nc
+                              on nc.address = n.collection and nc.verified*/
                          left join meta_handled_addresses mha on mha.address = n.address
                 where (mha.address is null)
                    or (mha.updated_at > extract(epoch from now()) - $2 and failed is true)
@@ -128,7 +128,7 @@ impl MetadataModelService {
                 from nft_collection c
                 left join meta_handled_addresses mha on mha.address = c.address
                 where
-                    c.verified and
+                    /*c.verified and*/
                     ((mha.address is null) or (mha.updated_at > extract(epoch from now()) - $2 and failed is true))
                 order by updated desc
                 limit $1
