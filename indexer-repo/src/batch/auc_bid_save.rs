@@ -1,9 +1,9 @@
 use anyhow::{anyhow, Result};
-use sqlx::PgPool;
+use sqlx::{Postgres, Transaction};
 
 use crate::types::decoded::AuctionBid;
 
-pub async fn save_auc_bid(pool: &PgPool, data: &[AuctionBid]) -> Result<()> {
+pub async fn save_auc_bid(tx: &mut Transaction<'_, Postgres>, data: &[AuctionBid]) -> Result<()> {
     let auctions = data.iter().map(|e| e.address.as_str()).collect::<Vec<_>>();
     let buyers = data.iter().map(|e| e.buyer.as_str()).collect::<Vec<_>>();
     let bid_vals = data.iter().map(|e| e.bid_value.clone()).collect::<Vec<_>>();
@@ -68,7 +68,7 @@ pub async fn save_auc_bid(pool: &PgPool, data: &[AuctionBid]) -> Result<()> {
         collections as _,
         price_tokens as _,
     )
-    .execute(pool)
+    .execute(tx)
     .await
     .map_err(|e| anyhow!(e))
     .map(|_| ())

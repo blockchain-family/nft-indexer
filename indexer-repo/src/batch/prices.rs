@@ -1,9 +1,12 @@
 use anyhow::{anyhow, Result};
-use sqlx::PgPool;
+use sqlx::{Postgres, Transaction};
 
 use crate::types::decoded::NftPriceHistory;
 
-pub async fn save_price_history(pool: &PgPool, data: &[NftPriceHistory]) -> Result<()> {
+pub async fn save_price_history(
+    tx: &mut Transaction<'_, Postgres>,
+    data: &[NftPriceHistory],
+) -> Result<()> {
     let sources = data.iter().map(|e| e.source.as_str()).collect::<Vec<_>>();
     let source_types = data.iter().map(|e| e.source_type).collect::<Vec<_>>();
     let created_at = data.iter().map(|e| e.created_at).collect::<Vec<_>>();
@@ -50,7 +53,7 @@ pub async fn save_price_history(pool: &PgPool, data: &[NftPriceHistory]) -> Resu
         usd_prices as _,
         collections as _,
     )
-    .execute(pool)
+    .execute(tx)
     .await
     .map_err(|e| anyhow!(e))
     .map(|_| ())

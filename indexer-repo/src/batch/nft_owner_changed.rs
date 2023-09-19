@@ -1,11 +1,14 @@
 use std::collections::HashMap;
 
 use anyhow::{anyhow, Result};
-use sqlx::PgPool;
+use sqlx::{Postgres, Transaction};
 
 use crate::types::decoded::AddressChanged;
 
-pub async fn save_nft_owner_changed(pool: &PgPool, data: &mut [AddressChanged]) -> Result<()> {
+pub async fn save_nft_owner_changed(
+    tx: &mut Transaction<'_, Postgres>,
+    data: &mut [AddressChanged],
+) -> Result<()> {
     data.sort_by(|a, b| b.logical_time.cmp(&a.logical_time));
     let mut last_addresses = HashMap::with_capacity(data.len());
 
@@ -43,7 +46,7 @@ pub async fn save_nft_owner_changed(pool: &PgPool, data: &mut [AddressChanged]) 
         new_owners as _,
         timestamps as _,
     )
-    .execute(pool)
+    .execute(tx)
     .await
     .map_err(|e| anyhow!(e))
     .map(|_| ())

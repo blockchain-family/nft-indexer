@@ -1,9 +1,12 @@
 use crate::types::decoded::DirectSell;
 use anyhow::{anyhow, Result};
-use sqlx::PgPool;
+use sqlx::{Postgres, Transaction};
 use std::collections::HashMap;
 
-pub async fn save_direct_sell(pool: &PgPool, dss: &[DirectSell]) -> Result<()> {
+pub async fn save_direct_sell(
+    tx: &mut Transaction<'_, Postgres>,
+    dss: &[DirectSell],
+) -> Result<()> {
     let addresses = dss.iter().map(|ds| ds.address.as_str()).collect::<Vec<_>>();
     let roots = dss.iter().map(|ds| ds.root.as_str()).collect::<Vec<_>>();
     let nfts = dss.iter().map(|ds| ds.nft.as_str()).collect::<Vec<_>>();
@@ -71,13 +74,16 @@ pub async fn save_direct_sell(pool: &PgPool, dss: &[DirectSell]) -> Result<()> {
         updated as _,
         tx_lt as _,
     )
-    .execute(pool)
+    .execute(tx)
     .await
     .map_err(|e| anyhow!(e))
     .map(|_| ())
 }
 
-pub async fn update_direct_sell_state(pool: &PgPool, dss: &mut [DirectSell]) -> Result<()> {
+pub async fn update_direct_sell_state(
+    tx: &mut Transaction<'_, Postgres>,
+    dss: &mut [DirectSell],
+) -> Result<()> {
     dss.sort_by(|a, b| b.tx_lt.cmp(&a.tx_lt));
     let mut last_state_change = HashMap::with_capacity(dss.len());
 
@@ -160,7 +166,7 @@ pub async fn update_direct_sell_state(pool: &PgPool, dss: &mut [DirectSell]) -> 
         expired_at as _,
         created as _,
     )
-    .execute(pool)
+    .execute(tx)
     .await
     .map_err(|e| anyhow!(e))
     .map(|_| ())

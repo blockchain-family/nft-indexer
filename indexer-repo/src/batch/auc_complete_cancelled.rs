@@ -1,12 +1,15 @@
 use anyhow::{anyhow, Result};
-use sqlx::PgPool;
+use sqlx::{Postgres, Transaction};
 
 use crate::types::{
     decoded::{AuctionCancelled, AuctionComplete},
     AuctionStatus,
 };
 
-pub async fn save_auc_complete(pool: &PgPool, data: &[AuctionComplete]) -> Result<()> {
+pub async fn save_auc_complete(
+    tx: &mut Transaction<'_, Postgres>,
+    data: &[AuctionComplete],
+) -> Result<()> {
     let addresses = data.iter().map(|e| e.address.as_str()).collect::<Vec<_>>();
     let max_bids = data.iter().map(|e| e.max_bid.clone()).collect::<Vec<_>>();
 
@@ -28,13 +31,16 @@ pub async fn save_auc_complete(pool: &PgPool, data: &[AuctionComplete]) -> Resul
         max_bids as _,
         AuctionStatus::Completed as _,
     )
-    .execute(pool)
+    .execute(tx)
     .await
     .map_err(|e| anyhow!(e))
     .map(|_| ())
 }
 
-pub async fn save_auc_cancelled(pool: &PgPool, data: &[AuctionCancelled]) -> Result<()> {
+pub async fn save_auc_cancelled(
+    tx: &mut Transaction<'_, Postgres>,
+    data: &[AuctionCancelled],
+) -> Result<()> {
     let addresses = data.iter().map(|e| e.address.as_str()).collect::<Vec<_>>();
 
     sqlx::query!(
@@ -52,7 +58,7 @@ pub async fn save_auc_cancelled(pool: &PgPool, data: &[AuctionCancelled]) -> Res
         addresses as _,
         AuctionStatus::Cancelled as _,
     )
-    .execute(pool)
+    .execute(tx)
     .await
     .map_err(|e| anyhow!(e))
     .map(|_| ())

@@ -1,9 +1,12 @@
 use anyhow::{anyhow, Result};
-use sqlx::PgPool;
+use sqlx::{Postgres, Transaction};
 
 use crate::types::{decoded::AuctionActive, AuctionStatus};
 
-pub async fn save_auc_active(pool: &PgPool, data: &[AuctionActive]) -> Result<()> {
+pub async fn save_auc_active(
+    tx: &mut Transaction<'_, Postgres>,
+    data: &[AuctionActive],
+) -> Result<()> {
     let addresses = data.iter().map(|a| a.address.as_str()).collect::<Vec<_>>();
     let wallets = data
         .iter()
@@ -57,7 +60,7 @@ pub async fn save_auc_active(pool: &PgPool, data: &[AuctionActive]) -> Result<()
         tx_lts as _,
         AuctionStatus::Active as _,
     )
-    .execute(pool)
+    .execute(tx)
     .await
     .map_err(|e| anyhow!(e))
     .map(|_| ())

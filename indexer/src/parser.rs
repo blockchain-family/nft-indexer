@@ -53,8 +53,6 @@ pub async fn run_nft_indexer(
     let mut collection_queue = CollectionsQueue::new(pool.clone()).await;
 
     while let Some(message) = rx_raw_transactions.next().await {
-        let now_loop = std::time::Instant::now();
-
         let mut data = Vec::with_capacity(EVENTS_PER_ITERATION * 3);
 
         for (out, tx) in message {
@@ -105,9 +103,6 @@ pub async fn run_nft_indexer(
         log::info!("METRIC | Saving to db, elapsed {}ms", elapsed.as_millis());
 
         tx_commit.send(()).await.expect("dead commit sender");
-
-        let elapsed_loop = now_loop.elapsed();
-        log::info!("METRIC | Loop, elapsed {}ms", elapsed_loop.as_millis());
     }
 
     panic!("rip kafka consumer");
@@ -189,77 +184,122 @@ async fn save_to_db(
         }
     }
 
+    log::info!(
+        r#"
+        Saving events (total raw events: {}),
+        collections: {},
+        nft_created: {},
+        nft_burned: {},
+        nft_owner_changed: {},
+        nft_manager_changed: {},
+        auc_deployed: {},
+        auc_active: {},
+        prices: {},
+        auc_bid_placed: {},
+        auc_bid_declined: {},
+        auc_complete: {},
+        auc_cancelled: {},
+        fees_update: {},
+        direct_sell_deployed: {},
+        direct_sell_state_changed: {},
+        direct_buy_deployed: {},
+        direct_buy_state_changed: {},
+        deployed_offers: {},
+        "#,
+        raw_events.len(),
+        collections.len(),
+        nft_created.len(),
+        nft_burned.len(),
+        nft_owner_changed.len(),
+        nft_manager_changed.len(),
+        auc_deployed.len(),
+        auc_active.len(),
+        prices.len(),
+        auc_bid_placed.len(),
+        auc_bid_declined.len(),
+        auc_complete.len(),
+        auc_cancelled.len(),
+        fees_update.len(),
+        direct_sell_deployed.len(),
+        direct_sell_state_changed.len(),
+        direct_buy_deployed.len(),
+        direct_buy_state_changed.len(),
+        deployed_offers.len(),
+    );
+
     // IMPORTANT: Order matters!
 
     collections_queue.add_collections(collections).await?;
 
+    let mut pg_pool_tx = pool.begin().await?;
+
     if !fees_update.is_empty() {
-        update_collection_fee(pool, &fees_update).await?;
+        update_collection_fee(&mut pg_pool_tx, &fees_update).await?;
     }
 
     if !raw_events.is_empty() {
-        save_raw_event(pool, &raw_events).await?;
+        save_raw_event(&mut pg_pool_tx, &raw_events).await?;
     }
 
     if !nft_created.is_empty() {
-        save_nft_created(pool, &nft_created).await?;
+        save_nft_created(&mut pg_pool_tx, &nft_created).await?;
     };
 
     if !nft_burned.is_empty() {
-        save_nft_burned(pool, &nft_burned).await?;
+        save_nft_burned(&mut pg_pool_tx, &nft_burned).await?;
     }
 
     if !nft_owner_changed.is_empty() {
-        save_nft_owner_changed(pool, &mut nft_owner_changed).await?;
+        save_nft_owner_changed(&mut pg_pool_tx, &mut nft_owner_changed).await?;
     }
 
     if !nft_manager_changed.is_empty() {
-        save_nft_manager_changed(pool, &mut nft_manager_changed).await?;
+        save_nft_manager_changed(&mut pg_pool_tx, &mut nft_manager_changed).await?;
     }
 
     if !deployed_offers.is_empty() {
-        save_deployed_offers(pool, &deployed_offers).await?;
+        save_deployed_offers(&mut pg_pool_tx, &deployed_offers).await?;
     }
 
     if !auc_deployed.is_empty() {
-        save_auc_deployed(pool, &auc_deployed).await?;
+        save_auc_deployed(&mut pg_pool_tx, &auc_deployed).await?;
     }
 
     if !auc_active.is_empty() {
-        save_auc_active(pool, &auc_active).await?;
+        save_auc_active(&mut pg_pool_tx, &auc_active).await?;
     }
 
     if !auc_bid_placed.is_empty() {
-        save_auc_bid(pool, &auc_bid_placed).await?;
-        update_auc_maxmin(pool, &auc_bid_placed).await?;
+        save_auc_bid(&mut pg_pool_tx, &auc_bid_placed).await?;
+        update_auc_maxmin(&mut pg_pool_tx, &auc_bid_placed).await?;
     }
 
     if !auc_bid_declined.is_empty() {
-        save_auc_bid(pool, &auc_bid_declined).await?;
+        save_auc_bid(&mut pg_pool_tx, &auc_bid_declined).await?;
     }
 
     if !auc_complete.is_empty() {
-        save_auc_complete(pool, &auc_complete).await?;
+        save_auc_complete(&mut pg_pool_tx, &auc_complete).await?;
     }
 
     if !auc_cancelled.is_empty() {
-        save_auc_cancelled(pool, &auc_cancelled).await?;
+        save_auc_cancelled(&mut pg_pool_tx, &auc_cancelled).await?;
     }
 
     if !direct_buy_deployed.is_empty() {
-        save_direct_buy(pool, &direct_buy_deployed).await?;
+        save_direct_buy(&mut pg_pool_tx, &direct_buy_deployed).await?;
     }
 
     if !direct_sell_deployed.is_empty() {
-        save_direct_sell(pool, &direct_sell_deployed).await?;
+        save_direct_sell(&mut pg_pool_tx, &direct_sell_deployed).await?;
     }
 
     if !direct_sell_state_changed.is_empty() {
-        update_direct_sell_state(pool, &mut direct_sell_state_changed).await?;
+        update_direct_sell_state(&mut pg_pool_tx, &mut direct_sell_state_changed).await?;
     }
 
     if !direct_buy_state_changed.is_empty() {
-        update_direct_buy_state(pool, &mut direct_buy_state_changed).await?;
+        update_direct_buy_state(&mut pg_pool_tx, &mut direct_buy_state_changed).await?;
     }
 
     if !prices.is_empty() {
@@ -271,8 +311,10 @@ async fn save_to_db(
                 )
                 .await;
         }
-        save_price_history(pool, &prices).await?;
+        save_price_history(&mut pg_pool_tx, &prices).await?;
     }
+
+    pg_pool_tx.commit().await?;
 
     Ok(())
 }

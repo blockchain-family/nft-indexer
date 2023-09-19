@@ -1,9 +1,12 @@
 use anyhow::{anyhow, Result};
-use sqlx::PgPool;
+use sqlx::{Postgres, Transaction};
 
 use crate::types::decoded::NftCreated;
 
-pub async fn save_nft_created(pool: &PgPool, nft_created: &[NftCreated]) -> Result<()> {
+pub async fn save_nft_created(
+    tx: &mut Transaction<'_, Postgres>,
+    nft_created: &[NftCreated],
+) -> Result<()> {
     let ids = nft_created.iter().map(|n| n.id.clone()).collect::<Vec<_>>();
     let addresses = nft_created
         .iter()
@@ -63,7 +66,7 @@ pub async fn save_nft_created(pool: &PgPool, nft_created: &[NftCreated]) -> Resu
         owner_update_lt as _,
         manager_update_lt as _,
     )
-    .execute(pool)
+    .execute(tx)
     .await
     .map_err(|e| anyhow!(e))
     .map(|_| ())

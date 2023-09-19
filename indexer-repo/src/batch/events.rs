@@ -1,9 +1,12 @@
 use anyhow::{anyhow, Result};
-use sqlx::PgPool;
+use sqlx::{Postgres, Transaction};
 
 use crate::types::decoded::{EventRecord, OfferDeployed};
 
-pub async fn save_raw_event(pool: &PgPool, events: &[EventRecord]) -> Result<()> {
+pub async fn save_raw_event(
+    tx: &mut Transaction<'_, Postgres>,
+    events: &[EventRecord],
+) -> Result<()> {
     let categories = events.iter().map(|e| e.event_category).collect::<Vec<_>>();
     let types = events.iter().map(|e| e.event_type).collect::<Vec<_>>();
     let addresses = events
@@ -61,13 +64,16 @@ pub async fn save_raw_event(pool: &PgPool, events: &[EventRecord]) -> Result<()>
         args as _,
         hashes as _,
     )
-    .execute(pool)
+    .execute(tx)
     .await
     .map_err(|e| anyhow!(e))
     .map(|_| ())
 }
 
-pub async fn save_deployed_offers(pool: &PgPool, offers: &[OfferDeployed]) -> Result<()> {
+pub async fn save_deployed_offers(
+    tx: &mut Transaction<'_, Postgres>,
+    offers: &[OfferDeployed],
+) -> Result<()> {
     let addresses = offers
         .iter()
         .map(|of| of.address.as_str())
@@ -92,7 +98,7 @@ pub async fn save_deployed_offers(pool: &PgPool, offers: &[OfferDeployed]) -> Re
         roots as _,
         created as _,
     )
-    .execute(pool)
+    .execute(tx)
     .await
     .map_err(|e| anyhow!(e))
     .map(|_| ())
