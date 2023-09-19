@@ -1,0 +1,1 @@
+create unique index on nft_verified_mv (address);
