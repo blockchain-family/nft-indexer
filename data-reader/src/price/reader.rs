@@ -17,7 +17,7 @@ use tokio::sync::RwLock;
 
 use super::price_requester::{request_prices, PriceInfo};
 
-const NFT_PER_ITERATION: i64 = 100;
+const NFT_PER_ITERATION: i64 = 1000;
 
 pub struct PriceReader {
     pub model: NftPriceModel,
