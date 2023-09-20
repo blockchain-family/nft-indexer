@@ -3,6 +3,7 @@ use anyhow::Result;
 use data_reader::{MetaReaderContext, PriceReader};
 use indexer_api::run_api;
 use std::net::SocketAddr;
+use std::panic;
 use std::str::FromStr;
 
 mod abi;
@@ -17,6 +18,12 @@ extern crate num_derive;
 
 #[tokio::main]
 async fn main() -> Result<()> {
+    let default_hook = panic::take_hook();
+    panic::set_hook(Box::new(move |panic_info| {
+        default_hook(panic_info);
+        std::process::exit(1);
+    }));
+
     dotenv::dotenv().ok();
     stackdriver_logger::init_with_cargo!();
     log::info!("Indexer is preparing to start");
