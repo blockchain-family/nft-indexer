@@ -12,6 +12,7 @@ use indexer_repo::{
     types::BcName,
 };
 use nekoton_utils::TrustMe;
+use sqlx::types::chrono::NaiveDateTime;
 use sqlx::PgPool;
 use tokio::sync::RwLock;
 
@@ -135,9 +136,15 @@ impl PriceReader {
     }
 
     pub async fn get_current_usd_price(&self, token: &str, timestamp: u64) -> Option<BigDecimal> {
-        if self.last_update.load(Ordering::Acquire).abs_diff(timestamp)
-            > self.price_update_frequency
-        {
+        let last_update = self.last_update.load(Ordering::Acquire);
+
+        log::info!(
+            "Current prices (last update {}): {:?}",
+            NaiveDateTime::from_timestamp_opt(last_update as i64, 0).unwrap_or_default(),
+            self.current_prices.read().await
+        );
+
+        if last_update.abs_diff(timestamp) > self.price_update_frequency {
             return None;
         }
 
