@@ -192,10 +192,8 @@ impl PriceReader {
                         BigInt::from(10).pow(pool_info.decimals.try_into().unwrap()),
                     );
 
-                    let closest_hour = PriceReader::get_closest_hour(now as i64);
-
-                    let Some(token_usd_price) = price_dict.get(&closest_hour) else {
-                        log::error!("Can't find price for token {token} time: {closest_hour}");
+                    let Some(token_usd_price) = price_dict.get(&(now as i64)) else {
+                        log::error!("Can't find price for token {token} time: {now}");
 
                         *usd_price = None;
                         continue;
