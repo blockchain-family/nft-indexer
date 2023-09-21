@@ -161,7 +161,8 @@ impl PriceReader {
             let now = std::time::SystemTime::now()
                 .duration_since(UNIX_EPOCH)
                 .trust_me()
-                .as_secs();
+                .as_secs()
+                .saturating_sub(10);
 
             {
                 let mut current_prices = self.current_prices.write().await;
@@ -181,6 +182,8 @@ impl PriceReader {
                         *usd_price = None;
                         continue;
                     };
+
+                    log::info!("Current prices from dex (now = {}): {:#?}", now, prices);
 
                     let price_dict = prices.iter().map(|e| (e.timestamp, e)).collect::<HashMap<
                         i64,
