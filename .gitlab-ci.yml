@@ -43,25 +43,6 @@ cloudbuild:image:prod:
     - tags
   extends: .cloudbuild:common
 
-deploy:prod:
-  only:
-    - main
-  except:
-    - tags
-  extends: .deploy
-  environment:
-    name: prod
-    on_stop: stop:prod
-
-stop:prod:
-  only:
-    - main
-  except:
-    - tags
-  extends: .stop
-  environment:
-    name: prod
-
 deploy:venom-prod:
   only:
     - main
@@ -80,6 +61,58 @@ stop:venom-prod:
     APP_CONFIG: venom
   environment:
     name: prod
+
+cloudbuild:image:venomstg2:
+  only:
+    - venomstg2
+  except:
+    - tags
+  extends: .cloudbuild:common
+
+deploy:venomstg2:
+  only:
+    - venomstg2
+  extends: .deploy
+  variables:
+    APP_CONFIG: venomstg2
+  environment:
+    name: stage
+    on_stop: stop:venomstg2
+
+stop:venomstg2:
+  only:
+    - venomstg2
+  extends: .stop
+  variables:
+    APP_CONFIG: venomstg2
+  environment:
+    name: stage
+
+cloudbuild:image:venom-develop:
+  only:
+    - development
+  except:
+    - tags
+  extends: .cloudbuild:common
+
+deploy:venom-develop:
+  only:
+    - development
+  extends: .deploy
+  variables:
+    APP_CONFIG: development
+  environment:
+    name: stage
+    on_stop: stop:venom-develop
+
+stop:venom-develop:
+  only:
+    - development
+  extends: .stop
+  variables:
+    APP_CONFIG: development
+  environment:
+    name: stage
 
 deploy:venom-stage:
   only:
@@ -116,25 +149,6 @@ stop:v1-prod:
   extends: .stop
   variables:
     APP_CONFIG: v1
-  environment:
-    name: prod
-
-deploy:v2reindex:
-  only:
-    - main
-  extends: .deploy
-  variables:
-    APP_CONFIG: v2reindex
-  environment:
-    name: prod
-    on_stop: stop:v2reindex
-
-stop:v2reindex:
-  only:
-    - main
-  extends: .stop
-  variables:
-    APP_CONFIG: v2reindex
   environment:
     name: prod
 
