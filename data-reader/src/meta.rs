@@ -11,7 +11,7 @@ use sqlx::{types::chrono, PgPool};
 use ton_block::MsgAddressInt;
 use transaction_consumer::JrpcClient;
 
-const NFT_PER_ITERATION: i64 = 1_000;
+const NFT_PER_ITERATION: i64 = 30_000;
 const COLLECTION_PER_ITERATION: i64 = 100;
 
 #[derive(Clone)]

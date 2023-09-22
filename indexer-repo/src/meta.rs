@@ -99,15 +99,14 @@ impl MetadataModelService {
         sqlx::query_as!(
             Row,
             r#"
-                select n.address,
-                       n.collection
-                from nft n
-                         /*join nft_collection nc
-                              on nc.address = n.collection and nc.verified*/
-                         left join meta_handled_addresses mha on mha.address = n.address
-                where (mha.address is null)
-                   or (mha.updated_at > extract(epoch from now()) - $2 and failed is true)
-                limit $1
+            select n.address, n.collection
+            from nft n
+                     join nft_collection nc on nc.address = n.collection
+                     left join meta_handled_addresses mha on mha.address = n.address
+            where (mha.address is null)
+               or (extract(epoch from now()) - mha.updated_at > $2 and failed is true)
+            order by nc.verified desc
+            limit $1
             "#,
             items_per_page,
             FAILED_META_COOLDOWN_SECS as _,
