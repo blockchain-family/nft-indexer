@@ -163,8 +163,6 @@ impl PriceReader {
                 .trust_me()
                 .as_secs();
 
-            let now = now - (now % 3600);
-
             {
                 let mut current_prices = self.current_prices.write().await;
 
@@ -196,7 +194,7 @@ impl PriceReader {
                         BigInt::from(10).pow(pool_info.decimals.try_into().unwrap()),
                     );
 
-                    let Some(token_usd_price) = price_dict.get(&(now as i64)) else {
+                    let Some(token_usd_price) = price_dict.get(&((now - (now % 3600)) as i64)) else {
                         log::error!("Can't find price for token {token} time: {now}");
 
                         *usd_price = None;
