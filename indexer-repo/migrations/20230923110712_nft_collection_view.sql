@@ -1,13 +1,33 @@
-create materialized view nft_collection_type as
-select c.address as "collection_address", n.address as "nft_address", jsonb_array_elements(nm.meta->'files')->>'mimetype' as mimetype
-from nft n
-    left join nft_collection c on n.collection = c.address
+create materialized view collection_type_mv as
+select
+    mv.collection_address,
+    mv.mimetype
+from
+    (
+        select
+            c.address as "collection_address",
+            jsonb_array_elements(nm.meta -> 'files')->> 'mimetype' as mimetype
+        from
+            nft_collection c
+            left join nft n on n.collection = c.address
+            left join nft_metadata nm on nm.nft = n.address
+        where
+            jsonb_typeof(nm.meta -> 'files') = 'array'
+    ) mv
+GROUP BY
+    mv.collection_address,
+    mv.mimetype;
+
+create index on collection_type_mv (mimetype);
+
+create materialized view nft_type_mv as
+select
+    n.address as "nft_address",
+    jsonb_array_elements(nm.meta -> 'files')->> 'mimetype' as mimetype
+from
+    nft_verified_mv n
     left join nft_metadata nm on nm.nft = n.address
-where jsonb_typeof(nm.meta->'files') = 'array';
+where
+    jsonb_typeof(nm.meta -> 'files') = 'array';
 
-create index on nft_collection_type (collection_address);
-create index on nft_collection_type (nft_address);
-create index on nft_collection_type (mimetype);
-
-select cron.schedule('refresh nft_collection_type', '*/30 * * * *',
-                     'refresh materialized view concurrently nft_collection_type;');
+create index on nft_type_mv (mimetype);
