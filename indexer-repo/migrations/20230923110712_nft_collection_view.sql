@@ -9,8 +9,8 @@ from
             jsonb_array_elements(nm.meta -> 'files')->> 'mimetype' as mimetype
         from
             nft_collection c
-            left join nft n on n.collection = c.address
-            left join nft_metadata nm on nm.nft = n.address
+            join nft n on n.collection = c.address
+            join nft_metadata nm on nm.nft = n.address
         where
             jsonb_typeof(nm.meta -> 'files') = 'array'
     ) mv
