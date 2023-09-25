@@ -26,7 +26,7 @@ select
     jsonb_array_elements(nm.meta -> 'files')->> 'mimetype' as mimetype
 from
     nft_verified_mv n
-    left join nft_metadata nm on nm.nft = n.address
+    join nft_metadata nm on nm.nft = n.address
 where
     jsonb_typeof(nm.meta -> 'files') = 'array';
 
