@@ -13,6 +13,3 @@ create index on nft_verified_mv (collection asc);
 
 CREATE INDEX IF NOT EXISTS idx_event_type_and_auction
 ON nft_events (event_type, (args ->> 'auction'));
-
-select cron.schedule('refresh nft_verified_mv', '*/20 * * * *',
-                     'refresh materialized view concurrently nft_verified_mv;');
