@@ -18,7 +18,8 @@ GROUP BY
     mv.collection_address,
     mv.mimetype;
 
-create unique index on collection_type_mv (mimetype);
+create unique index on collection_type_mv (collection_address, mimetype);
+create index collection_type_mv_gin_index ON collection_type_mv USING gin (mimetype gin_trgm_ops);
 
 create materialized view nft_type_mv as
 select
@@ -30,4 +31,5 @@ from
 where
     jsonb_typeof(nm.meta -> 'files') = 'array';
 
-create unique index on nft_type_mv (mimetype);
+create unique index on nft_type_mv (nft_address, mimetype);
+create index nft_type_mv_gin_index ON nft_type_mv USING gin (mimetype gin_trgm_ops);
