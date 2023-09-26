@@ -1,0 +1,1 @@
+drop view nft_auction_search;
