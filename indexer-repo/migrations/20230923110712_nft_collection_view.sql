@@ -4,7 +4,7 @@ select
     mv.mimetype
 from
     (
-        select
+        select distinct
             c.address as "collection_address",
             jsonb_array_elements(nm.meta -> 'files')->> 'mimetype' as mimetype
         from
