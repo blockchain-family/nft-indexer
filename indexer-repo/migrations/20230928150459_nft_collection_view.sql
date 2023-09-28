@@ -20,8 +20,8 @@ select
     nc.verified as "verified"
 from
     nft_type_mv ntm
-    join nft n on n.address = ntm.nft_address
-    join nft_collection nc on nc.address = n.collection
+        join nft n on n.address = ntm.nft_address
+        join nft_collection nc on nc.address = n.collection
 GROUP BY
     nc.address,
     ntm.mimetype;
