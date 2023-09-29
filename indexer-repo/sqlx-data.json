@@ -220,6 +220,37 @@
     },
     "query": "\n            insert into deployed_offers (\n                address,\n                root,\n                created\n            )\n            select\n                unnest($1::varchar[]),\n                unnest($2::varchar[]),\n                unnest($3::timestamp[])\n            on conflict (address) do nothing\n        "
   },
+  "57eebc21aa8c79201be43fb0d01292b59317b76ae0a49f17eb44e858e17c3e24": {
+    "describe": {
+      "columns": [],
+      "nullable": [],
+      "parameters": {
+        "Left": [
+          {
+            "Custom": {
+              "kind": {
+                "Domain": "Varchar"
+              },
+              "name": "t_address"
+            }
+          },
+          {
+            "Custom": {
+              "kind": {
+                "Domain": "Varchar"
+              },
+              "name": "t_address"
+            }
+          },
+          "Jsonb",
+          "Varchar",
+          "Jsonb",
+          "Timestamp"
+        ]
+      }
+    },
+    "query": "\n                    insert into nft_attributes (nft, collection, raw, trait_type, value, updated)\n                    values ($1, $2, $3, $4, $5, $6)\n                    on conflict (nft, trait_type) do nothing;\n                "
+  },
   "5e51b09eb38779001303cf4a7bd8e19970f8741eef32844e802cbed56ba5cd6d": {
     "describe": {
       "columns": [],
@@ -734,36 +765,6 @@
       }
     },
     "query": "\n            insert into nft_auction_bid (\n                auction,\n                buyer,\n                price,\n                next_bid_value, \n                created_at,\n                tx_lt,\n                declined,\n                nft,\n                nft_owner,\n                collection,\n                price_token\n            )\n            select\n                unnest($1::varchar[]),\n                unnest($2::varchar[]),\n                unnest($3::numeric[]),\n                unnest($4::numeric[]),\n                unnest($5::timestamp[]),\n                unnest($6::bigint[]),\n                unnest($7::boolean[]),\n                unnest($8::varchar[]),\n                unnest($9::varchar[]),\n                unnest($10::varchar[]),\n                unnest($11::varchar[])\n        "
-  },
-  "ec559da9ccdf384a99bcbf700f2cfff1f504780671814369fc7c150fec1f4b4b": {
-    "describe": {
-      "columns": [],
-      "nullable": [],
-      "parameters": {
-        "Left": [
-          {
-            "Custom": {
-              "kind": {
-                "Domain": "Varchar"
-              },
-              "name": "t_address"
-            }
-          },
-          {
-            "Custom": {
-              "kind": {
-                "Domain": "Varchar"
-              },
-              "name": "t_address"
-            }
-          },
-          "Jsonb",
-          "Varchar",
-          "Jsonb"
-        ]
-      }
-    },
-    "query": "\n                    insert into nft_attributes (nft, collection, raw, trait_type, value)\n                    values ($1, $2, $3, $4, $5)\n                    on conflict (nft, trait_type) do nothing\n                "
   },
   "f5d588a0d28c4e9446b5ca4d7ea99ec0ad88afb1d7f48e71be86457eb9f9329a": {
     "describe": {

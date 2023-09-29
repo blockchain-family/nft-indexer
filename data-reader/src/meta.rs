@@ -222,13 +222,15 @@ pub async fn update_nft_meta(
         );
     };
 
+    let updated = chrono::Utc::now().naive_utc();
+
     let attr = meta
         .get("attributes")
         .and_then(|d| d.as_array())
         .and_then(|d| (!d.is_empty()).then_some(d))
         .map(|d| {
             d.iter()
-                .map(|e| NftMetaAttribute::new(e, address_data))
+                .map(|e| NftMetaAttribute::new(e, address_data, updated))
                 .collect::<Vec<_>>()
         });
 
@@ -245,7 +247,7 @@ pub async fn update_nft_meta(
     let nft_meta = NftMeta {
         address: &address_data.nft,
         meta: &meta,
-        updated: chrono::Utc::now().naive_utc(),
+        updated,
     };
 
     if let Err(e) = tx.update_nft_meta(&nft_meta).await {

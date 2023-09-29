@@ -28,12 +28,14 @@ pub struct NftMetaAttribute<'a> {
     pub raw: &'a serde_json::Value,
     pub trait_type: &'a str,
     pub value: Option<&'a serde_json::Value>,
+    pub updated: NaiveDateTime,
 }
 
 impl<'a> NftMetaAttribute<'a> {
     pub fn new(
         raw: &'a serde_json::Value,
         address_data: &'a NftAddressData,
+        updated: NaiveDateTime,
     ) -> NftMetaAttribute<'a> {
         let trait_type = raw
             .get("trait_type")
@@ -48,6 +50,7 @@ impl<'a> NftMetaAttribute<'a> {
             raw,
             trait_type,
             value,
+            updated,
         }
     }
 }
@@ -206,15 +209,16 @@ impl<'a> MetadataModelTransaction<'a> {
         for nft_attribute in attr {
             sqlx::query!(
                 r#"
-                    insert into nft_attributes (nft, collection, raw, trait_type, value)
-                    values ($1, $2, $3, $4, $5)
-                    on conflict (nft, trait_type) do nothing
+                    insert into nft_attributes (nft, collection, raw, trait_type, value, updated)
+                    values ($1, $2, $3, $4, $5, $6)
+                    on conflict (nft, trait_type) do nothing;
                 "#,
                 &nft_attribute.nft as _,
                 &nft_attribute.collection as _,
                 nft_attribute.raw,
                 nft_attribute.trait_type,
                 nft_attribute.value,
+                nft_attribute.updated,
             )
             .execute(&mut self.tx)
             .await
