@@ -1,0 +1,1 @@
+create unique index nft_attributes_idx_unique on nft_attributes (nft, trait_type);
