@@ -208,6 +208,7 @@ impl<'a> MetadataModelTransaction<'a> {
                 r#"
                     insert into nft_attributes (nft, collection, raw, trait_type, value)
                     values ($1, $2, $3, $4, $5)
+                    on conflict (nft, trait_type) do nothing
                 "#,
                 &nft_attribute.nft as _,
                 &nft_attribute.collection as _,
