@@ -100,7 +100,7 @@ pub async fn update_collections_meta(
         bail!("Error while converting collection address {} to MsgAddressInt", address);
     };
 
-    let mut failed = None;
+    let mut failed = false;
 
     let (owner, meta) = match meta_jrpc_service
         .get_collection_meta(collection_address)
@@ -109,7 +109,7 @@ pub async fn update_collections_meta(
         Ok(meta) => meta,
         Err(e) => {
             log::error!("Error while reading {address} collection meta: {:#?}", e);
-            failed = Some(true);
+            failed = true;
             (None, Value::default())
         }
     };
@@ -162,7 +162,7 @@ pub async fn update_collections_meta(
         updated: now,
     };
 
-    if let None = failed {
+    if let false = failed {
         if let Err(e) = tx.update_collection(&collection).await {
             bail!(
                 "Collection address: {}, error while updating collection meta: {:#?}",
@@ -172,7 +172,7 @@ pub async fn update_collections_meta(
         };
     }
 
-    if let Err(e) = tx.add_to_proceeded(address, failed).await {
+    if let Err(e) = tx.add_to_proceeded(address, Some(failed)).await {
         bail!(
             "Collection address: {}, error while adding to meta_handled_addresses table: {:#?}",
             address,
@@ -201,7 +201,7 @@ pub async fn update_nft_meta(
             };
 
 
-    let mut failed = None;
+    let mut failed = false;
 
     let meta = match meta_jrpc_service
         .get_nft_meta(&nft_address)
@@ -210,7 +210,7 @@ pub async fn update_nft_meta(
         Ok(meta) => meta,
         Err(e) => {
             log::error!("Error while reading ${} nft meta: {:#?}", address_data.nft, e);
-            failed = Some(true);
+            failed = true;
             Value::default()
         }
     };
@@ -246,7 +246,7 @@ pub async fn update_nft_meta(
                 .map(|e| NftMetaAttribute::new(e, address_data, updated))
                 .collect::<Vec<_>>()
         });
-    if let None = failed {
+    if let false = failed {
         if let Some(attr) = attr {
             if let Err(e) = tx.update_nft_attributes(&attr).await {
                 bail!(
@@ -264,7 +264,7 @@ pub async fn update_nft_meta(
         updated,
     };
 
-    if let None = failed {
+    if let false = failed {
         if let Err(e) = tx.update_nft_meta(&nft_meta).await {
             bail!(
                 "Nft address: {}, error while updating nft meta: {:#?}",
@@ -274,7 +274,7 @@ pub async fn update_nft_meta(
         };
     }
 
-    if let Err(e) = tx.add_to_proceeded(&address_data.nft, failed).await {
+    if let Err(e) = tx.add_to_proceeded(&address_data.nft, Some(failed)).await {
         bail!(
             "Nft address: {}, error while adding to meta_handled_addresses table: {:#?}",
             &address_data.nft,
