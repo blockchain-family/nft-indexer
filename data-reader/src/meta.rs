@@ -99,7 +99,7 @@ pub async fn update_collections_meta(
     let Ok(collection_address) = MsgAddressInt::from_str(address) else {
         bail!("Error while converting collection address {} to MsgAddressInt", address);
     };
-///
+
     let mut failed = None;
 
     let (owner, meta) = match meta_jrpc_service
@@ -119,7 +119,7 @@ pub async fn update_collections_meta(
         };
 
     let now = chrono::Utc::now().naive_utc();
-///
+
     let collection = NftCollectionMeta {
         address: address.into(),
         owner,
