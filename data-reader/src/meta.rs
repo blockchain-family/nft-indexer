@@ -33,29 +33,27 @@ pub async fn run_meta_reader(context: MetaReaderContext) -> Result<()> {
             .get_nfts_for_meta_update(NFT_PER_ITERATION)
             .await?;
 
-        if nft_addresses.len() > MIN_NFT_PER_ITERATION as usize {
-            for address_data in nft_addresses.iter() {
-                if let Err(e) =
-                update_nft_meta(address_data, &meta_model_service, &meta_jrpc_service).await
-                {
-                    log::error!("{:#?}", e);
+        for address_data in nft_addresses.iter() {
+            if let Err(e) =
+            update_nft_meta(address_data, &meta_model_service, &meta_jrpc_service).await
+            {
+                log::error!("{:#?}", e);
 
-                    let Ok(mut tx) = meta_model_service.start_transaction().await else {
-                        log::error!("Cant start transaction for saving metadata");
-                        tokio::time::sleep(Duration::from_millis(context.jrpc_req_latency_millis)).await;
-                        continue;
-                    };
+                let Ok(mut tx) = meta_model_service.start_transaction().await else {
+                    log::error!("Cant start transaction for saving metadata");
+                    tokio::time::sleep(Duration::from_millis(context.jrpc_req_latency_millis)).await;
+                    continue;
+                };
 
-                    if let Err(e) = tx.add_to_proceeded(&address_data.nft, Some(true)).await {
-                        log::error!("Collection address: {}, error while adding to meta_handled_addresses table: {:#?}",
-                        address_data.nft,
-                        e
+                if let Err(e) = tx.add_to_proceeded(&address_data.nft, Some(true)).await {
+                    log::error!("Collection address: {}, error while adding to meta_handled_addresses table: {:#?}",
+                    address_data.nft,
+                    e
                     );
-                    }
                 }
-
-                tokio::time::sleep(Duration::from_millis(context.jrpc_req_latency_millis)).await;
             }
+
+            tokio::time::sleep(Duration::from_millis(context.jrpc_req_latency_millis)).await;
         }
 
         let collection_addresses = meta_model_service
@@ -85,7 +83,7 @@ pub async fn run_meta_reader(context: MetaReaderContext) -> Result<()> {
             tokio::time::sleep(Duration::from_millis(context.jrpc_req_latency_millis)).await;
         }
 
-        if nft_addresses.is_empty() && collection_addresses.is_empty() {
+        if nft_addresses.len() < MIN_NFT_PER_ITERATION as usize && collection_addresses.is_empty() {
             log::info!("Finished updating metadata work. Idling");
             tokio::time::sleep(Duration::from_secs(context.idle_after_loop)).await;
 
