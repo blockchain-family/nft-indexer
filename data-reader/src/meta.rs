@@ -12,7 +12,6 @@ use ton_block::MsgAddressInt;
 use transaction_consumer::JrpcClient;
 
 const NFT_PER_ITERATION: i64 = 30_000;
-const MIN_NFT_PER_ITERATION: i64 = 200;
 const COLLECTION_PER_ITERATION: i64 = 100;
 
 #[derive(Clone)]
@@ -83,7 +82,7 @@ pub async fn run_meta_reader(context: MetaReaderContext) -> Result<()> {
             tokio::time::sleep(Duration::from_millis(context.jrpc_req_latency_millis)).await;
         }
 
-        if nft_addresses.len() < MIN_NFT_PER_ITERATION as usize && collection_addresses.is_empty() {
+        if nft_addresses.len() < NFT_PER_ITERATION as usize && collection_addresses.is_empty() {
             log::info!("Finished updating metadata work. Idling");
             tokio::time::sleep(Duration::from_secs(context.idle_after_loop)).await;
 

@@ -107,7 +107,7 @@ impl MetadataModelService {
                      join nft_collection nc on nc.address = n.collection
                      left join meta_handled_addresses mha on mha.address = n.address
             where (mha.address is null)
-               or (extract(epoch from now()) - mha.updated_at > $2 and failed is true)
+               or (mha.updated_at < (extract(epoch from now()) - $2)::bigint and failed)
             order by nc.verified desc
             limit $1
             "#,
@@ -131,7 +131,8 @@ impl MetadataModelService {
                 left join meta_handled_addresses mha on mha.address = c.address
                 where
                     /*c.verified and*/
-                    ((mha.address is null) or (extract(epoch from now()) - mha.updated_at > $2 and failed))
+                    (mha.address is null)
+                    or (mha.updated_at < (extract(epoch from now()) - $2)::bigint and failed)
                 order by updated desc
                 limit $1
                 "#,
