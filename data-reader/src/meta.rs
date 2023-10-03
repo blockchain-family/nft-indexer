@@ -36,7 +36,7 @@ pub async fn run_meta_reader(context: MetaReaderContext) -> Result<()> {
             if let Err(e) =
                 update_nft_meta(address_data, &meta_model_service, &meta_jrpc_service).await
             {
-                log::error!("{:#?}", e);
+                log::error!("Error of update nft meta. Reason:{:#?}", e);
 
                 let Ok(mut tx) = meta_model_service.start_transaction().await else {
                     log::error!("Cant start transaction for saving metadata");
