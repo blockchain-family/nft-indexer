@@ -292,6 +292,27 @@
     },
     "query": "\n        update nft_auction set\n            status = data.status\n        from\n        (\n            select \n                unnest($1::varchar[]) as address,\n                $2::auction_status as status\n        ) as data\n        where nft_auction.address = data.address\n    "
   },
+  "5f74869421b8691550c4910a19c61994c8b2ea703b24e4931afc366762c09e99": {
+    "describe": {
+      "columns": [
+        {
+          "name": "address",
+          "ordinal": 0,
+          "type_info": "Varchar"
+        }
+      ],
+      "nullable": [
+        false
+      ],
+      "parameters": {
+        "Left": [
+          "Int8",
+          "Numeric"
+        ]
+      }
+    },
+    "query": "\n                select c.address\n                from nft_collection c\n                left join meta_handled_addresses mha on mha.address = c.address\n                where\n                    /*c.verified and*/\n                    ((mha.address is null) or (extract(epoch from now()) - mha.updated_at > $2 and failed is true))\n                order by updated desc\n                limit $1\n                "
+  },
   "6541c04d83e3b45927d0472100e752550a10b667fddf4ff6e8cdbb92348daa11": {
     "describe": {
       "columns": [],
@@ -612,27 +633,6 @@
       }
     },
     "query": "\n        update nft_auction set\n            max_bid = data.max_bid,\n            status = data.status\n        from\n        (\n            select \n                unnest($1::varchar[]) as address,\n                unnest($2::numeric[]) as max_bid,\n                $3::auction_status as status\n        ) as data\n        where nft_auction.address = data.address\n    "
-  },
-  "b656bf69cb90b93694ec753176a7f3e9feed0803409e91c1d2ad77948258ca85": {
-    "describe": {
-      "columns": [
-        {
-          "name": "address",
-          "ordinal": 0,
-          "type_info": "Varchar"
-        }
-      ],
-      "nullable": [
-        false
-      ],
-      "parameters": {
-        "Left": [
-          "Int8",
-          "Numeric"
-        ]
-      }
-    },
-    "query": "\n                select c.address\n                from nft_collection c\n                left join meta_handled_addresses mha on mha.address = c.address\n                where\n                    /*c.verified and*/\n                    ((mha.address is null) or (mha.updated_at > extract(epoch from now()) - $2 and failed is true))\n                order by updated desc\n                limit $1\n                "
   },
   "cef46bb5677b537b3e7e62bbafd3e071c5e3a60a4a8c02b591a1f7599a632aa0": {
     "describe": {

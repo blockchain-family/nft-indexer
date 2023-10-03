@@ -12,6 +12,7 @@ use ton_block::MsgAddressInt;
 use transaction_consumer::JrpcClient;
 
 const NFT_PER_ITERATION: i64 = 30_000;
+const MIN_NFT_PER_ITERATION: i64 = 200;
 const COLLECTION_PER_ITERATION: i64 = 100;
 
 #[derive(Clone)]
@@ -32,27 +33,29 @@ pub async fn run_meta_reader(context: MetaReaderContext) -> Result<()> {
             .get_nfts_for_meta_update(NFT_PER_ITERATION)
             .await?;
 
-        for address_data in nft_addresses.iter() {
-            if let Err(e) =
+        if nft_addresses.len() > MIN_NFT_PER_ITERATION as usize {
+            for address_data in nft_addresses.iter() {
+                if let Err(e) =
                 update_nft_meta(address_data, &meta_model_service, &meta_jrpc_service).await
-            {
-                log::error!("{:#?}", e);
+                {
+                    log::error!("{:#?}", e);
 
-                let Ok(mut tx) = meta_model_service.start_transaction().await else {
-                    log::error!("Cant start transaction for saving metadata");
-                    tokio::time::sleep(Duration::from_millis(context.jrpc_req_latency_millis)).await;
-                    continue;
-                };
+                    let Ok(mut tx) = meta_model_service.start_transaction().await else {
+                        log::error!("Cant start transaction for saving metadata");
+                        tokio::time::sleep(Duration::from_millis(context.jrpc_req_latency_millis)).await;
+                        continue;
+                    };
 
-                if let Err(e) = tx.add_to_proceeded(&address_data.nft, Some(true)).await {
-                    log::error!("Collection address: {}, error while adding to meta_handled_addresses table: {:#?}",
+                    if let Err(e) = tx.add_to_proceeded(&address_data.nft, Some(true)).await {
+                        log::error!("Collection address: {}, error while adding to meta_handled_addresses table: {:#?}",
                         address_data.nft,
                         e
                     );
+                    }
                 }
-            }
 
-            tokio::time::sleep(Duration::from_millis(context.jrpc_req_latency_millis)).await;
+                tokio::time::sleep(Duration::from_millis(context.jrpc_req_latency_millis)).await;
+            }
         }
 
         let collection_addresses = meta_model_service
