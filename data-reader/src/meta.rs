@@ -162,13 +162,15 @@ pub async fn update_collections_meta(
         updated: now,
     };
 
-    if let Err(e) = tx.update_collection(&collection).await {
-        bail!(
-            "Collection address: {}, error while updating collection meta: {:#?}",
-            address,
-            e
-        );
-    };
+    if let None = failed {
+        if let Err(e) = tx.update_collection(&collection).await {
+            bail!(
+                "Collection address: {}, error while updating collection meta: {:#?}",
+                address,
+                e
+            );
+        };
+    }
 
     if let Err(e) = tx.add_to_proceeded(address, failed).await {
         bail!(
@@ -244,14 +246,15 @@ pub async fn update_nft_meta(
                 .map(|e| NftMetaAttribute::new(e, address_data, updated))
                 .collect::<Vec<_>>()
         });
-
-    if let Some(attr) = attr {
-        if let Err(e) = tx.update_nft_attributes(&attr).await {
-            bail!(
-                "Nft address: {}, error while updating attributes: {:#?}",
-                &address_data.nft,
-                e
-            );
+    if let None = failed {
+        if let Some(attr) = attr {
+            if let Err(e) = tx.update_nft_attributes(&attr).await {
+                bail!(
+                    "Nft address: {}, error while updating attributes: {:#?}",
+                    &address_data.nft,
+                    e
+                );
+            }
         }
     }
 
@@ -261,13 +264,15 @@ pub async fn update_nft_meta(
         updated,
     };
 
-    if let Err(e) = tx.update_nft_meta(&nft_meta).await {
-        bail!(
-            "Nft address: {}, error while updating nft meta: {:#?}",
-            &address_data.nft,
-            e
-        );
-    };
+    if let None = failed {
+        if let Err(e) = tx.update_nft_meta(&nft_meta).await {
+            bail!(
+                "Nft address: {}, error while updating nft meta: {:#?}",
+                &address_data.nft,
+                e
+            );
+        };
+    }
 
     if let Err(e) = tx.add_to_proceeded(&address_data.nft, failed).await {
         bail!(
