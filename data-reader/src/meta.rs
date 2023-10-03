@@ -162,7 +162,7 @@ pub async fn update_collections_meta(
         updated: now,
     };
 
-    if let false = failed {
+    if !failed {
         if let Err(e) = tx.update_collection(&collection).await {
             bail!(
                 "Collection address: {}, error while updating collection meta: {:#?}",
@@ -246,7 +246,7 @@ pub async fn update_nft_meta(
                 .map(|e| NftMetaAttribute::new(e, address_data, updated))
                 .collect::<Vec<_>>()
         });
-    if let false = failed {
+    if !failed {
         if let Some(attr) = attr {
             if let Err(e) = tx.update_nft_attributes(&attr).await {
                 bail!(
@@ -264,7 +264,7 @@ pub async fn update_nft_meta(
         updated,
     };
 
-    if let false = failed {
+    if !failed {
         if let Err(e) = tx.update_nft_meta(&nft_meta).await {
             bail!(
                 "Nft address: {}, error while updating nft meta: {:#?}",
