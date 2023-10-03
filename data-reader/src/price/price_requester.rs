@@ -16,10 +16,13 @@ pub async fn request_prices(
     to: i64,
     pair_addr: &str,
     bc: BcName,
+    dex_host_url: &str,
 ) -> Result<Vec<PriceInfo>> {
     match bc {
-        BcName::Venom => web3world_request_prices(client, from, to, pair_addr).await,
-        BcName::Everscale => flatqube_request_prices(client, from, to, pair_addr).await,
+        BcName::Venom => web3world_request_prices(client, from, to, pair_addr, dex_host_url).await,
+        BcName::Everscale => {
+            flatqube_request_prices(client, from, to, pair_addr, dex_host_url).await
+        }
     }
 }
 
@@ -28,6 +31,7 @@ async fn flatqube_request_prices(
     from: i64,
     to: i64,
     pool_address: &str,
+    dex_host_url: &str,
 ) -> Result<Vec<PriceInfo>> {
     #[derive(Serialize)]
     #[serde(rename_all = "camelCase")]
@@ -40,7 +44,7 @@ async fn flatqube_request_prices(
     }
 
     client
-        .post("https://api.flatqube.io/v2/pools/ohlcv")
+        .post(format!("{dex_host_url}/v2/pools/ohlcv"))
         .json(&FlatqubePriceRequest {
             from,
             to,
@@ -60,6 +64,7 @@ async fn web3world_request_prices(
     from: i64,
     to: i64,
     pair_address: &str,
+    dex_host_url: &str,
 ) -> Result<Vec<PriceInfo>> {
     #[derive(Serialize)]
     #[serde(rename_all = "camelCase")]
@@ -77,7 +82,7 @@ async fn web3world_request_prices(
             }
         }
     }
-    let url = format!("https://testnetapi.web3.world/v1/pairs/address/{pair_address}/ohlcv");
+    let url = format!("{dex_host_url}/v1/pairs/address/{pair_address}/ohlcv");
 
     client
         .post(url)

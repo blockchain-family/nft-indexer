@@ -21,6 +21,7 @@ env:
   IDLE_AFTER_META_LOOP_SEC: 600
   PRICE_UPDATE_FREQUENCY_SEC: 180
   BC_NAME: "Venom"
+  DEX_HOST_URL: "https://testnetapi.web3.world"
 
 service:
   port: 3001
