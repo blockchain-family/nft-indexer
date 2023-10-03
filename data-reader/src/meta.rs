@@ -35,7 +35,7 @@ pub async fn run_meta_reader(context: MetaReaderContext) -> Result<()> {
 
         for address_data in nft_addresses.iter() {
             if let Err(e) =
-            update_nft_meta(address_data, &meta_model_service, &meta_jrpc_service).await
+                update_nft_meta(address_data, &meta_model_service, &meta_jrpc_service).await
             {
                 log::error!("{:#?}", e);
 
@@ -47,8 +47,8 @@ pub async fn run_meta_reader(context: MetaReaderContext) -> Result<()> {
 
                 if let Err(e) = tx.add_to_proceeded(&address_data.nft, Some(true)).await {
                     log::error!("Collection address: {}, error while adding to meta_handled_addresses table: {:#?}",
-                    address_data.nft,
-                    e
+                        address_data.nft,
+                        e
                     );
                 }
             }
