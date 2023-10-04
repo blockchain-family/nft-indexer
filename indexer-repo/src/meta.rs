@@ -209,21 +209,6 @@ impl<'a> MetadataModelTransaction<'a> {
         .map_err(|e| anyhow!(e))
     }
 
-    pub async fn update_metadata_updated(&mut self, addr: &str) -> Result<()> {
-        sqlx::query!(
-            r#"
-                update nft
-                set metadata_updated_at = extract(epoch from now())
-                where address = $1
-            "#,
-            addr
-        )
-            .execute(&mut self.tx)
-            .await
-            .map(|_| ())
-            .map_err(|e| anyhow!(e))
-    }
-
     pub async fn update_nft_attributes(&mut self, attr: &[NftMetaAttribute<'a>]) -> Result<()> {
         for nft_attribute in attr {
             sqlx::query!(
