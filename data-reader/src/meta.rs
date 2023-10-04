@@ -200,16 +200,16 @@ pub async fn update_nft_meta(
                 bail!("Error while converting nft address {} to MsgAddressInt", address_data.nft);
             };
 
-
     let mut failed = false;
 
-    let meta = match meta_jrpc_service
-        .get_nft_meta(&nft_address)
-        .await
-    {
+    let meta = match meta_jrpc_service.get_nft_meta(&nft_address).await {
         Ok(meta) => meta,
         Err(e) => {
-            log::error!("Error while reading ${} nft meta: {:#?}", address_data.nft, e);
+            log::error!(
+                "Error while reading ${} nft meta: {:#?}",
+                address_data.nft,
+                e
+            );
             failed = true;
             Value::default()
         }

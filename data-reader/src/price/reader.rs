@@ -24,6 +24,7 @@ pub struct PriceReader {
     pub model: NftPriceModel,
     pub http_client: reqwest::Client,
     pub bc: BcName,
+    pub dex_host_url: String,
     pub idle_after_loop: u64,
     pub price_update_frequency: u64,
     pub current_prices: RwLock<HashMap<String, Option<BigDecimal>>>,
@@ -34,6 +35,7 @@ impl PriceReader {
     pub async fn new(
         pool: PgPool,
         bc: BcName,
+        dex_host_url: String,
         idle_after_loop: u64,
         price_update_frequency_secs: u64,
     ) -> Arc<Self> {
@@ -58,6 +60,7 @@ impl PriceReader {
             model,
             http_client,
             bc,
+            dex_host_url,
             idle_after_loop,
             price_update_frequency: price_update_frequency_secs,
             current_prices,
@@ -96,7 +99,7 @@ impl PriceReader {
                 };
 
                 let Ok(prices) =
-                    request_prices(&self.http_client, from, to, &pool_info.address, self.bc).await else {
+                    request_prices(&self.http_client, from, to, &pool_info.address, self.bc, &self.dex_host_url).await else {
                     log::error!("Error while requesting prices to dex for address {}", &pool_info.address);
                     continue;
                 };
@@ -175,7 +178,7 @@ impl PriceReader {
                     };
 
                     let Ok(prices) =
-                        request_prices(&self.http_client, now as i64, now as i64, &pool_info.address, self.bc).await else {
+                        request_prices(&self.http_client, now as i64, now as i64, &pool_info.address, self.bc, &self.dex_host_url).await else {
                         log::error!("Error while requesting prices to dex for address {}", &pool_info.address);
 
                         *usd_price = None;

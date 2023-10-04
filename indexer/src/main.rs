@@ -47,6 +47,7 @@ async fn main() -> Result<()> {
     let price_reader = PriceReader::new(
         pg_pool.clone(),
         config.bc_name,
+        config.dex_host_url.clone(),
         config.idle_after_price_loop_sec,
         config.price_update_frequency_sec,
     )
