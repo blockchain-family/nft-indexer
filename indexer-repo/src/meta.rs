@@ -106,8 +106,8 @@ impl MetadataModelService {
             from nft n
                      join nft_collection nc on nc.address = n.collection
                      left join meta_handled_addresses mha on mha.address = n.address
-            where (mha.address is null)
-               or (mha.updated_at < (extract(epoch from now()) - $2)::bigint and failed)
+            where (n.metadata_updated_at is null and mha.address is null)
+               or (mha.updated_at < (extract(epoch from now()) - $2)::bigint and failed and n.metadata_updated_at is null)
             order by nc.verified desc
             limit $1
             "#,
@@ -161,7 +161,8 @@ impl<'a> MetadataModelTransaction<'a> {
             r#"
                 update nft
                 set name = $1,
-                    description = $2
+                    description = $2,
+                    metadata_updated_at = extract(epoch from now())
                 where address = $3
             "#,
             name,
@@ -178,7 +179,8 @@ impl<'a> MetadataModelTransaction<'a> {
         sqlx::query!(
             r#"
                 update nft
-                set name = $1
+                set name = $1,
+                    metadata_updated_at = extract(epoch from now())
                 where address = $2
             "#,
             name,
@@ -194,7 +196,8 @@ impl<'a> MetadataModelTransaction<'a> {
         sqlx::query!(
             r#"
                 update nft
-                set description = $1
+                set description = $1,
+                    metadata_updated_at = extract(epoch from now())
                 where address = $2
             "#,
             desc,
@@ -204,6 +207,21 @@ impl<'a> MetadataModelTransaction<'a> {
         .await
         .map(|_| ())
         .map_err(|e| anyhow!(e))
+    }
+
+    pub async fn update_metadata_updated(&mut self, addr: &str) -> Result<()> {
+        sqlx::query!(
+            r#"
+                update nft
+                set metadata_updated_at = extract(epoch from now())
+                where address = $1
+            "#,
+            addr
+        )
+            .execute(&mut self.tx)
+            .await
+            .map(|_| ())
+            .map_err(|e| anyhow!(e))
     }
 
     pub async fn update_nft_attributes(&mut self, attr: &[NftMetaAttribute<'a>]) -> Result<()> {
