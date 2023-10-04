@@ -63,10 +63,6 @@ create index nft_collection_details_verified_idx on nft_collection_details (veri
 create index nft_collection_details_name_idx on nft_collection_details (name);
 create index nft_collection_details_owners_count_idx on nft_collection_details (owners_count desc);
 
-
-alter table nft_events
-    add column local_created_at timestamp not null default now();
-
 create procedure update_collections_details(collections t_address[], with_counts bool default false)
     language plpgsql as
 $$
