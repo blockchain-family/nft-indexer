@@ -1,18 +1,5 @@
 {
   "db": "PostgreSQL",
-  "1068960c3648fcc7976b1db18efa700c069bb3e54ee1a50631221f3dbb51d9ec": {
-    "describe": {
-      "columns": [],
-      "nullable": [],
-      "parameters": {
-        "Left": [
-          "Varchar",
-          "Text"
-        ]
-      }
-    },
-    "query": "\n                update nft\n                set name = $1\n                where address = $2\n            "
-  },
   "14044f4dc2858bb70b9857f42b5ff9290e93358dab29b05d5c8cb77c8346a311": {
     "describe": {
       "columns": [],
@@ -57,33 +44,6 @@
       }
     },
     "query": "\n            insert into nft_direct_sell(\n                address,\n                root,\n                nft, \n                collection,\n                price_token, \n                price, \n                seller,\n                finished_at,\n                expired_at,\n                state,\n                created,\n                updated,\n                tx_lt\n            )\n            select\n                unnest($1::varchar[]), \n                unnest($2::varchar[]),\n                unnest($3::varchar[]), \n                unnest($4::varchar[]),\n                unnest($5::varchar[]), \n                unnest($6::numeric[]),\n                unnest($7::varchar[]),\n                unnest($8::timestamp[]),\n                unnest($9::timestamp[]),\n                unnest($10::direct_sell_state[]),\n                unnest($11::timestamp[]),\n                unnest($12::timestamp[]),\n                unnest($13::bigint[])\n            on conflict(address) do nothing\n        "
-  },
-  "1515cacffce3934bd99823bbc9171e64f48d2b59de3792b5404559b78d20e66e": {
-    "describe": {
-      "columns": [
-        {
-          "name": "address",
-          "ordinal": 0,
-          "type_info": "Varchar"
-        },
-        {
-          "name": "collection",
-          "ordinal": 1,
-          "type_info": "Varchar"
-        }
-      ],
-      "nullable": [
-        false,
-        false
-      ],
-      "parameters": {
-        "Left": [
-          "Int8",
-          "Numeric"
-        ]
-      }
-    },
-    "query": "\n            select n.address, n.collection\n            from nft n\n                     join nft_collection nc on nc.address = n.collection\n                     left join meta_handled_addresses mha on mha.address = n.address\n            where (mha.address is null)\n               or (mha.updated_at < (extract(epoch from now()) - $2)::bigint and failed)\n            order by nc.verified desc\n            limit $1\n            "
   },
   "1a8faf43e1567afeb374cc2c1d077d508b2b6df8cc0c30e59255d70c3f9ed835": {
     "describe": {
@@ -187,6 +147,20 @@
       }
     },
     "query": "\n        insert into nft_auction (\n            address, \n            root,\n            nft,\n            collection,\n            tx_lt,\n            nft_owner,\n            status\n        )\n        select \n            unnest($1::varchar[]),\n            unnest($2::varchar[]),\n            unnest($3::varchar[]),\n            unnest($4::varchar[]),\n            unnest($5::bigint[]),\n            unnest($6::varchar[]),\n            $7::auction_status\n        on conflict(address) do nothing\n        "
+  },
+  "4737bab7485f07b8a3c3bfd6973d1b484d64dcbe16a5364260a13c2645bde3ab": {
+    "describe": {
+      "columns": [],
+      "nullable": [],
+      "parameters": {
+        "Left": [
+          "Varchar",
+          "Text",
+          "Text"
+        ]
+      }
+    },
+    "query": "\n                update nft\n                set name = $1,\n                    description = $2,\n                    metadata_updated_at = extract(epoch from now())\n                where address = $3\n            "
   },
   "4b5b5898e4e10255844d4041476872f92e0d50a0620960eaf4d748823b39e32e": {
     "describe": {
@@ -358,19 +332,32 @@
     },
     "query": "\n            insert into nft_direct_buy(\n                address,\n                root,\n                nft,\n                collection,\n                price_token, \n                price, \n                buyer,\n                finished_at,\n                expired_at,\n                state,\n                created,\n                updated,\n                tx_lt\n            )\n            select\n                unnest($1::varchar[]),\n                unnest($2::varchar[]),\n                unnest($3::varchar[]), \n                unnest($4::varchar[]),\n                unnest($5::varchar[]), \n                unnest($6::numeric[]),\n                unnest($7::varchar[]),\n                unnest($8::timestamp[]),\n                unnest($9::timestamp[]),\n                unnest($10::direct_buy_state[]),\n                unnest($11::timestamp[]),\n                unnest($12::timestamp[]),\n                unnest($13::bigint[])\n            on conflict(address) do nothing\n        "
   },
-  "6f0fa608f7d0b847580fae9efb25389e76c11f42489f5220447c4caa845430a5": {
+  "6b17cf5470cca4d82bd7d2f3487019dbdced8cd8df9226934fd6c85fe9ce124b": {
     "describe": {
-      "columns": [],
-      "nullable": [],
+      "columns": [
+        {
+          "name": "address",
+          "ordinal": 0,
+          "type_info": "Varchar"
+        },
+        {
+          "name": "collection",
+          "ordinal": 1,
+          "type_info": "Varchar"
+        }
+      ],
+      "nullable": [
+        false,
+        false
+      ],
       "parameters": {
         "Left": [
-          "Varchar",
-          "Text",
-          "Text"
+          "Int8",
+          "Numeric"
         ]
       }
     },
-    "query": "\n                update nft\n                set name = $1,\n                    description = $2\n                where address = $3\n            "
+    "query": "\n            select n.address, n.collection\n            from nft n\n                     join nft_collection nc on nc.address = n.collection\n                     left join meta_handled_addresses mha on mha.address = n.address\n            where (n.metadata_updated_at is null and mha.address is null)\n               or (mha.updated_at < (extract(epoch from now()) - $2)::bigint and failed and n.metadata_updated_at is null)\n            order by nc.verified desc\n            limit $1\n            "
   },
   "727ae64851bbfa9c79ce7c939638a19483b8a2a3b2f8f50c5fc2b5135753ba18": {
     "describe": {
@@ -677,19 +664,6 @@
       }
     },
     "query": "\n        update nft_direct_buy set\n            state = data.state,\n            nft = data.nft,\n            collection = data.collection,\n            price_token = data.price_token,\n            price = data.price,\n            buyer = data.buyer,\n            expired_at = data.expired_at,\n            finished_at = data.finished_at,\n            created = data.created,\n            updated = data.updated,\n            tx_lt = data.tx_lt\n        from\n        (\n            select \n                unnest($1::varchar[]) as address,\n                unnest($2::direct_buy_state[]) as state,\n                unnest($3::timestamp[]) as finished_at,\n                unnest($4::timestamp[]) as updated,\n                unnest($5::bigint[]) as tx_lt,\n                unnest($6::varchar[]) as nft,\n                unnest($7::varchar[]) as collection,\n                unnest($8::varchar[]) as price_token,\n                unnest($9::numeric[]) as price,\n                unnest($10::varchar[]) as buyer,\n                unnest($11::timestamp[]) as expired_at,\n                unnest($12::timestamp[]) as created\n        ) as data\n        where nft_direct_buy.address = data.address\n        "
-  },
-  "d217cc75431bc07f6d73cc321622078a260f0d1d330a2b244f07f2802708e486": {
-    "describe": {
-      "columns": [],
-      "nullable": [],
-      "parameters": {
-        "Left": [
-          "Text",
-          "Text"
-        ]
-      }
-    },
-    "query": "\n                update nft\n                set description = $1\n                where address = $2\n            "
   },
   "d3296a1ab523134ef89964e8c7f17111e885c83145a88acd61050cd928ccea76": {
     "describe": {
