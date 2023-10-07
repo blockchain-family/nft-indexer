@@ -1,0 +1,1 @@
+alter table nft_collection add royalty jsonb;
