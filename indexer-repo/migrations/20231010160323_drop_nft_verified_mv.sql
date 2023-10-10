@@ -1,0 +1,2 @@
+DROP MATERIALIZED VIEW IF EXISTS nft_verified_prices_mv;
+DROP MATERIALIZED VIEW IF EXISTS nft_verified_mv;
