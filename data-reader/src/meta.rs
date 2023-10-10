@@ -36,11 +36,12 @@ pub async fn run_meta_reader(context: MetaReaderContext) -> Result<()> {
             if let Err(e) =
                 update_nft_meta(address_data, &meta_model_service, &meta_jrpc_service).await
             {
-                log::error!("{:#?}", e);
+                log::error!("Error of update nft meta. Reason:{:#?}", e);
 
                 let Ok(mut tx) = meta_model_service.start_transaction().await else {
                     log::error!("Cant start transaction for saving metadata");
-                    tokio::time::sleep(Duration::from_millis(context.jrpc_req_latency_millis)).await;
+                    tokio::time::sleep(Duration::from_millis(context.jrpc_req_latency_millis))
+                        .await;
                     continue;
                 };
 
@@ -67,7 +68,8 @@ pub async fn run_meta_reader(context: MetaReaderContext) -> Result<()> {
 
                 let Ok(mut tx) = meta_model_service.start_transaction().await else {
                     log::error!("Cant start transaction for saving metadata");
-                    tokio::time::sleep(Duration::from_millis(context.jrpc_req_latency_millis)).await;
+                    tokio::time::sleep(Duration::from_millis(context.jrpc_req_latency_millis))
+                        .await;
                     continue;
                 };
 
@@ -82,7 +84,7 @@ pub async fn run_meta_reader(context: MetaReaderContext) -> Result<()> {
             tokio::time::sleep(Duration::from_millis(context.jrpc_req_latency_millis)).await;
         }
 
-        if nft_addresses.is_empty() && collection_addresses.is_empty() {
+        if nft_addresses.len() < NFT_PER_ITERATION as usize && collection_addresses.is_empty() {
             log::info!("Finished updating metadata work. Idling");
             tokio::time::sleep(Duration::from_secs(context.idle_after_loop)).await;
 
@@ -97,7 +99,10 @@ pub async fn update_collections_meta(
     meta_jrpc_service: &MetadataJrpcService,
 ) -> Result<()> {
     let Ok(collection_address) = MsgAddressInt::from_str(address) else {
-        bail!("Error while converting collection address {} to MsgAddressInt", address);
+        bail!(
+            "Error while converting collection address {} to MsgAddressInt",
+            address
+        );
     };
 
     let mut failed = false;
@@ -115,8 +120,8 @@ pub async fn update_collections_meta(
     };
 
     let Ok(mut tx) = meta_model_service.start_transaction().await else {
-            bail!("Cant start transaction for saving metadata");
-        };
+        bail!("Cant start transaction for saving metadata");
+    };
 
     let now = chrono::Utc::now().naive_utc();
 
@@ -197,8 +202,11 @@ pub async fn update_nft_meta(
     meta_jrpc_service: &MetadataJrpcService,
 ) -> Result<()> {
     let Ok(nft_address) = MsgAddressInt::from_str(&address_data.nft) else {
-                bail!("Error while converting nft address {} to MsgAddressInt", address_data.nft);
-            };
+        bail!(
+            "Error while converting nft address {} to MsgAddressInt",
+            address_data.nft
+        );
+    };
 
     let mut failed = false;
 
@@ -216,24 +224,18 @@ pub async fn update_nft_meta(
     };
 
     let Ok(mut tx) = meta_model_service.start_transaction().await else {
-                bail!("Cant start transaction for saving metadata");
-            };
+        bail!("Cant start transaction for saving metadata");
+    };
 
-    if let Err(e) = match (
-        extract_name_from_meta(&meta),
-        extract_description_from_meta(&meta),
-    ) {
-        (Some(name), Some(desc)) => tx.update_name_desc(name, desc, &address_data.nft).await,
-        (None, Some(desc)) => tx.update_desc(desc, &address_data.nft).await,
-        (Some(name), None) => tx.update_name(name, &address_data.nft).await,
-        (None, None) => Ok(()),
-    } {
+    let name = extract_name_from_meta(&meta);
+    let desc = extract_description_from_meta(&meta);
+    if let Err(e) = tx.update_name_desc(name, desc, &address_data.nft).await {
         bail!(
             "Nft address: {}, error while updating name and/or description: {:#?}",
-            address_data.nft,
+            &address_data.nft,
             e
         );
-    };
+    }
 
     let updated = chrono::Utc::now().naive_utc();
 
