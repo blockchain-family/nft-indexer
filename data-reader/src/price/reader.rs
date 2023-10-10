@@ -93,14 +93,26 @@ impl PriceReader {
                 .collect::<HashSet<_>>();
 
             for token_addr in token_addresses {
-                let Ok(pool_info) = self.model.get_dex_pair_address(token_addr, self.bc).await else {
+                let Ok(pool_info) = self.model.get_dex_pair_address(token_addr, self.bc).await
+                else {
                     log::error!("Error while reading dex pair by token address {token_addr}");
                     continue;
                 };
 
-                let Ok(prices) =
-                    request_prices(&self.http_client, from, to, &pool_info.address, self.bc, &self.dex_host_url).await else {
-                    log::error!("Error while requesting prices to dex for address {}", &pool_info.address);
+                let Ok(prices) = request_prices(
+                    &self.http_client,
+                    from,
+                    to,
+                    &pool_info.address,
+                    self.bc,
+                    &self.dex_host_url,
+                )
+                .await
+                else {
+                    log::error!(
+                        "Error while requesting prices to dex for address {}",
+                        &pool_info.address
+                    );
                     continue;
                 };
 
@@ -170,16 +182,28 @@ impl PriceReader {
                 let mut current_prices = self.current_prices.write().await;
 
                 for (token, usd_price) in current_prices.iter_mut() {
-                    let Ok(pool_info) = self.model.get_dex_pair_address(token, self.bc).await else {
+                    let Ok(pool_info) = self.model.get_dex_pair_address(token, self.bc).await
+                    else {
                         log::error!("Error while reading dex pair by token address {token}");
 
                         *usd_price = None;
                         continue;
                     };
 
-                    let Ok(prices) =
-                        request_prices(&self.http_client, now as i64, now as i64, &pool_info.address, self.bc, &self.dex_host_url).await else {
-                        log::error!("Error while requesting prices to dex for address {}", &pool_info.address);
+                    let Ok(prices) = request_prices(
+                        &self.http_client,
+                        now as i64,
+                        now as i64,
+                        &pool_info.address,
+                        self.bc,
+                        &self.dex_host_url,
+                    )
+                    .await
+                    else {
+                        log::error!(
+                            "Error while requesting prices to dex for address {}",
+                            &pool_info.address
+                        );
 
                         *usd_price = None;
                         continue;
@@ -197,7 +221,8 @@ impl PriceReader {
                         BigInt::from(10).pow(pool_info.decimals.try_into().unwrap()),
                     );
 
-                    let Some(token_usd_price) = price_dict.get(&((now - (now % 3600)) as i64)) else {
+                    let Some(token_usd_price) = price_dict.get(&((now - (now % 3600)) as i64))
+                    else {
                         log::error!("Can't find price for token {token} time: {now}");
 
                         *usd_price = None;
@@ -238,7 +263,7 @@ impl PriceReader {
         I: Iterator<Item = &'a RowWithoutUsdPrice> + Clone,
     {
         let Some(to) = iter.clone().max_by_key(|e| e.created_at) else {
-            return None
+            return None;
         };
 
         // min_by_key returns None when iterator is empty. This case has been handled in the previous step.

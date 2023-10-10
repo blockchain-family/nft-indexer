@@ -1371,6 +1371,7 @@ version = "0.1.0"
 dependencies = [
  "actix-cors",
  "actix-web",
+ "anyhow",
  "data_reader",
  "indexer_repo",
  "log",

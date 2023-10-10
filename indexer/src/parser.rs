@@ -165,8 +165,8 @@ async fn save_to_db(
             }
             Decoded::DirectSellStateChanged((ds, price)) => {
                 direct_sell_state_changed.push(ds);
-                if price.is_some() {
-                    prices.push(price.unwrap());
+                if let Some(price) = price {
+                    prices.push(price);
                 }
             }
             Decoded::DirectBuyDeployed((db, offer)) => {
@@ -175,8 +175,8 @@ async fn save_to_db(
             }
             Decoded::DirectBuyStateChanged((db, price)) => {
                 direct_buy_state_changed.push(db);
-                if price.is_some() {
-                    prices.push(price.unwrap());
+                if let Some(price) = price {
+                    prices.push(price);
                 }
             }
             Decoded::ShouldSkip => (),

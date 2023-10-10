@@ -106,8 +106,8 @@ impl MetadataModelService {
             from nft n
                      join nft_collection nc on nc.address = n.collection
                      left join meta_handled_addresses mha on mha.address = n.address
-            where (mha.address is null)
-               or (extract(epoch from now()) - mha.updated_at > $2 and failed is true)
+            where (n.metadata_updated_at is null and mha.address is null)
+               or (mha.updated_at < (extract(epoch from now()) - $2)::bigint and failed and n.metadata_updated_at is null)
             order by nc.verified desc
             limit $1
             "#,
@@ -131,7 +131,8 @@ impl MetadataModelService {
                 left join meta_handled_addresses mha on mha.address = c.address
                 where
                     /*c.verified and*/
-                    ((mha.address is null) or (mha.updated_at > extract(epoch from now()) - $2 and failed is true))
+                    (mha.address is null)
+                    or (mha.updated_at < (extract(epoch from now()) - $2)::bigint and failed)
                 order by updated desc
                 limit $1
                 "#,
@@ -155,47 +156,21 @@ pub struct MetadataModelTransaction<'a> {
 }
 
 impl<'a> MetadataModelTransaction<'a> {
-    pub async fn update_name_desc(&mut self, name: &str, desc: &str, addr: &str) -> Result<()> {
+    pub async fn update_name_desc(
+        &mut self,
+        name: Option<&str>,
+        desc: Option<&str>,
+        addr: &str,
+    ) -> Result<()> {
         sqlx::query!(
             r#"
                 update nft
                 set name = $1,
-                    description = $2
+                    description = $2,
+                    metadata_updated_at = extract(epoch from now())
                 where address = $3
             "#,
             name,
-            desc,
-            addr
-        )
-        .execute(&mut self.tx)
-        .await
-        .map(|_| ())
-        .map_err(|e| anyhow!(e))
-    }
-
-    pub async fn update_name(&mut self, name: &str, addr: &str) -> Result<()> {
-        sqlx::query!(
-            r#"
-                update nft
-                set name = $1
-                where address = $2
-            "#,
-            name,
-            addr
-        )
-        .execute(&mut self.tx)
-        .await
-        .map(|_| ())
-        .map_err(|e| anyhow!(e))
-    }
-
-    pub async fn update_desc(&mut self, desc: &str, addr: &str) -> Result<()> {
-        sqlx::query!(
-            r#"
-                update nft
-                set description = $1
-                where address = $2
-            "#,
             desc,
             addr
         )
