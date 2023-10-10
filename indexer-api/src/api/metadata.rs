@@ -11,6 +11,8 @@ pub struct RefreshMetadataParams {
     nft: Option<String>,
     #[opg(string)]
     collection: String,
+    #[opg(bool)]
+    only_collection_info: bool,
 }
 
 #[post("/metadata/refresh/")]
@@ -30,32 +32,34 @@ pub async fn refresh_metadata_by_nft(
             {
                 Err(e)
             } else {
-                match meta_model_service
-                    .get_nfts_by_collection(&path.0.collection)
-                    .await
-                {
-                    Ok(nfts) => {
-                        let mut result = Ok(());
+                if !path.only_collection_info {
+                    match meta_model_service
+                        .get_nfts_by_collection(&path.0.collection)
+                        .await
+                    {
+                        Ok(nfts) => {
+                            let mut result = Ok(());
 
-                        for nft in nfts {
-                            if let Err(e) = data_reader::update_nft_meta(
-                                &NftAddressData {
-                                    nft,
-                                    collection: path.0.collection.clone(),
-                                },
-                                &meta_model_service,
-                                &meta_jrpc_service,
-                            )
-                            .await
-                            {
-                                result = Err(e);
-                                break;
+                            for nft in nfts {
+                                if let Err(e) = data_reader::update_nft_meta(
+                                    &NftAddressData {
+                                        nft,
+                                        collection: path.0.collection.clone(),
+                                    },
+                                    &meta_model_service,
+                                    &meta_jrpc_service,
+                                )
+                                    .await
+                                {
+                                    result = Err(e);
+                                    break;
+                                }
                             }
-                        }
 
-                        result
+                            result
+                        }
+                        Err(e) => Err(e),
                     }
-                    Err(e) => Err(e),
                 }
             }
         }
