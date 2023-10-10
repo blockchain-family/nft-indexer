@@ -117,6 +117,25 @@
     },
     "query": "\n            insert into nft_price_history (\n                source, \n                source_type, \n                ts, \n                price,\n                price_token, \n                nft,\n                usd_price,\n                collection\n            )\n            select\n                unnest($1::varchar[]),\n                unnest($2::nft_price_source[]),\n                unnest($3::timestamp[]),\n                unnest($4::numeric[]),\n                unnest($5::varchar[]),\n                unnest($6::varchar[]),\n                unnest($7::numeric[]),\n                unnest($8::varchar[])\n        "
   },
+  "3820bcd657e430c5e7229d5f065132f4012a590e0951862f80be9d131850cbc0": {
+    "describe": {
+      "columns": [],
+      "nullable": [],
+      "parameters": {
+        "Left": [
+          "Text",
+          "Text",
+          "Text",
+          "Varchar",
+          "Varchar",
+          "Timestamp",
+          "Varchar",
+          "Jsonb"
+        ]
+      }
+    },
+    "query": "\n            update nft_collection\n            set \n                name         = coalesce($2, nft_collection.name),\n                description  = coalesce($3, nft_collection.description),\n                logo         = coalesce($4, nft_collection.logo),\n                wallpaper    = coalesce($5, nft_collection.wallpaper),\n                updated      = greatest($6, nft_collection.updated),\n                owner        = coalesce($7, nft_collection.owner),\n                royalty      = coalesce($8, nft_collection.royalty)\n            where address = $1\n            "
+  },
   "3da1a3c00024408bbdc7bac09b48570170d758818e789dca67541a0663088924": {
     "describe": {
       "columns": [],
@@ -182,24 +201,6 @@
       }
     },
     "query": "\n                select c.address\n                from nft_collection c\n                left join meta_handled_addresses mha on mha.address = c.address\n                where\n                    /*c.verified and*/\n                    (mha.address is null)\n                    or (mha.updated_at < (extract(epoch from now()) - $2)::bigint and failed)\n                order by updated desc\n                limit $1\n                "
-  },
-  "4d8bdf44fff7b8084a723bdd773f5a9cfb0f7d119adce12a059643490f8d1f16": {
-    "describe": {
-      "columns": [],
-      "nullable": [],
-      "parameters": {
-        "Left": [
-          "Text",
-          "Text",
-          "Text",
-          "Varchar",
-          "Varchar",
-          "Timestamp",
-          "Varchar"
-        ]
-      }
-    },
-    "query": "\n            update nft_collection\n            set \n                name         = coalesce($2, nft_collection.name),\n                description  = coalesce($3, nft_collection.description),\n                logo         = coalesce($4, nft_collection.logo),\n                wallpaper    = coalesce($5, nft_collection.wallpaper),\n                updated      = greatest($6, nft_collection.updated),\n                owner        = coalesce($7, nft_collection.owner)\n            where address = $1\n            "
   },
   "52b1d58d04ad88f604ad3ca173a796ff6d3087b137f1cf2379fe307692b0c6d7": {
     "describe": {

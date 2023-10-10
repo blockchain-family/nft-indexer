@@ -177,7 +177,7 @@ pub struct NftCollectionMeta {
     pub updated: NaiveDateTime,
     pub logo: Option<String>,
     pub wallpaper: Option<String>,
-    pub royalty: Option<serde_json::Value>
+    pub royalty: Option<serde_json::Value>,
 }
 
 pub mod decoded {

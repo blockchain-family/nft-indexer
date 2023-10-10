@@ -1,3 +1,4 @@
+drop index if exists nft_collection_details_address_index;
 alter table nft_collection
     add royalty jsonb;
 alter table nft_collection_details
