@@ -11,7 +11,6 @@ pub struct RefreshMetadataParams {
     nft: Option<String>,
     #[opg(string)]
     collection: String,
-    #[opg(bool)]
     only_collection_info: bool,
 }
 
