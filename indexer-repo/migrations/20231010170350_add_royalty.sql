@@ -36,6 +36,7 @@ begin
                                          coalesce(total_volume.usd, 0)                                         as total_volume_usd,
                                          attr.list                                                             as attributes,
                                          least(direct_sell.token_price, auction.token_price)                   as floor_price_token,
+                                         c.royalty                                                             as royalty,
                                          c.first_mint,
                                          c.created
                                   from nft_collection c
@@ -79,7 +80,7 @@ begin
                                              owners_count,
                                              verified, nft_count, floor_price_usd, total_volume_usd, attributes,
                                              total_count,
-                                             verified_count, first_mint, floor_price_token)
+                                             verified_count, first_mint, floor_price_token, royalty)
                 select d.address,
                        d.owner,
                        d.name,
@@ -98,7 +99,8 @@ begin
                        0,
                        0,
                        d.first_mint,
-                       d.floor_price_token
+                       d.floor_price_token,
+                       d.royalty
                 from details d
                 on conflict (address) do update set owner             = excluded.owner,
                                                     name              = excluded.name,
@@ -113,7 +115,8 @@ begin
                                                     floor_price_usd   = excluded.floor_price_usd,
                                                     total_volume_usd  = excluded.total_volume_usd,
                                                     attributes        = excluded.attributes,
-                                                    floor_price_token = excluded.floor_price_token
+                                                    floor_price_token = excluded.floor_price_token,
+                                                    royalty           = d.royalty
                 where nft_collection_details.address = collection_for_update;
             end loop;
     end if;
