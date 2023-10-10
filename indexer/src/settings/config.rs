@@ -16,6 +16,7 @@ pub struct Config {
     pub terminate_open_connections: Option<bool>,
     pub jrpc_req_latency_millis: u64,
     pub bc_name: BcName,
+    pub dex_host_url: String,
     pub idle_after_price_loop_sec: u64,
     pub idle_after_meta_loop_sec: u64,
     pub price_update_frequency_sec: u64,
