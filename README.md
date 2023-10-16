@@ -10,16 +10,14 @@ Force refresh metadata
 
 
 ```
-POST /metadata/refresh/
+/* Run after migrations */
 
-# for one NFT
-{
-    "nft" : "0:bbe069479f784b51b8818e624c3254b003bad14bb9b1787593c187100e4b361c",
-    "collection": "0:4876694042b5b385318f2bd49f2eebf9d68913f1ccd723ab95c5ccb12979c8ba"
-}
+delete from cron.job where jobname = 'refresh nft_verified_mv'
 
-# for all nfts in collection
-{
-    "collection": "0:4876694042b5b385318f2bd49f2eebf9d68913f1ccd723ab95c5ccb12979c8ba"
-}
+select refresh_nft_verified_extended(true);
+SELECT cron.schedule('execute safe_refresh_nft_verified_extended every 4 hours', '8 */4 * * *',
+                     'select safe_refresh_nft_verified_extended(true);');
+
+SELECT cron.schedule('execute safe_refresh_nft_verified_extended every 7 minutes', '*/7 * * * *',
+                     'select safe_refresh_nft_verified_extended(false);');                    
 ```
