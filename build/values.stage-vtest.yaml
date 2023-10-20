@@ -1,0 +1,41 @@
+env:
+  RUST_LOG: debug
+  RUST_BACKTRACE: 1
+
+  DATABASE_URL: postgresql://$(BACKEND_DEV_USER):$(BACKEND_DEV_PASSWORD)@$(BACKEND_DEV_HOST):5432/indexer-test-venom
+  DATABASE_MAX_CONNECTIONS: 16
+  KAFKA_CONSUMER_GROUP: temp-venom-vtest-1
+  KAFKA_TOPIC: rest-transactions
+  STATES_RPC_ENDPOINTS: $(VENOM_RPC_ENDPOINTS)
+  KAFKA_SETTINGS__BOOTSTRAP_SERVERS: $(KAFKA_SETTINGS__BOOTSTRAP_SERVERS)
+  KAFKA_SETTINGS__SECURITY_PROTOCOL: SASL_SSL
+  KAFKA_SETTINGS__SASL_USERNAME: $(REST_SASL_USERNAME)
+  KAFKA_SETTINGS__SASL_PASSWORD: $(REST_SASL_PASSWORD)
+  KAFKA_SETTINGS__SASL_MECHANISM: SCRAM-SHA-512
+  KAFKA_SETTINGS__SSL_KEYSTORE_LOCATION: /app/broker.keystore.jks
+  KAFKA_SETTINGS__SSL_KEYSTORE_PASSWORD: $(KAFKA_SETTINGS__SSL_KEYSTORE_PASSWORD)
+  KAFKA_SETTINGS__SSL_CA_LOCATION: /app/ca.pem
+  SERVER_API_URL: 0.0.0.0:3001
+  JRPC_REQ_LATENCY_MILLIS: 0
+  IDLE_AFTER_PRICE_LOOP_SEC: 100
+  IDLE_AFTER_META_LOOP_SEC: 120
+  PRICE_UPDATE_FREQUENCY_SEC: 180
+  BC_NAME: "Venom"
+  DEX_HOST_URL: "https://testnetapi.web3.world"
+
+service:
+  port: 3001
+
+ingress:
+  enabled: true
+  hosts:
+    - host: indexer-vtest.bf.works
+      paths:
+        - path: /
+          pathType: ImplementationSpecific
+  tls:
+    - secretName: indexer-vtest-tls
+      hosts:
+        - indexer-vtest.bf.works
+  
+controller: statefulset

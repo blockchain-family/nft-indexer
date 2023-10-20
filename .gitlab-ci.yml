@@ -88,6 +88,25 @@ stop:venomstg2:
   environment:
     name: stage
 
+deploy:vtest:
+  only:
+    - venomstg2
+  extends: .deploy
+  variables:
+    APP_CONFIG: vtest
+  environment:
+    name: stage
+    on_stop: stop:vtest
+
+stop:vtest:
+  only:
+    - venomstg2
+  extends: .stop
+  variables:
+    APP_CONFIG: vtest
+  environment:
+    name: stage
+
 cloudbuild:image:venom-develop:
   only:
     - development
