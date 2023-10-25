@@ -19,5 +19,8 @@ SELECT cron.schedule('execute safe_refresh_nft_verified_extended every 4 hours',
                      'select safe_refresh_nft_verified_extended(true);');
 
 SELECT cron.schedule('execute safe_refresh_nft_verified_extended every 7 minutes', '*/7 * * * *',
-                     'select safe_refresh_nft_verified_extended(false);');                    
+                     'select safe_refresh_nft_verified_extended(false);');               
+                     
+SELECT cron.schedule('refresh materialized view concurrently nft_events_verified_mv', '*/11 * * * *',
+                     'refresh materialized view concurrently nft_events_verified_mv;');                          
 ```
