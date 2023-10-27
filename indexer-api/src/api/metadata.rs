@@ -42,12 +42,8 @@ async fn update_collection_metadata(
     meta_model_service: &web::Data<MetadataModelService>,
     meta_jrpc_service: &web::Data<MetadataJrpcService>,
 ) -> anyhow::Result<()> {
-    data_reader::update_collections_meta(
-        &path.0.collection,
-        meta_model_service,
-        meta_jrpc_service,
-    )
-    .await?;
+    data_reader::update_collections_meta(&path.0.collection, meta_model_service, meta_jrpc_service)
+        .await?;
 
     if !path.only_collection_info {
         let nfts = meta_model_service
