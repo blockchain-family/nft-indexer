@@ -494,6 +494,20 @@
     },
     "query": "\n                insert into nft_metadata (nft, meta, updated)\n                values ($1, $2, $3)\n                on conflict (nft) where updated < $3 do update\n                set meta = coalesce($2, nft_metadata.meta), updated = $3\n            "
   },
+  "979652eb2bce370ed55ca111b3cf3dad175daf3fa77efd106c79ae016d694e03": {
+    "describe": {
+      "columns": [],
+      "nullable": [],
+      "parameters": {
+        "Left": [
+          "VarcharArray",
+          "Int4Array",
+          "Int4Array"
+        ]
+      }
+    },
+    "query": "\n        update nft_direct_buy set\n            royalty_numerator = data.numerator,\n            royalty_denominator = data.denominator\n        from\n        (\n            select\n                unnest($1::varchar[]) as address,\n                unnest($2::integer[]) as numerator,\n                unnest($3::integer[]) as denominator\n        ) as data\n        where nft_direct_buy.address = data.address\n    "
+  },
   "9e785ebcd70336f018a5c52a32816eb3c26a5dc439344d691ef9cdcef0584381": {
     "describe": {
       "columns": [],
@@ -595,6 +609,20 @@
     },
     "query": "\n            insert into nft (\n                id,\n                address, \n                collection, \n                owner, \n                manager, \n                updated, \n                owner_update_lt, \n                manager_update_lt\n            )\n            select\n                unnest($1::numeric[]),\n                unnest($2::varchar[]),\n                unnest($3::varchar[]), \n                unnest($4::varchar[]), \n                unnest($5::varchar[]), \n                unnest($6::timestamp[]),\n                unnest($7::bigint[]),\n                unnest($8::bigint[]) \n            on conflict(address) do nothing\n        "
   },
+  "b029d270ff46159f0ef351c16ff5ef23bcca247cc4d5338f7310e198c5eb170d": {
+    "describe": {
+      "columns": [],
+      "nullable": [],
+      "parameters": {
+        "Left": [
+          "VarcharArray",
+          "Int4Array",
+          "Int4Array"
+        ]
+      }
+    },
+    "query": "\n        update nft_direct_sell set\n            royalty_numerator = data.numerator,\n            royalty_denominator = data.denominator\n        from\n        (\n            select\n                unnest($1::varchar[]) as address,\n                unnest($2::integer[]) as numerator,\n                unnest($3::integer[]) as denominator\n        ) as data\n        where nft_direct_sell.address = data.address\n    "
+  },
   "b26379153f56804b980c102af4afc542ec8aeda91a7e11918c72a7690b4a67f5": {
     "describe": {
       "columns": [],
@@ -665,6 +693,20 @@
       }
     },
     "query": "\n        update nft_direct_buy set\n            state = data.state,\n            nft = data.nft,\n            collection = data.collection,\n            price_token = data.price_token,\n            price = data.price,\n            buyer = data.buyer,\n            expired_at = data.expired_at,\n            finished_at = data.finished_at,\n            created = data.created,\n            updated = data.updated,\n            tx_lt = data.tx_lt\n        from\n        (\n            select \n                unnest($1::varchar[]) as address,\n                unnest($2::direct_buy_state[]) as state,\n                unnest($3::timestamp[]) as finished_at,\n                unnest($4::timestamp[]) as updated,\n                unnest($5::bigint[]) as tx_lt,\n                unnest($6::varchar[]) as nft,\n                unnest($7::varchar[]) as collection,\n                unnest($8::varchar[]) as price_token,\n                unnest($9::numeric[]) as price,\n                unnest($10::varchar[]) as buyer,\n                unnest($11::timestamp[]) as expired_at,\n                unnest($12::timestamp[]) as created\n        ) as data\n        where nft_direct_buy.address = data.address\n        "
+  },
+  "d1f7a3bffb14e4753aa27f201d388962bc987f866dfc0b895df4e5243c70a900": {
+    "describe": {
+      "columns": [],
+      "nullable": [],
+      "parameters": {
+        "Left": [
+          "VarcharArray",
+          "Int4Array",
+          "Int4Array"
+        ]
+      }
+    },
+    "query": "\n        update nft_auction set\n            royalty_numerator = data.numerator,\n            royalty_denominator = data.denominator\n        from\n        (\n            select\n                unnest($1::varchar[]) as address,\n                unnest($2::integer[]) as numerator,\n                unnest($3::integer[]) as denominator\n        ) as data\n        where nft_auction.address = data.address\n    "
   },
   "d3296a1ab523134ef89964e8c7f17111e885c83145a88acd61050cd928ccea76": {
     "describe": {

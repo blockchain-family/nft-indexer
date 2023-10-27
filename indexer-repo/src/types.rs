@@ -327,7 +327,7 @@ pub mod decoded {
 
     pub struct SetRoyalty {
         pub address: String,
-        pub denominator: String,
-        pub numerator: String,
+        pub denominator: i32,
+        pub numerator: i32,
     }
 }

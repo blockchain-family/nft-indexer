@@ -13,8 +13,8 @@ mod factory_auction;
 mod factory_direct_buy;
 mod factory_direct_sell;
 mod nft;
-mod types;
 mod royalty;
+mod types;
 
 pub trait Decode {
     fn decode(&self, ctx: &DecodeContext) -> Result<Decoded>;
