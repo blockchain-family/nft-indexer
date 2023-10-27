@@ -324,4 +324,10 @@ pub mod decoded {
         pub root: String,
         pub created: NaiveDateTime,
     }
+
+    pub struct SetRoyalty {
+        pub address: String,
+        pub denominator: String,
+        pub numerator: String,
+    }
 }
