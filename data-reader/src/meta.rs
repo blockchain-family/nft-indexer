@@ -164,9 +164,7 @@ pub async fn update_collections_meta(
             .unwrap_or_default()
             .as_str()
             .map(|s| s.into()),
-        royalty: meta
-            .get("royalty")
-            .cloned(),
+        royalty: meta.get("royalty").cloned(),
         updated: now,
     };
 

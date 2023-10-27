@@ -34,6 +34,6 @@ pub use nft_created::save_nft_created;
 pub use nft_manager_changed::save_nft_manager_changed;
 pub use nft_owner_changed::save_nft_owner_changed;
 pub use prices::save_price_history;
-pub use royalty::update_direct_sell;
-pub use royalty::update_direct_buy;
 pub use royalty::update_auction;
+pub use royalty::update_direct_buy;
+pub use royalty::update_direct_sell;
