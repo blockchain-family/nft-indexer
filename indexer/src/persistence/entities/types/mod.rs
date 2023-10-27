@@ -2,7 +2,6 @@ use indexer_repo::types::decoded::*;
 
 pub enum Decoded {
     ShouldSkip,
-    ForTests,
     CreateNft(NftCreated),
     BurnNft(NftBurned),
     OwnerChangedNft(AddressChanged),
@@ -19,4 +18,5 @@ pub enum Decoded {
     DirectBuyStateChanged((DirectBuy, Option<NftPriceHistory>)),
     DirectSellDeployed((DirectSell, OfferDeployed)),
     DirectSellStateChanged((DirectSell, Option<NftPriceHistory>)),
+    RoyaltySet(SetRoyalty),
 }

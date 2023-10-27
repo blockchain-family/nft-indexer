@@ -180,7 +180,7 @@ async fn save_to_db(
                     prices.push(price);
                 }
             }
-            Decoded::ForTests => set_royalty.push("test".to_string()),
+            Decoded::RoyaltySet(rs) => set_royalty.push(rs),
             Decoded::ShouldSkip => (),
         }
     }
@@ -318,6 +318,9 @@ async fn save_to_db(
     }
 
     if !set_royalty.is_empty() {
+        update_direct_sell(&mut pg_pool_tx, &set_royalty).await?;
+        update_direct_buy(&mut pg_pool_tx, &set_royalty).await?;
+        update_auction(&mut pg_pool_tx, &set_royalty).await?;
         log::info!("ROYALTY WAS SAVED");
     }
 
