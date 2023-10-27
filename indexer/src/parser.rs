@@ -132,6 +132,7 @@ async fn save_to_db(
     let mut direct_buy_deployed = Vec::with_capacity(EVENTS_PER_ITERATION);
     let mut direct_buy_state_changed = Vec::with_capacity(EVENTS_PER_ITERATION);
     let mut deployed_offers = Vec::with_capacity(EVENTS_PER_ITERATION);
+    let mut set_royalty = Vec::with_capacity(EVENTS_PER_ITERATION);
 
     for element in data {
         match element {
@@ -179,6 +180,7 @@ async fn save_to_db(
                     prices.push(price);
                 }
             }
+            Decoded::ForTests => set_royalty.push("test".to_string()),
             Decoded::ShouldSkip => (),
         }
     }
@@ -204,6 +206,7 @@ async fn save_to_db(
         direct_buy_deployed: {},
         direct_buy_state_changed: {},
         deployed_offers: {},
+        set_royalty: {},
         "#,
         raw_events.len(),
         collections.len(),
@@ -224,6 +227,7 @@ async fn save_to_db(
         direct_buy_deployed.len(),
         direct_buy_state_changed.len(),
         deployed_offers.len(),
+        set_royalty.len(),
     );
 
     // IMPORTANT: Order matters!

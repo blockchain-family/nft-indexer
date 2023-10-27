@@ -2,6 +2,7 @@ use indexer_repo::types::decoded::*;
 
 pub enum Decoded {
     ShouldSkip,
+    ForTests,
     CreateNft(NftCreated),
     BurnNft(NftBurned),
     OwnerChangedNft(AddressChanged),

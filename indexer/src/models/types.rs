@@ -174,3 +174,14 @@ pub struct CollectionFeeInfo {
     #[abi]
     pub denominator: u32,
 }
+
+#[derive(UnpackAbi, PackAbi, PartialEq, Eq, Clone, Debug, Serialize)]
+pub struct Royalty {
+    #[abi]
+    pub numerator: u32,
+    #[abi]
+    pub denominator: u32,
+    #[abi]
+    #[serde(serialize_with = "serialize_msg_address_int")]
+    pub receiver: MsgAddressInt,
+}

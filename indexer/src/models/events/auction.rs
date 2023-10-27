@@ -56,3 +56,9 @@ pub struct AuctionCancelled {
     #[abi]
     pub value0: AuctionDetails,
 }
+
+#[derive(Clone, UnpackAbiPlain, PackAbiPlain, PartialEq, Eq, Debug, Serialize)]
+pub struct RoyaltySet {
+    #[abi]
+    pub _royalty: Royalty,
+}
