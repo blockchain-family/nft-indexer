@@ -28,7 +28,7 @@ BEGIN
         FROM locked_rows
         LEFT JOIN nft_collection_custom ncc ON ncc.address = NEW.address
         WHERE ncd.address = NEW.address;
-x
+
         EXCEPTION
             WHEN LOCK_NOT_AVAILABLE THEN
                 RAISE NOTICE 'Could not update nft_collection_details for address % due to lock contention.', NEW.address;
