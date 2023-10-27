@@ -350,6 +350,7 @@ fn unpack_entity(event: &ExtractedOwned) -> Result<Option<Box<dyn Decode>>> {
         BidDeclined,
         AuctionComplete,
         AuctionCancelled,
+        RoyaltySet,
         /* Collection */
         NftCreated,
         NftBurned,
