@@ -317,6 +317,10 @@ async fn save_to_db(
         save_price_history(&mut pg_pool_tx, &prices).await?;
     }
 
+    if !set_royalty.is_empty() {
+        log::info!("ROYALTY WAS SAVED");
+    }
+
     pg_pool_tx.commit().await?;
 
     Ok(())
