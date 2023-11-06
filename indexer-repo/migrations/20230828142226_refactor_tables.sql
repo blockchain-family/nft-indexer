@@ -5,9 +5,15 @@ create table deployed_offers (
 
 alter table meta_handled_addresses alter column failed set not null;
 
+ALTER TABLE nft ALTER COLUMN collection SET DEFAULT '0:0000000000000000000000000000000000000000000000000000000000000000';
 alter table nft alter column collection set not null;
+
+ALTER TABLE nft ALTER COLUMN owner SET DEFAULT '0:0000000000000000000000000000000000000000000000000000000000000000';
 alter table nft alter column owner set not null;
+
+ALTER TABLE nft ALTER COLUMN manager SET DEFAULT '0:0000000000000000000000000000000000000000000000000000000000000000';
 alter table nft alter column manager set not null;
+
 alter table nft alter column burned set not null;
 alter table nft alter column updated set not null;
 alter table nft alter column owner_update_lt set not null;
