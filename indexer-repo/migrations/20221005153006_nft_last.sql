@@ -37,7 +37,7 @@ create type event_category as enum (
 );
 
 create domain t_address as varchar(67);
-create domain t_uri as varchar(4096);
+create domain t_uri as varchar(200);
 
 create table events_whitelist(
     address t_address primary key
