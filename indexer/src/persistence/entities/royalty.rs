@@ -1,7 +1,6 @@
 use anyhow::Result;
-use indexer_repo::types::{decoded, EventCategory, EventType, NftPriceSource};
+use indexer_repo::types::{decoded, EventCategory, EventType};
 
-use crate::utils::{timestamp_to_datetime, u128_to_bigdecimal};
 use crate::{
     models::events::RoyaltySet,
     utils::{DecodeContext, KeyInfo},
