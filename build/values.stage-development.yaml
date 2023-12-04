@@ -2,7 +2,7 @@ env:
   RUST_LOG: debug
   RUST_BACKTRACE: 1
 
-  DATABASE_URL: postgresql://$(BACKEND_API_USER):$(BACKEND_API_PASSWORD)@cloudsqlproxy.default:5432/nft-indexer-stage-development
+  DATABASE_URL: postgresql://$(STAGE_DEVELOPMENT_PG_USER):$(STAGE_DEVELOPMENT_PG_PASSWORD)@postgresql-bf.europe-west1-c.c.broxus.internal:5432/nft-indexer-stage-development
   DATABASE_MAX_CONNECTIONS: 32
   KAFKA_CONSUMER_GROUP: nft-indexer-stage-development
   KAFKA_TOPIC: namib-raw-transactions
@@ -38,3 +38,6 @@ ingress:
         - indexer-venom-develop.bf.works
 
 controller: statefulset
+
+sharedSecrets:
+  - nftIndexer

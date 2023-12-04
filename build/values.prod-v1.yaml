@@ -2,7 +2,7 @@ env:
   RUST_LOG: debug
   RUST_BACKTRACE: 1
 
-  DATABASE_URL: postgresql://$(BACKEND_API_USER):$(BACKEND_API_PASSWORD)@cloudsqlproxy.default:5432/nft-indexer-prod-v1
+  DATABASE_URL: postgresql://$(PROD_V1_PG_USER):$(PROD_V1_PG_PASSWORD)@postgresql-bf.europe-west1-c.c.broxus.internal:5432/nft-indexer-prod-v1
   DATABASE_MAX_CONNECTIONS: 5
   KAFKA_CONSUMER_GROUP: nft-indexer-prod-v1
   KAFKA_TOPIC: mainnet-raw-transactions
@@ -22,4 +22,7 @@ env:
   RESET: false
   JRPC_REQ_LATENCY_MILLIS: 0
 
-controller: deployment
+controller: statefulset
+
+sharedSecrets:
+  - nftIndexer
