@@ -1,4 +1,4 @@
-FROM europe-west1-docker.pkg.dev/blockchain-family/docker/rust-builder:v1.68.0 AS builder
+FROM europe-west1-docker.pkg.dev/broxus-infrastructure/docker/rust-builder:stable AS builder
 
 WORKDIR /build
 
@@ -6,7 +6,7 @@ WORKDIR /build
 COPY . .
 RUN RUSTFLAGS=-g cargo build --release
 
-FROM europe-west1-docker.pkg.dev/blockchain-family/docker/rust-runtime:v1.68.0
+FROM europe-west1-docker.pkg.dev/broxus-infrastructure/docker/rust-runtime:stable
 COPY --from=builder /build/target/release/model /app/application
 COPY --from=builder /build/indexer-repo/migrations /app/migrations
 COPY --from=builder /build/indexer/src/abi/json /app/abi

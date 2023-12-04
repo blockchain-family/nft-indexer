@@ -2,13 +2,13 @@ env:
   RUST_LOG: info
   RUST_BACKTRACE: 1
 
-  DATABASE_URL: postgresql://$(BACKEND_API_USER):$(BACKEND_API_PASSWORD)@cloudsqlproxy.default:5432/indexator-venom
+  DATABASE_URL: postgresql://$(BACKEND_API_USER):$(BACKEND_API_PASSWORD)@cloudsqlproxy.default:5432/nft-indexer-prod-venom
   DATABASE_MAX_CONNECTIONS: 5
-  KAFKA_CONSUMER_GROUP: temp-venom-prod-1
-  KAFKA_TOPIC: rest-transactions
-  STATES_RPC_ENDPOINTS: $(VENOM_RPC_ENDPOINTS)
-  KAFKA_SETTINGS__BOOTSTRAP_SERVERS: $(KAFKA_SETTINGS__BOOTSTRAP_SERVERS)
-  KAFKA_SETTINGS__SECURITY_PROTOCOL: SASL_SSL
+  KAFKA_CONSUMER_GROUP: nft-indexer-prod-venom
+  KAFKA_TOPIC: namib-raw-transactions
+  STATES_RPC_ENDPOINTS: https://jrpc-testnet.venom.foundation
+  KAFKA_SETTINGS__BOOTSTRAP_SERVERS: kafka-broker-1.europe-west1-c.c.broxus.internal:9092,kafka-broker-2.europe-west1-c.c.broxus.internal:9092,kafka-broker-3.europe-west1-c.c.broxus.internal:9092
+  KAFKA_SETTINGS__SECURITY_PROTOCOL: PLAINTEXT
   KAFKA_SETTINGS__SASL_USERNAME: $(REST_SASL_USERNAME)
   KAFKA_SETTINGS__SASL_PASSWORD: $(REST_SASL_PASSWORD)
   KAFKA_SETTINGS__SASL_MECHANISM: SCRAM-SHA-512
@@ -20,7 +20,7 @@ env:
   TRUSTED_DIRECT_SELL_FACTORIES: 0:881ef2068e68f5e456977e18ba647a71cab5e77cbddb1624375ca3733919508a
   SERVER_API_URL: 0.0.0.0:3001
   RESET: false
-  JRPC_REQ_LATENCY_MILLIS: 0  
+  JRPC_REQ_LATENCY_MILLIS: 0
 
 service:
   port: 3001
@@ -36,5 +36,5 @@ ingress:
     - secretName: indexer-venom-prod-tls
       hosts:
         - indexer-venom-prod.bf.works
-  
+
 controller: statefulset
