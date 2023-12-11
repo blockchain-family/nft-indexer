@@ -42,3 +42,6 @@ ingress:
         - indexer-venom-stg2.bf.works
   
 controller: statefulset
+
+sharedSecrets:
+  - nftIndexer
