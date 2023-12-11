@@ -74,9 +74,10 @@ deploy:venomstg2:
     - venomstg2
   extends: .deploy
   variables:
-    APP_CONFIG: venomstg2
+    APP_CONFIG: stage-venomstg2
+    K8S_NAMESPACE: ${CI_PROJECT_ROOT_NAMESPACE}-stage
   environment:
-    name: stage
+    name: bf
     on_stop: stop:venomstg2
 
 stop:venomstg2:
@@ -84,18 +85,20 @@ stop:venomstg2:
     - venomstg2
   extends: .stop
   variables:
-    APP_CONFIG: venomstg2
+    APP_CONFIG: stage-venomstg2
+    K8S_NAMESPACE: ${CI_PROJECT_ROOT_NAMESPACE}-stage
   environment:
-    name: stage
+    name: bf
 
 deploy:vtest:
   only:
     - venomstg2
   extends: .deploy
   variables:
-    APP_CONFIG: vtest
+    APP_CONFIG: stage-vtest
+    K8S_NAMESPACE: ${CI_PROJECT_ROOT_NAMESPACE}-stage
   environment:
-    name: stage
+    name: bf
     on_stop: stop:vtest
 
 stop:vtest:
@@ -103,9 +106,10 @@ stop:vtest:
     - venomstg2
   extends: .stop
   variables:
-    APP_CONFIG: vtest
+    APP_CONFIG: bf-vtest
+    K8S_NAMESPACE: ${CI_PROJECT_ROOT_NAMESPACE}-stage
   environment:
-    name: stage
+    name: bf
 
 cloudbuild:image:venom-develop:
   only:
@@ -119,9 +123,10 @@ deploy:venom-develop:
     - development
   extends: .deploy
   variables:
-    APP_CONFIG: development
+    APP_CONFIG: stage-development
+    K8S_NAMESPACE: ${CI_PROJECT_ROOT_NAMESPACE}-stage
   environment:
-    name: stage
+    name: bf
     on_stop: stop:venom-develop
 
 stop:venom-develop:
@@ -129,18 +134,20 @@ stop:venom-develop:
     - development
   extends: .stop
   variables:
-    APP_CONFIG: development
+    APP_CONFIG: bf-development
+    K8S_NAMESPACE: ${CI_PROJECT_ROOT_NAMESPACE}-stage
   environment:
-    name: stage
+    name: bf
 
 deploy:venom-stage:
   only:
     - stage
   extends: .deploy
   variables:
-    APP_CONFIG: venom
+    APP_CONFIG: bf-venom
+    K8S_NAMESPACE: ${CI_PROJECT_ROOT_NAMESPACE}-stage
   environment:
-    name: stage
+    name: bf
     on_stop: stop:venom-stage
 
 stop:venom-stage:
@@ -148,9 +155,10 @@ stop:venom-stage:
     - stage
   extends: .stop
   variables:
-    APP_CONFIG: venom
+    APP_CONFIG: bf-venom
+    K8S_NAMESPACE: ${CI_PROJECT_ROOT_NAMESPACE}-stage
   environment:
-    name: stage
+    name: bf
 
 deploy:v1-prod:
   only:

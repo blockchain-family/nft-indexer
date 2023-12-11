@@ -2,9 +2,9 @@ env:
   RUST_LOG: debug
   RUST_BACKTRACE: 1
 
-  DATABASE_URL: postgresql://$(BACKEND_DEV_USER):$(BACKEND_DEV_PASSWORD)@$(BACKEND_DEV_HOST):5432/indexator-2
-  DATABASE_MAX_CONNECTIONS: 16
-  KAFKA_CONSUMER_GROUP: temp-venom-stg2-3
+  DATABASE_URL: postgresql://$(STAGE_VENOM_PG_USER):$(STAGE_VENOM_PG_PASSWORD)@cloudsqlproxy.default:5432/indexator-venom
+  DATABASE_MAX_CONNECTIONS: 50p
+  KAFKA_CONSUMER_GROUP: tem-venom-stage-4
   KAFKA_TOPIC: rest-transactions
   STATES_RPC_ENDPOINTS: $(VENOM_RPC_ENDPOINTS)
   KAFKA_SETTINGS__BOOTSTRAP_SERVERS: $(KAFKA_SETTINGS__BOOTSTRAP_SERVERS)
@@ -15,13 +15,12 @@ env:
   KAFKA_SETTINGS__SSL_KEYSTORE_LOCATION: /app/broker.keystore.jks
   KAFKA_SETTINGS__SSL_KEYSTORE_PASSWORD: $(KAFKA_SETTINGS__SSL_KEYSTORE_PASSWORD)
   KAFKA_SETTINGS__SSL_CA_LOCATION: /app/ca.pem
+  TRUSTED_AUCTION_ROOTS: 0:a81a10e7dcaa163704a412b445d255f2949175ee59759975ec562837d297433e
+  TRUSTED_DIRECT_BUY_FACTORIES: 0:136c17d27691dba6273e778390e261d2f015102c643c565993ef3e44f79a409b
+  TRUSTED_DIRECT_SELL_FACTORIES: 0:d1f0569cb203e11a701b2e8bba65c3c79635367ce12c2ee563cf3281c72841e6
   SERVER_API_URL: 0.0.0.0:3001
-  JRPC_REQ_LATENCY_MILLIS: 0
-  IDLE_AFTER_PRICE_LOOP_SEC: 100
-  IDLE_AFTER_META_LOOP_SEC: 120
-  PRICE_UPDATE_FREQUENCY_SEC: 180
-  BC_NAME: "Venom"
-  DEX_HOST_URL: "https://testnetapi.web3.world"
+  RESET: false
+  JRPC_REQ_LATENCY_MILLIS: 0 
 
 service:
   port: 3001
@@ -29,13 +28,13 @@ service:
 ingress:
   enabled: true
   hosts:
-    - host: indexer-venom-stg2.bf.works
+    - host: indexer-venom.bf.works
       paths:
         - path: /
           pathType: ImplementationSpecific
   tls:
-    - secretName: indexer-venom-stg2-tls
+    - secretName: indexer-venom-tls
       hosts:
-        - indexer-venom-stg2.bf.works
+        - indexer-venom.bf.works
   
 controller: statefulset
