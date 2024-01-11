@@ -157,6 +157,13 @@ stop:prod-reindex:
   environment:
     name: prod
 
+cloudbuild:image:tokstock-prod:
+  only:
+    - tokstock-prod
+  except:
+    - tags
+  extends: .cloudbuild:common
+
 deploy:tokstock-prod:
   only:
     - tokstock-prod
