@@ -166,7 +166,7 @@ deploy:tokstock-prod:
     APP_CONFIG: tokstock-prod
   environment:
     name: bf
-    on_stop: stop:v1-prod
+    on_stop: stop:tokstock-prod
 
 stop:tokstock-prod:
   only:
