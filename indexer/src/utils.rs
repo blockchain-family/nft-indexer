@@ -30,7 +30,7 @@ impl KeyInfo for ton_block::Transaction {
     }
 
     fn get_timestamp(&self) -> i64 {
-        self.now.try_into().expect("Timestamp overflow")
+        self.now.into()
     }
 }
 

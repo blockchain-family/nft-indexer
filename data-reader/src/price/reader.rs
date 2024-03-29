@@ -262,9 +262,7 @@ impl PriceReader {
     where
         I: Iterator<Item = &'a RowWithoutUsdPrice> + Clone,
     {
-        let Some(to) = iter.clone().max_by_key(|e| e.created_at) else {
-            return None;
-        };
+        let to = iter.clone().max_by_key(|e| e.created_at)?;
 
         // min_by_key returns None when iterator is empty. This case has been handled in the previous step.
         let from = iter.min_by_key(|e| e.created_at).unwrap();
