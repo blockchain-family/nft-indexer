@@ -25,6 +25,7 @@ env:
   IDLE_AFTER_META_LOOP_SEC: 100
   PRICE_UPDATE_FREQUENCY_SEC: 180
   BC_NAME: "Venom"
+  DEX_HOST_URL: "https://api.web3.world"
 
 service:
   port: 3001
