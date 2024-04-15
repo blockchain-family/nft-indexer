@@ -70,6 +70,27 @@ stop:venom-prod:
     K8S_NAMESPACE: ${CI_PROJECT_ROOT_NAMESPACE}-prod
     APP_CONFIG: prod-venom
 
+deploy:venom-prod-mainnet:
+  only:
+    - main
+  extends: .deploy
+  environment:
+    name: bf
+    on_stop: stop:venom-prod-mainnet
+  variables:
+    K8S_NAMESPACE: ${CI_PROJECT_ROOT_NAMESPACE}-prod
+    APP_CONFIG: prod-mainnet-venom
+
+stop:venom-prod-mainnet:
+  only:
+    - main
+  extends: .stop
+  environment:
+    name: bf
+  variables:
+    K8S_NAMESPACE: ${CI_PROJECT_ROOT_NAMESPACE}-prod
+    APP_CONFIG: prod-mainnet-venom
+
 cloudbuild:image:venom-develop:
   only:
     - main
