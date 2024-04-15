@@ -39,6 +39,7 @@ stop:stage:
 cloudbuild:image:prod:
   only:
     - main
+    - venom_main
   except:
     - tags
   extends: .cloudbuild:common
@@ -163,6 +164,7 @@ stop:venom-stage:
 deploy:venom-prod-mainnet:
   only:
     - main
+    - venom_main
   extends: .deploy
   environment:
     name: bf
@@ -174,6 +176,7 @@ deploy:venom-prod-mainnet:
 stop:venom-prod-mainnet:
   only:
     - main
+    - venom_main
   extends: .stop
   environment:
     name: bf
