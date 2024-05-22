@@ -1,4 +1,5 @@
 use anyhow::Result;
+use ton_block::MsgAddressInt;
 
 use crate::utils::DecodeContext;
 
@@ -19,4 +20,8 @@ mod types;
 pub trait Decode {
     fn decode(&self, ctx: &DecodeContext) -> Result<Decoded>;
     fn decode_event(&self, ctx: &DecodeContext) -> Result<Decoded>;
+}
+
+fn to_address(addr: &MsgAddressInt) -> String {
+    format!("{}:{}", addr.workchain_id(), addr.address().as_hex_string())
 }

@@ -7,16 +7,16 @@ use crate::{
     utils::{DecodeContext, KeyInfo},
 };
 
-use super::{types::Decoded, Decode};
+use super::{to_address, types::Decoded, Decode};
 
 impl Decode for NftCreated {
     fn decode(&self, ctx: &DecodeContext) -> Result<Decoded> {
         Ok(Decoded::CreateNft(decoded::NftCreated {
             id: u256_to_bigdecimal(&self.id),
-            address: self.nft.to_string(),
+            address: to_address(&self.nft),
             collection: ctx.tx_data.get_account(),
-            owner: self.owner.to_string(),
-            manager: self.manager.to_string(),
+            owner: to_address(&self.owner),
+            manager: to_address(&self.manager),
             updated: timestamp_to_datetime(ctx.tx_data.get_timestamp()),
             owner_update_lt: ctx.tx_data.logical_time(),
             manager_update_lt: ctx.tx_data.logical_time(),
@@ -43,9 +43,9 @@ impl Decode for NftCreated {
 impl Decode for NftBurned {
     fn decode(&self, _: &DecodeContext) -> Result<Decoded> {
         let record = decoded::NftBurned {
-            address: self.nft.to_string(),
-            owner: self.owner.to_string(),
-            manager: self.manager.to_string(),
+            address: to_address(&self.nft),
+            owner: to_address(&self.owner),
+            manager: to_address(&self.manager),
         };
 
         Ok(Decoded::BurnNft(record))

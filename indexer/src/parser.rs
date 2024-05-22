@@ -94,13 +94,9 @@ pub async fn run_nft_indexer(
         }
 
         let now = std::time::Instant::now();
-        let save_attempt =
-            save_to_db(&pool, &price_reader, data.clone(), &mut collection_queue).await;
-        // TODO: change back as fast as possible
-        if let Err(err) = save_attempt {
-            log::warn!("Failed to save one of following data to db: {:#?}", data);
-            log::error!("Error: {err}");
-        }
+        save_to_db(&pool, &price_reader, data, &mut collection_queue)
+            .await
+            .expect("Error saving to DB");
         let elapsed = now.elapsed();
 
         log::info!("METRIC | Saving to db, elapsed {}ms", elapsed.as_millis());
