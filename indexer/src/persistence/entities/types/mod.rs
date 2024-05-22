@@ -1,6 +1,6 @@
 use indexer_repo::types::decoded::*;
 
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 pub enum Decoded {
     ShouldSkip,
     CreateNft(NftCreated),
