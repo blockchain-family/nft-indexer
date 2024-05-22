@@ -212,6 +212,7 @@ pub mod decoded {
         pub raw_data: serde_json::Value,
     }
 
+    #[derive(Debug)]
     pub struct NftCreated {
         pub id: BigDecimal,
         pub address: String,
@@ -223,12 +224,14 @@ pub mod decoded {
         pub manager_update_lt: u64,
     }
 
+    #[derive(Debug)]
     pub struct NftBurned {
         pub address: String,
         pub owner: String,
         pub manager: String,
     }
 
+    #[derive(Debug)]
     pub struct AddressChanged {
         pub id_address: String,
         pub new_address: String,
@@ -236,6 +239,7 @@ pub mod decoded {
         pub timestamp: NaiveDateTime,
     }
 
+    #[derive(Debug)]
     pub struct AuctionDeployed {
         pub address: String,
         pub root: String,
@@ -245,6 +249,7 @@ pub mod decoded {
         pub tx_lt: i64,
     }
 
+    #[derive(Debug)]
     pub struct AuctionActive {
         pub address: String,
         pub nft: String,
@@ -257,6 +262,7 @@ pub mod decoded {
         pub tx_lt: i64,
     }
 
+    #[derive(Debug)]
     pub struct AuctionBid {
         pub address: String,
         pub collection: String,
@@ -271,15 +277,18 @@ pub mod decoded {
         pub declined: bool,
     }
 
+    #[derive(Debug)]
     pub struct AuctionComplete {
         pub address: String,
         pub max_bid: BigDecimal,
     }
 
+    #[derive(Debug)]
     pub struct AuctionCancelled {
         pub address: String,
     }
 
+    #[derive(Debug)]
     pub struct CollectionFee {
         pub address: String,
         pub timestamp: NaiveDateTime,
@@ -287,6 +296,7 @@ pub mod decoded {
         pub denominator: Option<i32>,
     }
 
+    #[derive(Debug)]
     pub struct DirectBuy {
         pub address: String,
         pub root: String,
@@ -303,6 +313,7 @@ pub mod decoded {
         pub tx_lt: i64,
     }
 
+    #[derive(Debug)]
     pub struct DirectSell {
         pub address: String,
         pub root: String,
@@ -319,12 +330,14 @@ pub mod decoded {
         pub tx_lt: i64,
     }
 
+    #[derive(Debug)]
     pub struct OfferDeployed {
         pub address: String,
         pub root: String,
         pub created: NaiveDateTime,
     }
 
+    #[derive(Debug)]
     pub struct SetRoyalty {
         pub address: String,
         pub denominator: i32,
