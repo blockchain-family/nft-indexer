@@ -22,7 +22,7 @@ deploy:prod-mainnet-venom:
     - oasis-prod
   extends: .deploy
   environment:
-    name: broxus
+    name: bf
     on_stop: stop:prod-mainnet-venom
   variables:
     K8S_NAMESPACE: ${CI_PROJECT_ROOT_NAMESPACE}-prod
@@ -33,7 +33,7 @@ stop:prod-mainnet-venom:
     - oasis-prod
   extends: .stop
   environment:
-    name: broxus
+    name: bf
   variables:
     K8S_NAMESPACE: ${CI_PROJECT_ROOT_NAMESPACE}-prod
     APP_CONFIG: prod-mainnet-venom
