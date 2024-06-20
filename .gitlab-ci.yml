@@ -10,6 +10,34 @@ stages:
   - cloudbuild
   - deploy
 
+cloudbuild:image:stage:
+  only:
+    - oasis-stage
+  except:
+    - tags
+  extends: .cloudbuild:common
+
+deploy:stage-mainnet-venom:
+  only:
+    - oasis-stage
+  extends: .deploy
+  environment:
+    name: bf
+    on_stop: stop:stage-mainnet-venom
+  variables:
+    K8S_NAMESPACE: ${CI_PROJECT_ROOT_NAMESPACE}-stage
+    APP_CONFIG: stage-mainnet-venom
+
+stop:stage-mainnet-venom:
+  only:
+    - oasis-stage
+  extends: .stop
+  environment:
+    name: bf
+  variables:
+    K8S_NAMESPACE: ${CI_PROJECT_ROOT_NAMESPACE}-stage
+    APP_CONFIG: stage-mainnet-venom
+
 cloudbuild:image:prod:
   only:
     - oasis-prod
