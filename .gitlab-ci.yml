@@ -12,14 +12,14 @@ stages:
 
 cloudbuild:image:prod:
   only:
-    - oasis-prod
+    - venom_main
   except:
     - tags
   extends: .cloudbuild:common
 
 deploy:prod-mainnet-venom:
   only:
-    - oasis-prod
+    - venom_main
   extends: .deploy
   environment:
     name: broxus
@@ -30,7 +30,7 @@ deploy:prod-mainnet-venom:
 
 stop:prod-mainnet-venom:
   only:
-    - oasis-prod
+    - venom_main
   extends: .stop
   environment:
     name: broxus
