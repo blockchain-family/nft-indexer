@@ -10,215 +10,30 @@ stages:
   - cloudbuild
   - deploy
 
-cloudbuild:image:stage:
-  only:
-    - stage
-  except:
-    - tags
-  extends: .cloudbuild:common
-
-deploy:stage:
-  only:
-    - stage
-  except:
-    - tags
-  extends: .deploy
-  environment:
-    name: stage
-    on_stop: stop:stage
-
-stop:stage:
-  only:
-    - stage
-  except:
-    - tags
-  extends: .stop
-  environment:
-    name: stage
-
 cloudbuild:image:prod:
   only:
-    - main
-    - venom_main
+    - oasis-prod
   except:
     - tags
   extends: .cloudbuild:common
 
-deploy:venom-prod:
+deploy:prod-mainnet-venom:
   only:
-    - main
-  extends: .deploy
-  variables:
-    APP_CONFIG: venom
-  environment:
-    name: prod
-    on_stop: stop:venom-prod
-
-stop:venom-prod:
-  only:
-    - main
-  extends: .stop
-  variables:
-    APP_CONFIG: venom
-  environment:
-    name: prod
-
-cloudbuild:image:venomstg2:
-  only:
-    - venomstg2
-  except:
-    - tags
-  extends: .cloudbuild:common
-
-deploy:venomstg2:
-  only:
-    - venomstg2
-  extends: .deploy
-  variables:
-    APP_CONFIG: stage-venomstg2
-    K8S_NAMESPACE: ${CI_PROJECT_ROOT_NAMESPACE}-stage
-  environment:
-    name: bf
-    on_stop: stop:venomstg2
-
-stop:venomstg2:
-  only:
-    - venomstg2
-  extends: .stop
-  variables:
-    APP_CONFIG: stage-venomstg2
-    K8S_NAMESPACE: ${CI_PROJECT_ROOT_NAMESPACE}-stage
-  environment:
-    name: bf
-
-deploy:vtest:
-  only:
-    - venomstg2
-  extends: .deploy
-  variables:
-    APP_CONFIG: stage-vtest
-    K8S_NAMESPACE: ${CI_PROJECT_ROOT_NAMESPACE}-stage
-  environment:
-    name: bf
-    on_stop: stop:vtest
-
-stop:vtest:
-  only:
-    - venomstg2
-  extends: .stop
-  variables:
-    APP_CONFIG: bf-vtest
-    K8S_NAMESPACE: ${CI_PROJECT_ROOT_NAMESPACE}-stage
-  environment:
-    name: bf
-
-cloudbuild:image:venom-develop:
-  only:
-    - development
-  except:
-    - tags
-  extends: .cloudbuild:common
-
-deploy:venom-develop:
-  only:
-    - development
-  extends: .deploy
-  variables:
-    APP_CONFIG: stage-development
-    K8S_NAMESPACE: ${CI_PROJECT_ROOT_NAMESPACE}-stage
-  environment:
-    name: bf
-    on_stop: stop:venom-develop
-
-stop:venom-develop:
-  only:
-    - development
-  extends: .stop
-  variables:
-    APP_CONFIG: bf-development
-    K8S_NAMESPACE: ${CI_PROJECT_ROOT_NAMESPACE}-stage
-  environment:
-    name: bf
-
-deploy:venom-stage:
-  only:
-    - stage
-  extends: .deploy
-  variables:
-    APP_CONFIG: bf-venom
-    K8S_NAMESPACE: ${CI_PROJECT_ROOT_NAMESPACE}-stage
-  environment:
-    name: bf
-    on_stop: stop:venom-stage
-
-stop:venom-stage:
-  only:
-    - stage
-  extends: .stop
-  variables:
-    APP_CONFIG: bf-venom
-    K8S_NAMESPACE: ${CI_PROJECT_ROOT_NAMESPACE}-stage
-  environment:
-    name: bf
-
-deploy:venom-prod-mainnet:
-  only:
-    - main
-    - venom_main
+    - oasis-prod
   extends: .deploy
   environment:
-    name: bf
-    on_stop: stop:venom-prod-mainnet
+    name: broxus
+    on_stop: stop:prod-mainnet-venom
   variables:
     K8S_NAMESPACE: ${CI_PROJECT_ROOT_NAMESPACE}-prod
     APP_CONFIG: prod-mainnet-venom
 
-stop:venom-prod-mainnet:
+stop:prod-mainnet-venom:
   only:
-    - main
-    - venom_main
+    - oasis-prod
   extends: .stop
   environment:
-    name: bf
+    name: broxus
   variables:
     K8S_NAMESPACE: ${CI_PROJECT_ROOT_NAMESPACE}-prod
     APP_CONFIG: prod-mainnet-venom
-
-
-deploy:v1-prod:
-  only:
-    - main
-  extends: .deploy
-  variables:
-    APP_CONFIG: v1
-  environment:
-    name: prod
-    on_stop: stop:v1-prod
-
-stop:v1-prod:
-  only:
-    - main
-  extends: .stop
-  variables:
-    APP_CONFIG: v1
-  environment:
-    name: prod
-
-deploy:prod-reindex:
-  only:
-    - main
-  extends: .deploy
-  variables:
-    APP_CONFIG: reindex
-  environment:
-    name: prod
-    on_stop: stop:prod-reindex
-
-stop:prod-reindex:
-  only:
-    - main
-  extends: .stop
-  variables:
-    APP_CONFIG: reindex
-  environment:
-    name: prod

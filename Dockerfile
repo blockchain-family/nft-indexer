@@ -2,6 +2,16 @@ FROM europe-west1-docker.pkg.dev/broxus-infrastructure/docker/rust-builder:stabl
 
 WORKDIR /build
 
+# Build dependencies only, when source code changes,
+# this build can be cached, we don't need to compile dependency again.
+RUN mkdir src && touch src/lib.rs
+COPY data-reader data-reader
+COPY indexer indexer
+COPY indexer-api indexer-api
+COPY indexer-repo indexer-repo
+COPY Cargo.toml Cargo.lock ./
+RUN RUSTFLAGS=-g cargo build --release
+
 # Build App
 COPY . .
 RUN RUSTFLAGS=-g cargo build --release
@@ -14,4 +24,3 @@ COPY --from=builder /build/entrypoint.sh /app/entrypoint.sh
 USER runuser
 EXPOSE 3001
 ENTRYPOINT ["/app/entrypoint.sh"]
-
