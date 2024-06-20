@@ -20,7 +20,8 @@ serde_json = "1.0"
 ton_block = { git = "https://github.com/broxus/ton-labs-block" }
 reqwest = { version="0.11.18", features = ["json"] }
 bigdecimal = { version="0.3.0", features=["serde"] }
-nekoton-abi = { git = "https://github.com/broxus/nekoton.git" }
-nekoton-contracts = { git = "https://github.com/broxus/nekoton.git" }
-nekoton-utils =  { git = "https://github.com/broxus/nekoton.git" }
+nekoton-abi = { git = "https://github.com/broxus/nekoton" }
+everscale-rpc-client = { git = "https://github.com/broxus/everscale-jrpc" }
+nekoton-contracts = { git = "https://github.com/broxus/nekoton" }
+nekoton-utils =  { git = "https://github.com/broxus/nekoton" }
 ton_abi = { git = "https://github.com/broxus/ton-labs-abi" }

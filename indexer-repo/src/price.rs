@@ -43,13 +43,13 @@ impl NftPriceModel {
                     token_addr: value.token_addr,
                     id: value.id,
                     token_amount: value.token_amount,
-                    created_at: value.created_at.timestamp(),
+                    created_at: value.created_at.and_utc().timestamp(),
                 }
             }
         }
 
         let now = Local::now().naive_local();
-        let zero_time = NaiveDateTime::from_timestamp_opt(0, 0).unwrap();
+        let zero_time = NaiveDateTime::default();
 
         sqlx::query_as!(
             Row,

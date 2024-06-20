@@ -196,8 +196,7 @@ impl<'a> MetadataModelTransaction<'a> {
                 nft_attribute.updated,
             )
             .execute(&mut self.tx)
-            .await
-            .map_err(|e| anyhow!(e))?;
+            .await?;
         }
 
         Ok(())
@@ -252,7 +251,7 @@ impl<'a> MetadataModelTransaction<'a> {
     pub async fn add_to_proceeded(&mut self, addr: &str, failed: Option<bool>) -> Result<()> {
         let failed = failed.unwrap_or(false);
 
-        let now = chrono::Utc::now().naive_utc().timestamp();
+        let now = chrono::Utc::now().timestamp();
 
         sqlx::query!(
             r#"

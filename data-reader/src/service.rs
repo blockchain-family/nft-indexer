@@ -1,23 +1,23 @@
 use anyhow::{anyhow, Result};
+use everscale_rpc_client::RpcClient;
 use nekoton_abi::{FunctionBuilder, FunctionExt, UnpackFirst};
 use nekoton_utils::SimpleClock;
 use ton_block::{MsgAddrStd, MsgAddressInt};
-use transaction_consumer::JrpcClient;
 
 #[derive(Clone)]
 pub struct MetadataJrpcService {
-    jrpc_client: JrpcClient,
+    jrpc_client: RpcClient,
 }
 
 impl MetadataJrpcService {
-    pub fn new(jrpc_client: JrpcClient) -> Self {
+    pub fn new(jrpc_client: RpcClient) -> Self {
         Self { jrpc_client }
     }
 
     pub async fn get_nft_meta(&self, address: &MsgAddressInt) -> Result<serde_json::Value> {
         let contract = self
             .jrpc_client
-            .get_contract_state(address)
+            .get_contract_state(address, None)
             .await?
             .ok_or_else(|| anyhow!("Contract state is none!"))?;
 
@@ -51,7 +51,7 @@ impl MetadataJrpcService {
     ) -> Result<(Option<String>, serde_json::Value)> {
         let contract = self
             .jrpc_client
-            .get_contract_state(&collection)
+            .get_contract_state(&collection, None)
             .await?
             .ok_or_else(|| anyhow!("Contract state is none!"))?;
 

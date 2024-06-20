@@ -1,7 +1,7 @@
 use anyhow::Result;
 use bigdecimal::num_bigint::Sign;
 use bigdecimal::BigDecimal;
-use chrono::NaiveDateTime;
+use chrono::{DateTime, NaiveDateTime};
 use num::BigInt;
 use serde::Serializer;
 use ton_block::{GetRepresentationHash, MsgAddressInt};
@@ -9,7 +9,7 @@ use ton_types::UInt256;
 
 pub trait KeyInfo {
     fn get_account(&self) -> String;
-    fn get_hash(&self) -> Result<Vec<u8>>;
+    fn _get_hash(&self) -> Result<Vec<u8>>;
     fn get_timestamp(&self) -> i64;
 }
 
@@ -25,7 +25,7 @@ impl KeyInfo for ton_block::Transaction {
             .unwrap_or_else(|| format!("0:{}", self.account_addr.to_hex_string()))
     }
 
-    fn get_hash(&self) -> Result<Vec<u8>> {
+    fn _get_hash(&self) -> Result<Vec<u8>> {
         Ok(self.hash()?.into_vec())
     }
 
@@ -36,7 +36,7 @@ impl KeyInfo for ton_block::Transaction {
 
 pub struct DecodeContext {
     pub tx_data: ton_block::Transaction,
-    pub function_inputs: Vec<ton_abi::Token>,
+    pub _function_inputs: Vec<ton_abi::Token>,
     pub message_hash: UInt256,
 }
 
@@ -63,5 +63,7 @@ pub fn u256_to_bigdecimal(i: &UInt256) -> BigDecimal {
 }
 
 pub fn timestamp_to_datetime(ts: i64) -> NaiveDateTime {
-    NaiveDateTime::from_timestamp_opt(ts, 0).unwrap_or_default()
+    DateTime::from_timestamp(ts, 0)
+        .unwrap_or_default()
+        .naive_utc()
 }

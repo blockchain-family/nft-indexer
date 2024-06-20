@@ -2,6 +2,7 @@ use std::{str::FromStr, time::Duration};
 
 use crate::service::MetadataJrpcService;
 use anyhow::{bail, Result};
+use everscale_rpc_client::RpcClient;
 use indexer_repo::{
     meta::{MetadataModelService, NftAddressData, NftMeta, NftMetaAttribute},
     types::NftCollectionMeta,
@@ -9,14 +10,13 @@ use indexer_repo::{
 use serde_json::Value;
 use sqlx::{types::chrono, PgPool};
 use ton_block::MsgAddressInt;
-use transaction_consumer::JrpcClient;
 
 const NFT_PER_ITERATION: i64 = 30_000;
 const COLLECTION_PER_ITERATION: i64 = 100;
 
 #[derive(Clone)]
 pub struct MetaReaderContext {
-    pub jrpc_client: JrpcClient,
+    pub jrpc_client: RpcClient,
     pub pool: PgPool,
     pub jrpc_req_latency_millis: u64,
     pub idle_after_loop: u64,

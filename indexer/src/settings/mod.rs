@@ -2,14 +2,13 @@ use crate::abi::declare_abi::*;
 use crate::abi::scope;
 use crate::settings::config::Config;
 use anyhow::Result;
+use everscale_rpc_client::{ClientOptions, RpcClient};
 use sqlx::PgPool;
 use std::{collections::HashMap, sync::Arc};
 use transaction_buffer::models::{
     AnyExtractable, BufferedConsumerChannels, BufferedConsumerConfig,
 };
 use transaction_buffer::start_parsing_and_get_channels;
-use transaction_consumer::JrpcClient;
-use transaction_consumer::JrpcClientOptions;
 use transaction_consumer::{ConsumerOptions, TransactionConsumer};
 
 pub mod config;
@@ -28,7 +27,7 @@ pub async fn init_consumer(config: &Config) -> Result<Arc<TransactionConsumer>> 
         skip_0_partition: true,
     };
 
-    TransactionConsumer::without_jrpc_client(
+    TransactionConsumer::without_rpc_client(
         &config.kafka_consumer_group,
         &config.kafka_topic,
         con_opt,
@@ -50,6 +49,7 @@ pub async fn init_transaction_buffer(
         buff_size: 100_000,
         commit_time_secs: 100,
         cache_timer: 60,
+        save_failed_transactions_for_accounts: vec![],
     }))
 }
 
@@ -105,10 +105,10 @@ fn get_extractable_name(extractable: &AnyExtractable) -> String {
     }
 }
 
-pub async fn get_jrpc_client(config: &Config) -> Result<JrpcClient> {
-    JrpcClient::new(
+pub async fn get_jrpc_client(config: &Config) -> Result<RpcClient> {
+    RpcClient::new(
         config.states_rpc_endpoints.clone(),
-        JrpcClientOptions::default(),
+        ClientOptions::default(),
     )
     .await
 }

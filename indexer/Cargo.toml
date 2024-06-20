@@ -22,7 +22,7 @@ dotenv = "0.15.0"
 futures = "0.3"
 once_cell = "1.16.0"
 log = { version = "0.4", features = ["std", "serde"] }
-nekoton-abi = { git = "https://github.com/broxus/nekoton.git" }
+nekoton-abi = { git = "https://github.com/broxus/nekoton" }
 num = "0.4"
 num-derive = "0.3"
 num-traits = "0.2"
@@ -31,10 +31,11 @@ serde_json = "1.0"
 sqlx = { version = "0.6", features = ["postgres", "runtime-tokio-native-tls", "offline"] }
 stackdriver_logger = { version = "*", default-features = false, features = ["prod"] }
 tokio = { version = "1.2", features = ["macros", "rt-multi-thread"] }
-transaction-buffer = { git = "https://github.com/broxus/transaction-buffer.git" }
+everscale-rpc-client = { git = "https://github.com/broxus/everscale-jrpc" }
+transaction-buffer = { git = "https://github.com/broxus/transaction-buffer" }
 transaction-consumer = { git = "https://github.com/broxus/transaction-consumer" }
 ton_abi = { git = "https://github.com/broxus/ton-labs-abi" }
 ton_block = { git = "https://github.com/broxus/ton-labs-block" }
-ton_types = { git = "https://github.com/broxus/ton-labs-types.git" }
+ton_types = { git = "https://github.com/broxus/ton-labs-types" }
 url = { version = "2", features = ["serde"] }
 cpu-time = "1.0.0"

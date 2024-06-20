@@ -12,7 +12,7 @@ use indexer_repo::{
     types::BcName,
 };
 use nekoton_utils::TrustMe;
-use sqlx::types::chrono::NaiveDateTime;
+use sqlx::types::chrono::DateTime;
 use sqlx::PgPool;
 use tokio::sync::RwLock;
 
@@ -155,7 +155,9 @@ impl PriceReader {
 
         log::info!(
             "Current prices (last update {}): {:?}",
-            NaiveDateTime::from_timestamp_opt(last_update as i64, 0).unwrap_or_default(),
+            DateTime::from_timestamp(last_update as i64, 0)
+                .unwrap_or_default()
+                .naive_utc(),
             self.current_prices.read().await
         );
 

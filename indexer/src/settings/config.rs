@@ -9,7 +9,6 @@ pub struct Config {
     pub database_max_connections: u32,
     pub kafka_topic: String,
     pub kafka_consumer_group: String,
-    pub kafka_reset: Option<bool>,
     pub states_rpc_endpoints: Vec<Url>,
     pub kafka_settings: HashMap<String, String>,
     pub server_api_url: String,

@@ -5,7 +5,6 @@ use serde::{Deserialize, Serialize};
 
 #[derive(Deserialize, Debug)]
 pub struct PriceInfo {
-    pub open: BigDecimal,
     pub close: BigDecimal,
     pub timestamp: i64,
 }

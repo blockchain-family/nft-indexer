@@ -74,7 +74,7 @@ pub async fn run_nft_indexer(
             for event in events {
                 let ctx = DecodeContext {
                     tx_data: tx.data.clone(),
-                    function_inputs: function_inputs.clone(),
+                    _function_inputs: function_inputs.clone(),
                     message_hash: event.message_hash,
                 };
 
@@ -310,7 +310,7 @@ async fn save_to_db(
             price.usd_price = price_reader
                 .get_current_usd_price(
                     price.price_token.as_str(),
-                    price.created_at.timestamp() as u64,
+                    price.created_at.and_utc().timestamp() as u64,
                 )
                 .await;
         }
