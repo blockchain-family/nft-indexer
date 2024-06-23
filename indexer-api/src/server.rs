@@ -2,7 +2,7 @@ use actix_cors::Cors;
 use actix_web::middleware::Logger;
 use actix_web::web::Data;
 use actix_web::{get, App, HttpResponse, HttpServer};
-use data_reader::{MetaReaderContext, MetadataJrpcService};
+use data_reader::{MetaReaderContext, MetadataRpcService};
 use indexer_repo::meta::MetadataModelService;
 use std::net::SocketAddr;
 
@@ -10,7 +10,7 @@ use crate::api;
 use crate::api::docs::v1::{swagger_json, swagger_yaml};
 
 pub async fn run_api(address: &SocketAddr, context: MetaReaderContext) -> std::io::Result<()> {
-    let meta_jrpc_service = MetadataJrpcService::new(context.jrpc_client);
+    let meta_jrpc_service = MetadataRpcService::new(context.jrpc_client, context.http_client);
     let meta_model_service = MetadataModelService::new(context.pool);
     let address_str = address.to_string();
 

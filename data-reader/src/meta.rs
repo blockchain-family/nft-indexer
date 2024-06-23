@@ -1,6 +1,6 @@
 use std::{str::FromStr, time::Duration};
 
-use crate::service::MetadataJrpcService;
+use crate::service::MetadataRpcService;
 use anyhow::{bail, Result};
 use everscale_rpc_client::RpcClient;
 use indexer_repo::{
@@ -17,6 +17,7 @@ const COLLECTION_PER_ITERATION: i64 = 100;
 #[derive(Clone)]
 pub struct MetaReaderContext {
     pub jrpc_client: RpcClient,
+    pub http_client: reqwest::Client,
     pub pool: PgPool,
     pub jrpc_req_latency_millis: u64,
     pub idle_after_loop: u64,
@@ -24,7 +25,7 @@ pub struct MetaReaderContext {
 
 pub async fn run_meta_reader(context: MetaReaderContext) -> Result<()> {
     log::info!("Run metadata reader");
-    let meta_jrpc_service = MetadataJrpcService::new(context.jrpc_client.clone());
+    let meta_jrpc_service = MetadataRpcService::new(context.jrpc_client, context.http_client);
     let meta_model_service = MetadataModelService::new(context.pool.clone());
 
     loop {
@@ -96,7 +97,7 @@ pub async fn run_meta_reader(context: MetaReaderContext) -> Result<()> {
 pub async fn update_collections_meta(
     address: &str,
     meta_model_service: &MetadataModelService,
-    meta_jrpc_service: &MetadataJrpcService,
+    meta_jrpc_service: &MetadataRpcService,
 ) -> Result<()> {
     let Ok(collection_address) = MsgAddressInt::from_str(address) else {
         bail!(
@@ -200,7 +201,7 @@ pub async fn update_collections_meta(
 pub async fn update_nft_meta(
     address_data: &NftAddressData,
     meta_model_service: &MetadataModelService,
-    meta_jrpc_service: &MetadataJrpcService,
+    meta_jrpc_service: &MetadataRpcService,
 ) -> Result<()> {
     let Ok(nft_address) = MsgAddressInt::from_str(&address_data.nft) else {
         bail!(

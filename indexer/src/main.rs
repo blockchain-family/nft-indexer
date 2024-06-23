@@ -57,6 +57,7 @@ async fn main() -> Result<()> {
 
     let meta_reader_context = MetaReaderContext {
         jrpc_client: jrpc_client.clone(),
+        http_client: reqwest::Client::new(),
         pool: pg_pool.clone(),
         jrpc_req_latency_millis: config.jrpc_req_latency_millis,
         idle_after_loop: config.idle_after_meta_loop_sec,

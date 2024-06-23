@@ -1,6 +1,6 @@
 use actix_web::web::Json;
 use actix_web::{post, web, HttpResponse};
-use data_reader::MetadataJrpcService;
+use data_reader::MetadataRpcService;
 use indexer_repo::meta::{MetadataModelService, NftAddressData};
 use opg::OpgModel;
 use serde::Deserialize;
@@ -18,7 +18,7 @@ pub struct RefreshMetadataParams {
 #[post("/metadata/refresh/")]
 pub async fn refresh_metadata_by_nft(
     path: Json<RefreshMetadataParams>,
-    meta_jrpc_service: web::Data<MetadataJrpcService>,
+    meta_jrpc_service: web::Data<MetadataRpcService>,
     meta_model_service: web::Data<MetadataModelService>,
 ) -> HttpResponse {
     let result = match path.0.nft {
@@ -40,7 +40,7 @@ pub async fn refresh_metadata_by_nft(
 async fn update_collection_metadata(
     path: &Json<RefreshMetadataParams>,
     meta_model_service: &web::Data<MetadataModelService>,
-    meta_jrpc_service: &web::Data<MetadataJrpcService>,
+    meta_jrpc_service: &web::Data<MetadataRpcService>,
 ) -> anyhow::Result<()> {
     data_reader::update_collections_meta(&path.0.collection, meta_model_service, meta_jrpc_service)
         .await?;
@@ -68,7 +68,7 @@ async fn update_nft_metadata(
     nft: String,
     collection: &str,
     meta_model_service: &web::Data<MetadataModelService>,
-    meta_jrpc_service: &web::Data<MetadataJrpcService>,
+    meta_jrpc_service: &web::Data<MetadataRpcService>,
 ) -> anyhow::Result<()> {
     data_reader::update_nft_meta(
         &NftAddressData {
