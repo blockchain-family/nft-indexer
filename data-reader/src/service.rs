@@ -1,11 +1,11 @@
+use crate::contracts::access::OwnableContract;
 use crate::contracts::tip4_1::nft_contract::GetInfoOutputs;
 use crate::contracts::{tip4_1, tip4_2, tip4_2_2, tip4_3, tip6};
 use anyhow::Result;
 use everscale_rpc_client::RpcClient;
 use nekoton::transport::models::ExistingContract;
-use nekoton_abi::{FunctionBuilder, FunctionExt, UnpackFirst};
 use nekoton_utils::{Clock, SimpleClock};
-use ton_block::{MsgAddrStd, MsgAddressInt, Serializable};
+use ton_block::{MsgAddressInt, Serializable};
 use ton_types::{BuilderData, Cell, UInt256};
 
 #[derive(Clone)]
@@ -76,22 +76,6 @@ impl MetadataRpcService {
         self.json_value_from_json_info(json_data.or(json_url)).await
     }
 
-    fn owner() -> ton_abi::Function {
-        FunctionBuilder::new("owner")
-            .abi_version(ton_abi::contract::ABI_VERSION_2_2)
-            .default_headers()
-            .output("value0", ton_abi::ParamType::Address)
-            .build()
-    }
-
-    fn get_owner() -> ton_abi::Function {
-        FunctionBuilder::new("getOwner")
-            .abi_version(ton_abi::contract::ABI_VERSION_2_2)
-            .default_headers()
-            .output("value0", ton_abi::ParamType::Address)
-            .build()
-    }
-
     pub async fn get_collection_meta(
         &self,
         collection: MsgAddressInt,
@@ -122,17 +106,9 @@ impl MetadataRpcService {
             .json_value_from_json_info(json_data.or(json_url))
             .await?;
 
-        let owner_contract =
-            MetadataRpcService::owner().run_local(&SimpleClock, contract.account.clone(), &[])?;
-
-        let owner = owner_contract
-            .tokens
-            .map(|t| {
-                t.unpack_first::<MsgAddrStd>()
-                    .map(MsgAddressInt::AddrStd)
-                    .map(|a| a.to_string())
-            })
-            .transpose()
+        let owner = OwnableContract(ctx)
+            .owner()
+            .map(to_address)
             .map_err(|e| {
                 log::error!(
                     "Can't get collection {} owner with 'owner' method: {:#?}",
@@ -143,33 +119,12 @@ impl MetadataRpcService {
             })
             .ok();
 
-        if let Some(Some(owner)) = owner {
-            Ok((Some(owner), meta))
-        } else {
-            let get_owner_contract =
-                MetadataRpcService::get_owner().run_local(&SimpleClock, contract.account, &[])?;
-
-            let owner = get_owner_contract
-                .tokens
-                .map(|t| {
-                    t.unpack_first::<MsgAddrStd>()
-                        .map(MsgAddressInt::AddrStd)
-                        .map(|a| a.to_string())
-                })
-                .transpose()
-                .map_err(|e| {
-                    log::error!(
-                        "Can't get collection {} owner with 'getOwner' method: {:#?}",
-                        collection.to_string(),
-                        e
-                    );
-                    e
-                })
-                .ok();
-
-            Ok((owner.unwrap_or_default(), meta))
-        }
+        Ok((owner, meta))
     }
+}
+
+fn to_address(addr: MsgAddressInt) -> String {
+    format!("{}:{}", addr.workchain_id(), addr.address().as_hex_string())
 }
 
 const NFT_STAMP: &[u8; 3] = b"nft";

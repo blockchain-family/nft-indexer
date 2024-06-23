@@ -1,6 +1,7 @@
 use anyhow::Result;
 use nekoton_abi::{ExecutionContext, ExecutionOutput};
 
+pub mod access;
 pub mod tip4_1;
 pub mod tip4_2;
 pub mod tip4_2_2;
