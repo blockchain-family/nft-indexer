@@ -670,6 +670,17 @@ dependencies = [
 ]
 
 [[package]]
+name = "cron"
+version = "0.12.1"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "6f8c3e73077b4b4a6ab1ea5047c37c57aee77657bc8ecd6f29b0af082d0b0c07"
+dependencies = [
+ "chrono",
+ "nom",
+ "once_cell",
+]
+
+[[package]]
 name = "crossbeam-queue"
 version = "0.3.11"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -748,13 +759,13 @@ dependencies = [
 ]
 
 [[package]]
-name = "data_reader"
+name = "data-reader"
 version = "0.1.0"
 dependencies = [
  "anyhow",
  "bigdecimal",
  "everscale-rpc-client",
- "indexer_repo",
+ "indexer-repo",
  "log",
  "nekoton",
  "nekoton-abi",
@@ -1508,14 +1519,14 @@ dependencies = [
 ]
 
 [[package]]
-name = "indexer_api"
+name = "indexer-api"
 version = "0.1.0"
 dependencies = [
  "actix-cors",
  "actix-web",
  "anyhow",
- "data_reader",
- "indexer_repo",
+ "data-reader",
+ "indexer-repo",
  "log",
  "opg",
  "serde",
@@ -1524,7 +1535,18 @@ dependencies = [
 ]
 
 [[package]]
-name = "indexer_repo"
+name = "indexer-jobs"
+version = "0.1.0"
+dependencies = [
+ "indexer-repo",
+ "log",
+ "sqlx",
+ "tokio",
+ "tokio-cron-scheduler",
+]
+
+[[package]]
+name = "indexer-repo"
 version = "0.1.0"
 dependencies = [
  "anyhow",
@@ -1830,42 +1852,6 @@ dependencies = [
 ]
 
 [[package]]
-name = "model"
-version = "0.1.0"
-dependencies = [
- "anyhow",
- "async-trait",
- "bigdecimal",
- "chrono",
- "config",
- "cpu-time",
- "data_reader",
- "dotenv",
- "everscale-rpc-client",
- "futures",
- "indexer_api",
- "indexer_repo",
- "log",
- "nekoton-abi",
- "num",
- "num-derive",
- "num-traits",
- "once_cell",
- "reqwest 0.11.27",
- "serde",
- "serde_json",
- "sqlx",
- "stackdriver_logger",
- "tokio",
- "ton_abi",
- "ton_block",
- "ton_types",
- "transaction-buffer",
- "transaction-consumer",
- "url",
-]
-
-[[package]]
 name = "native-tls"
 version = "0.2.12"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -2010,6 +1996,43 @@ dependencies = [
  "ton_block",
  "ton_types",
  "zeroize",
+]
+
+[[package]]
+name = "nft-indexer"
+version = "0.1.0"
+dependencies = [
+ "anyhow",
+ "async-trait",
+ "bigdecimal",
+ "chrono",
+ "config",
+ "cpu-time",
+ "data-reader",
+ "dotenv",
+ "everscale-rpc-client",
+ "futures",
+ "indexer-api",
+ "indexer-jobs",
+ "indexer-repo",
+ "log",
+ "nekoton-abi",
+ "num",
+ "num-derive",
+ "num-traits",
+ "once_cell",
+ "reqwest 0.11.27",
+ "serde",
+ "serde_json",
+ "sqlx",
+ "stackdriver_logger",
+ "tokio",
+ "ton_abi",
+ "ton_block",
+ "ton_types",
+ "transaction-buffer",
+ "transaction-consumer",
+ "url",
 ]
 
 [[package]]
@@ -3352,6 +3375,21 @@ dependencies = [
 ]
 
 [[package]]
+name = "tokio-cron-scheduler"
+version = "0.10.2"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "a4c2e3a88f827f597799cf70a6f673074e62f3fc5ba5993b2873345c618a29af"
+dependencies = [
+ "chrono",
+ "cron",
+ "num-derive",
+ "num-traits",
+ "tokio",
+ "tracing",
+ "uuid",
+]
+
+[[package]]
 name = "tokio-macros"
 version = "2.3.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -3719,6 +3757,9 @@ name = "uuid"
 version = "1.8.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "a183cf7feeba97b4dd1c0d46788634f6221d87fa961b305bed08c851829efcc0"
+dependencies = [
+ "getrandom",
+]
 
 [[package]]
 name = "vcpkg"

@@ -1,16 +1,19 @@
 [package]
-name = "model"
+name = "nft-indexer"
 version = "0.1.0"
 edition = "2021"
 
-[dependencies.data_reader]
+[dependencies.data-reader]
 path = "../data-reader"
 
-[dependencies.indexer_api]
+[dependencies.indexer-api]
 path = "../indexer-api"
 
-[dependencies.indexer_repo]
+[dependencies.indexer-repo]
 path = "../indexer-repo"
+
+[dependencies.indexer-jobs]
+path = "../indexer-jobs"
 
 [dependencies]
 anyhow = "^1.0.44"

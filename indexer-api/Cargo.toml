@@ -1,14 +1,14 @@
 [package]
-name = "indexer_api"
+name = "indexer-api"
 version = "0.1.0"
 edition = "2021"
 
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
-[dependencies.data_reader]
+[dependencies.data-reader]
 path = "../data-reader"
 
-[dependencies.indexer_repo]
+[dependencies.indexer-repo]
 path = "../indexer-repo"
 
 [dependencies]

@@ -1,5 +1,15 @@
 {
   "db": "PostgreSQL",
+  "10b0276dd2b01b11d05ba27c8bba4976864d0ad1e6813079c7468bfe29843921": {
+    "describe": {
+      "columns": [],
+      "nullable": [],
+      "parameters": {
+        "Left": []
+      }
+    },
+    "query": "call update_all_collections()"
+  },
   "14044f4dc2858bb70b9857f42b5ff9290e93358dab29b05d5c8cb77c8346a311": {
     "describe": {
       "columns": [],
@@ -650,6 +660,36 @@
     },
     "query": "\n        update nft_auction set\n            max_bid = data.max_bid,\n            status = data.status\n        from\n        (\n            select \n                unnest($1::varchar[]) as address,\n                unnest($2::numeric[]) as max_bid,\n                $3::auction_status as status\n        ) as data\n        where nft_auction.address = data.address\n    "
   },
+  "b9942fe4032b78edb24dd783e45e637322c83dda7d95272b1809da24c6c07951": {
+    "describe": {
+      "columns": [],
+      "nullable": [],
+      "parameters": {
+        "Left": []
+      }
+    },
+    "query": "call update_latest_collections(interval '30 minutes')"
+  },
+  "c3794cf135adbfe8b3d8ff7ece307250e4ef4eb6ba110a9fa216f6148eb96173": {
+    "describe": {
+      "columns": [
+        {
+          "name": "safe_refresh_nft_verified_extended",
+          "ordinal": 0,
+          "type_info": "Void"
+        }
+      ],
+      "nullable": [
+        null
+      ],
+      "parameters": {
+        "Left": [
+          "Bool"
+        ]
+      }
+    },
+    "query": "select safe_refresh_nft_verified_extended($1)"
+  },
   "cef46bb5677b537b3e7e62bbafd3e071c5e3a60a4a8c02b591a1f7599a632aa0": {
     "describe": {
       "columns": [],
@@ -747,6 +787,16 @@
       }
     },
     "query": "\n                select\n                    source as id,\n                    price_token as \"token_addr!\",\n                    price as \"token_amount!\",\n                    ts as \"created_at!\"\n                from nft_price_history\n                where usd_price is null\n                and ts <= $1\n                and ts != $2\n                limit $3\n            "
+  },
+  "d34ae4d3dc423724a3ffd48b5d1e1ac9268aeb9c8f825bf305a0b3e4c45c915b": {
+    "describe": {
+      "columns": [],
+      "nullable": [],
+      "parameters": {
+        "Left": []
+      }
+    },
+    "query": "refresh materialized view concurrently nft_events_verified_mv"
   },
   "df26d3c8e860957cafb5fb637bcad68056c8d7529d7f1c15cea58621a096bad9": {
     "describe": {

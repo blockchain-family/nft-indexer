@@ -65,6 +65,8 @@ async fn main() -> Result<()> {
 
     tokio::spawn(data_reader::run_meta_reader(meta_reader_context.clone()));
 
+    tokio::spawn(indexer_jobs::schedule_database_jobs(pg_pool.clone()));
+
     tokio::spawn(parser::start_parsing(
         config.clone(),
         pg_pool.clone(),
@@ -78,5 +80,5 @@ async fn main() -> Result<()> {
         .await
         .expect("Failed to run server");
 
-    Ok(())
+    std::future::pending().await
 }
