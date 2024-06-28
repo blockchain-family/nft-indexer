@@ -1,6 +1,9 @@
 use anyhow::Result;
 use nekoton_abi::{ExecutionContext, ExecutionOutput};
 
+#[cfg(test)]
+mod tests;
+
 pub mod access;
 pub mod tip4_1;
 pub mod tip4_2;
