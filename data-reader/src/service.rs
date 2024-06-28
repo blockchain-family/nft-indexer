@@ -1,4 +1,4 @@
-use crate::contracts::access::OwnableContract;
+use crate::contracts::access::OwnableInternalContract;
 use crate::contracts::tip4_1::nft_contract::GetInfoOutputs;
 use crate::contracts::{tip4_1, tip4_2, tip4_2_2, tip4_3, tip6};
 use anyhow::Result;
@@ -106,7 +106,7 @@ impl MetadataRpcService {
             .json_value_from_json_info(json_data.or(json_url))
             .await?;
 
-        let owner = OwnableContract(ctx)
+        let owner = OwnableInternalContract(ctx)
             .owner()
             .map(to_address)
             .map_err(|e| {

@@ -30,9 +30,9 @@ async fn get_existing_contract(address: &str) -> ExistingContract {
 
 async fn test_contract_owner(collection: &str, expected_owner: &str) {
     let contract = get_existing_contract(collection).await;
-    let ownable_contract = OwnableContract(contract.as_context(&SimpleClock));
+    let ownable_internal_contract = OwnableInternalContract(contract.as_context(&SimpleClock));
     assert_eq!(
-        ownable_contract.owner().unwrap().to_string(),
+        ownable_internal_contract.owner().unwrap().to_string(),
         expected_owner
     );
 }
