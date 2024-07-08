@@ -212,21 +212,7 @@
     },
     "query": "\n                select c.address\n                from nft_collection c\n                left join meta_handled_addresses mha on mha.address = c.address\n                where\n                    /*c.verified and*/\n                    (mha.address is null)\n                    or (mha.updated_at < (extract(epoch from now()) - $2)::bigint and failed)\n                order by updated desc\n                limit $1\n                "
   },
-  "52b1d58d04ad88f604ad3ca173a796ff6d3087b137f1cf2379fe307692b0c6d7": {
-    "describe": {
-      "columns": [],
-      "nullable": [],
-      "parameters": {
-        "Left": [
-          "VarcharArray",
-          "VarcharArray",
-          "TimestampArray"
-        ]
-      }
-    },
-    "query": "\n            insert into deployed_offers (\n                address,\n                root,\n                created\n            )\n            select\n                unnest($1::varchar[]),\n                unnest($2::varchar[]),\n                unnest($3::timestamp[])\n            on conflict (address) do nothing\n        "
-  },
-  "57eebc21aa8c79201be43fb0d01292b59317b76ae0a49f17eb44e858e17c3e24": {
+  "5135b708c23f27ddb65c58152b371a2a60d853fab5bac7e466f97c413a49306b": {
     "describe": {
       "columns": [],
       "nullable": [],
@@ -255,7 +241,21 @@
         ]
       }
     },
-    "query": "\n                    insert into nft_attributes (nft, collection, raw, trait_type, value, updated)\n                    values ($1, $2, $3, $4, $5, $6)\n                    on conflict (nft, trait_type) do nothing;\n                "
+    "query": "\n                    insert into nft_attributes (nft, collection, raw, trait_type, value, updated)\n                    values ($1, $2, $3, $4, $5, $6)\n                    on conflict (nft, trait_type) where updated < $6 do update\n                    set raw = excluded.raw, value = excluded.value, updated = excluded.updated;\n                "
+  },
+  "52b1d58d04ad88f604ad3ca173a796ff6d3087b137f1cf2379fe307692b0c6d7": {
+    "describe": {
+      "columns": [],
+      "nullable": [],
+      "parameters": {
+        "Left": [
+          "VarcharArray",
+          "VarcharArray",
+          "TimestampArray"
+        ]
+      }
+    },
+    "query": "\n            insert into deployed_offers (\n                address,\n                root,\n                created\n            )\n            select\n                unnest($1::varchar[]),\n                unnest($2::varchar[]),\n                unnest($3::timestamp[])\n            on conflict (address) do nothing\n        "
   },
   "5e51b09eb38779001303cf4a7bd8e19970f8741eef32844e802cbed56ba5cd6d": {
     "describe": {
