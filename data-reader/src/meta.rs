@@ -244,7 +244,6 @@ pub async fn update_nft_meta(
     let attr = meta
         .get("attributes")
         .and_then(|d| d.as_array())
-        .and_then(|d| (!d.is_empty()).then_some(d))
         .map(|d| d.iter().map(NftMetaAttribute::new).collect::<Vec<_>>());
     if !failed {
         if let Some(attr) = attr {
