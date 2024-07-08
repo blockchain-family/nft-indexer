@@ -23,20 +23,13 @@ pub struct NftMeta<'a> {
 }
 
 pub struct NftMetaAttribute<'a> {
-    pub nft: &'a str,
-    pub collection: &'a str,
     pub raw: &'a serde_json::Value,
     pub trait_type: &'a str,
     pub value: Option<&'a serde_json::Value>,
-    pub updated: NaiveDateTime,
 }
 
 impl<'a> NftMetaAttribute<'a> {
-    pub fn new(
-        raw: &'a serde_json::Value,
-        address_data: &'a NftAddressData,
-        updated: NaiveDateTime,
-    ) -> NftMetaAttribute<'a> {
+    pub fn new(raw: &'a serde_json::Value) -> NftMetaAttribute<'a> {
         let trait_type = raw
             .get("trait_type")
             .and_then(|e| e.as_str())
@@ -45,12 +38,9 @@ impl<'a> NftMetaAttribute<'a> {
         let value = raw.get("display_value").or_else(|| raw.get("value"));
 
         Self {
-            nft: &address_data.nft,
-            collection: &address_data.collection,
             raw,
             trait_type,
             value,
-            updated,
         }
     }
 }
@@ -69,8 +59,8 @@ impl MetadataModelService {
         let nfts: Vec<NftRecord> = sqlx::query_as!(
             NftRecord,
             r#"
-            select address 
-            from nft 
+            select address
+            from nft
             where collection = $1
             "#,
             collection,
@@ -180,7 +170,12 @@ impl<'a> MetadataModelTransaction<'a> {
         .map_err(|e| anyhow!(e))
     }
 
-    pub async fn update_nft_attributes(&mut self, attr: &[NftMetaAttribute<'a>]) -> Result<()> {
+    pub async fn update_nft_attributes(
+        &mut self,
+        address_data: &NftAddressData,
+        attr: &[NftMetaAttribute<'a>],
+        updated: NaiveDateTime,
+    ) -> Result<()> {
         for nft_attribute in attr {
             sqlx::query!(
                 r#"
@@ -189,16 +184,28 @@ impl<'a> MetadataModelTransaction<'a> {
                     on conflict (nft, trait_type) where updated < $6 do update
                     set raw = excluded.raw, value = excluded.value, updated = excluded.updated;
                 "#,
-                &nft_attribute.nft as _,
-                &nft_attribute.collection as _,
+                &address_data.nft as _,
+                &address_data.collection as _,
                 nft_attribute.raw,
                 nft_attribute.trait_type,
                 nft_attribute.value,
-                nft_attribute.updated,
+                updated,
             )
             .execute(&mut self.tx)
             .await?;
         }
+
+        let nft_trait_types = attr
+            .iter()
+            .map(|a| a.trait_type.to_string())
+            .collect::<Vec<_>>();
+        sqlx::query!(
+            r#"delete from nft_attributes where nft = $1 and trait_type != all($2);"#,
+            &address_data.nft,
+            &nft_trait_types[..]
+        )
+        .execute(&mut self.tx)
+        .await?;
 
         Ok(())
     }
@@ -224,7 +231,7 @@ impl<'a> MetadataModelTransaction<'a> {
         sqlx::query!(
             r#"
             update nft_collection
-            set 
+            set
                 name         = coalesce($2, nft_collection.name),
                 description  = coalesce($3, nft_collection.description),
                 logo         = coalesce($4, nft_collection.logo),
@@ -257,16 +264,16 @@ impl<'a> MetadataModelTransaction<'a> {
         sqlx::query!(
             r#"
                 insert into meta_handled_addresses (
-                    address, 
+                    address,
                     updated_at,
                     failed
                 )
                 values (
-                    $1, 
+                    $1,
                     $2,
                     $3
                 )
-                on conflict (address) do update 
+                on conflict (address) do update
                 set
                     updated_at = $2,
                     failed = $3

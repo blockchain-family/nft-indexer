@@ -127,7 +127,27 @@
     },
     "query": "\n            insert into nft_price_history (\n                source, \n                source_type, \n                ts, \n                price,\n                price_token, \n                nft,\n                usd_price,\n                collection\n            )\n            select\n                unnest($1::varchar[]),\n                unnest($2::nft_price_source[]),\n                unnest($3::timestamp[]),\n                unnest($4::numeric[]),\n                unnest($5::varchar[]),\n                unnest($6::varchar[]),\n                unnest($7::numeric[]),\n                unnest($8::varchar[])\n        "
   },
-  "3820bcd657e430c5e7229d5f065132f4012a590e0951862f80be9d131850cbc0": {
+  "3a1d58904ce016d5730a2c579b9ecf2322b0e61d3688d4514abc036695221292": {
+    "describe": {
+      "columns": [
+        {
+          "name": "address",
+          "ordinal": 0,
+          "type_info": "Varchar"
+        }
+      ],
+      "nullable": [
+        false
+      ],
+      "parameters": {
+        "Left": [
+          "Text"
+        ]
+      }
+    },
+    "query": "\n            select address\n            from nft\n            where collection = $1\n            "
+  },
+  "3d7908795676eb7e2896022697ba0457668b2a0502905a5f66baed44da26f9ee": {
     "describe": {
       "columns": [],
       "nullable": [],
@@ -144,7 +164,7 @@
         ]
       }
     },
-    "query": "\n            update nft_collection\n            set \n                name         = coalesce($2, nft_collection.name),\n                description  = coalesce($3, nft_collection.description),\n                logo         = coalesce($4, nft_collection.logo),\n                wallpaper    = coalesce($5, nft_collection.wallpaper),\n                updated      = greatest($6, nft_collection.updated),\n                owner        = coalesce($7, nft_collection.owner),\n                royalty      = coalesce($8, nft_collection.royalty)\n            where address = $1\n            "
+    "query": "\n            update nft_collection\n            set\n                name         = coalesce($2, nft_collection.name),\n                description  = coalesce($3, nft_collection.description),\n                logo         = coalesce($4, nft_collection.logo),\n                wallpaper    = coalesce($5, nft_collection.wallpaper),\n                updated      = greatest($6, nft_collection.updated),\n                owner        = coalesce($7, nft_collection.owner),\n                royalty      = coalesce($8, nft_collection.royalty)\n            where address = $1\n            "
   },
   "3da1a3c00024408bbdc7bac09b48570170d758818e789dca67541a0663088924": {
     "describe": {
@@ -504,6 +524,27 @@
     },
     "query": "\n                insert into nft_metadata (nft, meta, updated)\n                values ($1, $2, $3)\n                on conflict (nft) where updated < $3 do update\n                set meta = coalesce($2, nft_metadata.meta), updated = $3\n            "
   },
+  "8b5cad7aecc93fc1f3c1f72160858398e26687861db3a482ab4c1881ad22da9c": {
+    "describe": {
+      "columns": [],
+      "nullable": [],
+      "parameters": {
+        "Left": [
+          {
+            "Custom": {
+              "kind": {
+                "Domain": "Varchar"
+              },
+              "name": "t_address"
+            }
+          },
+          "Int8",
+          "Bool"
+        ]
+      }
+    },
+    "query": "\n                insert into meta_handled_addresses (\n                    address,\n                    updated_at,\n                    failed\n                )\n                values (\n                    $1,\n                    $2,\n                    $3\n                )\n                on conflict (address) do update\n                set\n                    updated_at = $2,\n                    failed = $3\n            "
+  },
   "979652eb2bce370ed55ca111b3cf3dad175daf3fa77efd106c79ae016d694e03": {
     "describe": {
       "columns": [],
@@ -532,26 +573,6 @@
     },
     "query": "\n        update nft set\n            owner = data.owner,\n            updated = data.time\n        from\n        (\n            select \n                unnest($1::varchar[]) as address,\n                unnest($2::varchar[]) as owner,\n                unnest($3::timestamp[]) as time\n        ) as data\n        where nft.address = data.address\n    "
   },
-  "a67d814a4385ec4491085a66462c167d4904413f5eff84e3e06ce094527cb552": {
-    "describe": {
-      "columns": [
-        {
-          "name": "address",
-          "ordinal": 0,
-          "type_info": "Varchar"
-        }
-      ],
-      "nullable": [
-        false
-      ],
-      "parameters": {
-        "Left": [
-          "Text"
-        ]
-      }
-    },
-    "query": "\n            select address \n            from nft \n            where collection = $1\n            "
-  },
   "a76e7676bc83e0d7ce7a25db1772552bd60eb7376fd761ed748dc622046d2748": {
     "describe": {
       "columns": [],
@@ -578,27 +599,6 @@
       }
     },
     "query": "\n                update nft_price_history\n                set usd_price = $1\n                where source = $2\n            "
-  },
-  "ac2aa6372528c6b605d90e6d1f9f56e22a6bd62c3f66770f45f3926ede759756": {
-    "describe": {
-      "columns": [],
-      "nullable": [],
-      "parameters": {
-        "Left": [
-          {
-            "Custom": {
-              "kind": {
-                "Domain": "Varchar"
-              },
-              "name": "t_address"
-            }
-          },
-          "Int8",
-          "Bool"
-        ]
-      }
-    },
-    "query": "\n                insert into meta_handled_addresses (\n                    address, \n                    updated_at,\n                    failed\n                )\n                values (\n                    $1, \n                    $2,\n                    $3\n                )\n                on conflict (address) do update \n                set\n                    updated_at = $2,\n                    failed = $3\n            "
   },
   "aebb95861aadb7974c8e245ecde24963f241ff4a4343f67077f9e730021d71d2": {
     "describe": {
@@ -669,6 +669,19 @@
       }
     },
     "query": "call update_latest_collections(interval '30 minutes')"
+  },
+  "bfe196c120fa5ca8becfb04cc34cb2764fb8b8acdf63a4d79243480e69ac1ad5": {
+    "describe": {
+      "columns": [],
+      "nullable": [],
+      "parameters": {
+        "Left": [
+          "Text",
+          "TextArray"
+        ]
+      }
+    },
+    "query": "delete from nft_attributes where nft = $1 and trait_type != all($2);"
   },
   "c3794cf135adbfe8b3d8ff7ece307250e4ef4eb6ba110a9fa216f6148eb96173": {
     "describe": {

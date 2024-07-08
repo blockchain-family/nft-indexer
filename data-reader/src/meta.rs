@@ -245,14 +245,10 @@ pub async fn update_nft_meta(
         .get("attributes")
         .and_then(|d| d.as_array())
         .and_then(|d| (!d.is_empty()).then_some(d))
-        .map(|d| {
-            d.iter()
-                .map(|e| NftMetaAttribute::new(e, address_data, updated))
-                .collect::<Vec<_>>()
-        });
+        .map(|d| d.iter().map(NftMetaAttribute::new).collect::<Vec<_>>());
     if !failed {
         if let Some(attr) = attr {
-            if let Err(e) = tx.update_nft_attributes(&attr).await {
+            if let Err(e) = tx.update_nft_attributes(address_data, &attr, updated).await {
                 bail!(
                     "Nft address: {}, error while updating attributes: {:#?}",
                     &address_data.nft,
