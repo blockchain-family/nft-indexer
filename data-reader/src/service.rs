@@ -257,3 +257,37 @@ enum NftError {
     #[error("Contract does not exist")]
     ContractNotExist,
 }
+
+#[cfg(test)]
+mod tests {
+
+    use crate::MetadataRpcService;
+    use everscale_rpc_client::{ClientOptions, RpcClient};
+    use reqwest::Url;
+    use std::str::FromStr;
+    use ton_block::MsgAddressInt;
+
+    async fn get_rpc_client() -> RpcClient {
+        RpcClient::new(
+            vec![Url::from_str("https://jrpc.venom.foundation/rpc").unwrap()],
+            ClientOptions::default(),
+        )
+        .await
+        .unwrap()
+    }
+
+    #[tokio::test]
+    async fn get_nft_meta_test() {
+        let service = MetadataRpcService::new(get_rpc_client().await, reqwest::Client::new());
+
+        let address = MsgAddressInt::from_str(
+            "0:78732a9677c0045cf3dbbeaea3f0de6b7e4be9606e47c9bab22059075317fe27",
+        )
+        .unwrap();
+        let meta = service.get_nft_meta(&address).await.unwrap();
+        assert_eq!(
+            meta.get("external_url").unwrap().as_str().unwrap(),
+            "https://hackgirl.club"
+        );
+    }
+}

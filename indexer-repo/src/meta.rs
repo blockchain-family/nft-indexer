@@ -1,6 +1,6 @@
-use anyhow::{anyhow, Result};
+use anyhow::Result;
 use chrono::NaiveDateTime;
-use sqlx::{PgPool, Postgres, Transaction};
+use sqlx::{postgres::PgQueryResult, PgPool, Postgres, Transaction};
 
 use crate::types::NftCollectionMeta;
 
@@ -51,13 +51,7 @@ impl MetadataModelService {
     }
 
     pub async fn get_nfts_by_collection(&self, collection: &str) -> Result<Vec<String>> {
-        #[derive(Default)]
-        struct NftRecord {
-            pub address: String,
-        }
-
-        let nfts: Vec<NftRecord> = sqlx::query_as!(
-            NftRecord,
+        Ok(sqlx::query_scalar!(
             r#"
             select address
             from nft
@@ -66,72 +60,53 @@ impl MetadataModelService {
             collection,
         )
         .fetch_all(&self.pool)
-        .await?;
-
-        Ok(nfts.into_iter().map(|it| it.address).collect())
+        .await?)
     }
 
     pub async fn get_nfts_for_meta_update(
         &self,
         items_per_page: i64,
     ) -> Result<Vec<NftAddressData>> {
-        struct Row {
-            address: String,
-            collection: String,
-        }
-
-        impl From<Row> for NftAddressData {
-            fn from(value: Row) -> Self {
-                Self {
-                    nft: value.address,
-                    collection: value.collection,
-                }
-            }
-        }
-
-        sqlx::query_as!(
-            Row,
-            r#"
-            select n.address, n.collection
-            from nft n
-                     join nft_collection nc on nc.address = n.collection
-                     left join meta_handled_addresses mha on mha.address = n.address
-            where (n.metadata_updated_at is null and mha.address is null)
-               or (mha.updated_at < (extract(epoch from now()) - $2)::bigint and failed and n.metadata_updated_at is null)
-            order by nc.verified desc
-            limit $1
-            "#,
-            items_per_page,
-            FAILED_META_COOLDOWN_SECS as _,
-        )
-        .fetch_all(&self.pool)
-        .await
-        .map(|d| d.into_iter().map(|r| r.into()).collect::<Vec<_>>())
-        .map_err(|e| anyhow!(e))
+        Ok(sqlx::query_as!(
+                    NftAddressData,
+                    r#"
+                    select n.address as nft, n.collection
+                    from nft n
+                             join nft_collection nc on nc.address = n.collection
+                             left join meta_handled_addresses mha on mha.address = n.address
+                    where (n.metadata_updated_at is null and mha.address is null)
+                       or (mha.updated_at < (extract(epoch from now()) - $2)::bigint and failed and n.metadata_updated_at is null)
+                    order by nc.verified desc
+                    limit $1
+                    "#,
+                    items_per_page,
+                    FAILED_META_COOLDOWN_SECS as _,
+                )
+            .fetch_all(&self.pool)
+            .await?)
     }
 
     pub async fn get_collections_for_meta_update(
         &self,
         items_per_page: i64,
     ) -> Result<Vec<String>> {
-        sqlx::query_scalar!(
-            r#"
-                select c.address
-                from nft_collection c
-                left join meta_handled_addresses mha on mha.address = c.address
-                where
-                    /*c.verified and*/
-                    (mha.address is null)
-                    or (mha.updated_at < (extract(epoch from now()) - $2)::bigint and failed)
-                order by updated desc
-                limit $1
-                "#,
-            items_per_page,
-            FAILED_META_COOLDOWN_SECS as _,
-        )
-        .fetch_all(&self.pool)
-        .await
-        .map_err(|e| anyhow!(e))
+        Ok(sqlx::query_scalar!(
+                    r#"
+                        select c.address
+                        from nft_collection c
+                        left join meta_handled_addresses mha on mha.address = c.address
+                        where
+                            /*c.verified and*/
+                            (mha.address is null)
+                            or (mha.updated_at < (extract(epoch from now()) - $2)::bigint and failed)
+                        order by updated desc
+                        limit $1
+                        "#,
+                    items_per_page,
+                    FAILED_META_COOLDOWN_SECS as _,
+                )
+            .fetch_all(&self.pool)
+            .await?)
     }
 
     pub async fn start_transaction(&self) -> Result<MetadataModelTransaction> {
@@ -146,28 +121,28 @@ pub struct MetadataModelTransaction<'a> {
 }
 
 impl<'a> MetadataModelTransaction<'a> {
-    pub async fn update_name_desc(
+    pub async fn update_nft_basic_meta(
         &mut self,
-        name: Option<&str>,
-        desc: Option<&str>,
         addr: &str,
-    ) -> Result<()> {
-        sqlx::query!(
+        name: Option<&str>,
+        description: Option<&str>,
+        updated: NaiveDateTime,
+    ) -> Result<PgQueryResult> {
+        Ok(sqlx::query!(
             r#"
                 update nft
-                set name = $1,
-                    description = $2,
-                    metadata_updated_at = extract(epoch from now())
-                where address = $3
+                set name = $2,
+                    description = $3,
+                    metadata_updated_at = $4
+                where address = $1
             "#,
+            addr,
             name,
-            desc,
-            addr
+            description,
+            updated.and_utc().timestamp()
         )
         .execute(&mut self.tx)
-        .await
-        .map(|_| ())
-        .map_err(|e| anyhow!(e))
+        .await?)
     }
 
     pub async fn update_nft_attributes(
@@ -209,8 +184,9 @@ impl<'a> MetadataModelTransaction<'a> {
 
         Ok(())
     }
-    pub async fn update_nft_meta(&mut self, meta: &NftMeta<'a>) -> Result<()> {
-        sqlx::query!(
+
+    pub async fn update_nft_meta(&mut self, meta: &NftMeta<'a>) -> Result<PgQueryResult> {
+        Ok(sqlx::query!(
             r#"
                 insert into nft_metadata (nft, meta, updated)
                 values ($1, $2, $3)
@@ -222,13 +198,11 @@ impl<'a> MetadataModelTransaction<'a> {
             &meta.updated
         )
         .execute(&mut self.tx)
-        .await
-        .map(|_| ())
-        .map_err(|e| anyhow!(e))
+        .await?)
     }
 
-    pub async fn update_collection(&mut self, meta: &NftCollectionMeta) -> Result<()> {
-        sqlx::query!(
+    pub async fn update_collection(&mut self, meta: &NftCollectionMeta) -> Result<PgQueryResult> {
+        Ok(sqlx::query!(
             r#"
             update nft_collection
             set
@@ -251,17 +225,19 @@ impl<'a> MetadataModelTransaction<'a> {
             meta.royalty as _,
         )
         .execute(&mut self.tx)
-        .await
-        .map(|_| ())
-        .map_err(|e| anyhow!(e))
+        .await?)
     }
 
-    pub async fn add_to_proceeded(&mut self, addr: &str, failed: Option<bool>) -> Result<()> {
+    pub async fn add_to_proceeded(
+        &mut self,
+        addr: &str,
+        failed: Option<bool>,
+    ) -> Result<PgQueryResult> {
         let failed = failed.unwrap_or(false);
 
         let now = chrono::Utc::now().timestamp();
 
-        sqlx::query!(
+        Ok(sqlx::query!(
             r#"
                 insert into meta_handled_addresses (
                     address,
@@ -283,11 +259,10 @@ impl<'a> MetadataModelTransaction<'a> {
             failed,
         )
         .execute(&mut self.tx)
-        .await
-        .map(|_| ())
-        .map_err(|e| anyhow!(e))
+        .await?)
     }
+
     pub async fn commit(self) -> Result<()> {
-        self.tx.commit().await.map_err(|e| anyhow!(e))
+        Ok(self.tx.commit().await?)
     }
 }

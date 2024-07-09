@@ -212,90 +212,76 @@ pub async fn update_nft_meta(
 
     let mut failed = false;
 
-    let meta = match meta_jrpc_service.get_nft_meta(&nft_address).await {
-        Ok(meta) => meta,
-        Err(e) => {
-            log::error!(
-                "Error while reading ${} nft meta: {:#?}",
-                address_data.nft,
-                e
-            );
+    let meta = meta_jrpc_service
+        .get_nft_meta(&nft_address)
+        .await
+        .map_err(|e| {
+            log::error!("Error while reading {} nft meta: {e:#?}", address_data.nft);
             failed = true;
-            Value::default()
-        }
-    };
+        })
+        .unwrap_or_default();
 
     let Ok(mut tx) = meta_model_service.start_transaction().await else {
         bail!("Cant start transaction for saving metadata");
     };
 
-    let name = extract_name_from_meta(&meta);
-    let desc = extract_description_from_meta(&meta);
-    if let Err(e) = tx.update_name_desc(name, desc, &address_data.nft).await {
-        bail!(
-            "Nft address: {}, error while updating name and/or description: {:#?}",
-            &address_data.nft,
-            e
-        );
-    }
-
-    let updated = chrono::Utc::now().naive_utc();
-
-    let attr = meta
-        .get("attributes")
-        .and_then(|d| d.as_array())
-        .map(|d| d.iter().map(NftMetaAttribute::new).collect::<Vec<_>>());
     if !failed {
-        if let Some(attr) = attr {
-            if let Err(e) = tx.update_nft_attributes(address_data, &attr, updated).await {
+        let updated = chrono::Utc::now().naive_utc();
+
+        let name = meta.get("name").and_then(|d| d.as_str());
+        let description = meta.get("description").and_then(|d| d.as_str());
+        if let Err(e) = tx
+            .update_nft_basic_meta(&address_data.nft, name, description, updated)
+            .await
+        {
+            bail!(
+                "Nft address: {}, error while updating name and/or description: {e:#?}",
+                &address_data.nft,
+            );
+        }
+
+        let attributes = meta
+            .get("attributes")
+            .and_then(|d| d.as_array())
+            .map(|d| d.iter().map(NftMetaAttribute::new).collect::<Vec<_>>());
+        if let Some(attributes) = attributes {
+            if let Err(e) = tx
+                .update_nft_attributes(address_data, &attributes, updated)
+                .await
+            {
                 bail!(
-                    "Nft address: {}, error while updating attributes: {:#?}",
+                    "Nft address: {}, error while updating attributes: {e:#?}",
                     &address_data.nft,
-                    e
                 );
             }
         }
-    }
 
-    let nft_meta = NftMeta {
-        address: &address_data.nft,
-        meta: &meta,
-        updated,
-    };
-
-    if !failed {
+        let nft_meta = NftMeta {
+            address: &address_data.nft,
+            meta: &meta,
+            updated,
+        };
         if let Err(e) = tx.update_nft_meta(&nft_meta).await {
             bail!(
-                "Nft address: {}, error while updating nft meta: {:#?}",
+                "Nft address: {}, error while updating nft meta: {e:#?}",
                 &address_data.nft,
-                e
             );
         };
     }
 
     if let Err(e) = tx.add_to_proceeded(&address_data.nft, Some(failed)).await {
         bail!(
-            "Nft address: {}, error while adding to meta_handled_addresses table: {:#?}",
+            "Nft address: {}, error while adding to meta_handled_addresses table: {e:#?}",
             &address_data.nft,
-            e
         );
     };
 
     if let Err(e) = tx.commit().await {
         bail!(
-            "Nft address: {}, error while commiting transaction: {:#?}",
+            "Nft address: {}, error while commiting transaction: {e:#?}",
             &address_data.nft,
-            e
         );
     };
 
     Ok(())
-}
-
-fn extract_name_from_meta(meta: &Value) -> Option<&str> {
-    meta.get("name").and_then(|d| d.as_str())
-}
-
-fn extract_description_from_meta(meta: &Value) -> Option<&str> {
-    meta.get("description").and_then(|d| d.as_str())
 }
