@@ -345,7 +345,7 @@ mod tests {
     }
 
     #[test]
-    pub fn dont_extract_incomplete_attribute_from_meta_test3() {
+    pub fn dont_extract_incomplete_attribute_from_meta_test() {
         let meta = json!({"attributes": [{"trait_type": "eyes"}]});
         let result = extract_attributes_from_meta(&meta);
         assert_eq!(result.len(), 0);
