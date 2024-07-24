@@ -25,23 +25,20 @@ pub struct NftMeta<'a> {
 pub struct NftMetaAttribute<'a> {
     pub raw: &'a serde_json::Value,
     pub trait_type: &'a str,
-    pub value: Option<&'a serde_json::Value>,
+    pub value: &'a serde_json::Value,
 }
 
 impl<'a> NftMetaAttribute<'a> {
-    pub fn new(raw: &'a serde_json::Value) -> NftMetaAttribute<'a> {
-        let trait_type = raw
-            .get("trait_type")
-            .and_then(|e| e.as_str())
-            .unwrap_or_default();
+    pub fn new(raw: &'a serde_json::Value) -> Option<NftMetaAttribute<'a>> {
+        let trait_type = raw.get("trait_type").and_then(|e| e.as_str())?;
 
-        let value = raw.get("display_value").or_else(|| raw.get("value"));
+        let value = raw.get("display_value").or_else(|| raw.get("value"))?;
 
-        Self {
+        Some(Self {
             raw,
             trait_type,
             value,
-        }
+        })
     }
 }
 

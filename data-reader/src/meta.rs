@@ -240,20 +240,15 @@ pub async fn update_nft_meta(
             );
         }
 
-        let attributes = meta
-            .get("attributes")
-            .and_then(|d| d.as_array())
-            .map(|d| d.iter().map(NftMetaAttribute::new).collect::<Vec<_>>());
-        if let Some(attributes) = attributes {
-            if let Err(e) = tx
-                .update_nft_attributes(address_data, &attributes, updated)
-                .await
-            {
-                bail!(
-                    "Nft address: {}, error while updating attributes: {e:#?}",
-                    &address_data.nft,
-                );
-            }
+        let attributes = extract_attributes_from_meta(&meta);
+        if let Err(e) = tx
+            .update_nft_attributes(address_data, &attributes, updated)
+            .await
+        {
+            bail!(
+                "Nft address: {}, error while updating attributes: {e:#?}",
+                &address_data.nft,
+            );
         }
 
         let nft_meta = NftMeta {
@@ -284,4 +279,75 @@ pub async fn update_nft_meta(
     };
 
     Ok(())
+}
+
+fn extract_attributes_from_meta(meta: &Value) -> Vec<NftMetaAttribute> {
+    meta.get("attributes")
+        .and_then(|d| d.as_array())
+        .map(|d| {
+            d.iter()
+                .filter_map(NftMetaAttribute::new)
+                .collect::<Vec<_>>()
+        })
+        .unwrap_or_default()
+}
+
+#[cfg(test)]
+mod tests {
+    use crate::meta::extract_attributes_from_meta;
+    use serde_json::json;
+
+    #[test]
+    pub fn extract_no_attributes_from_meta_empty_test() {
+        let meta = json!({});
+        let result = extract_attributes_from_meta(&meta);
+        assert_eq!(result.len(), 0);
+    }
+
+    #[test]
+    pub fn extract_no_attributes_from_meta_empty_field_test() {
+        let meta = json!({"attributes": []});
+        let result = extract_attributes_from_meta(&meta);
+        assert_eq!(result.len(), 0);
+    }
+
+    #[test]
+    pub fn extract_correct_attribute_from_meta_test() {
+        let meta = json!({"attributes": [{"trait_type": "eyes", "value": "blue"}]});
+        let result = extract_attributes_from_meta(&meta);
+        assert_eq!(result.len(), 1);
+        assert_eq!(
+            result[0].raw,
+            &json!({"trait_type": "eyes", "value": "blue"})
+        );
+        assert_eq!(result[0].trait_type, "eyes");
+        assert_eq!(result[0].value, "blue");
+    }
+
+    #[test]
+    pub fn extract_correct_attribute_from_meta_test2() {
+        let meta = json!({"attributes": [{"trait_type": "eyes", "display_value": "green"}]});
+        let result = extract_attributes_from_meta(&meta);
+        assert_eq!(result.len(), 1);
+        assert_eq!(
+            result[0].raw,
+            &json!({"trait_type": "eyes", "display_value": "green"})
+        );
+        assert_eq!(result[0].trait_type, "eyes");
+        assert_eq!(result[0].value, "green");
+    }
+
+    #[test]
+    pub fn dont_extract_corrupted_attribute_from_meta_test() {
+        let meta = json!({"attributes": [{"trait_typo": "eyes", "volume": "blue"}]});
+        let result = extract_attributes_from_meta(&meta);
+        assert_eq!(result.len(), 0);
+    }
+
+    #[test]
+    pub fn dont_extract_incomplete_attribute_from_meta_test3() {
+        let meta = json!({"attributes": [{"trait_type": "eyes"}]});
+        let result = extract_attributes_from_meta(&meta);
+        assert_eq!(result.len(), 0);
+    }
 }
