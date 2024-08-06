@@ -1,4 +1,4 @@
-use nekoton_abi::{PackAbiPlain, UnpackAbiPlain};
+use nekoton_abi::{KnownParamTypePlain, PackAbi, PackAbiPlain, UnpackAbiPlain};
 use serde::Serialize;
 use ton_block::MsgAddressInt;
 
@@ -23,3 +23,12 @@ pub struct ManagerChanged {
     #[serde(serialize_with = "serialize_msg_address_int")]
     pub new_manager: MsgAddressInt,
 }
+
+#[derive(Debug, Clone, PackAbi, PackAbiPlain, UnpackAbiPlain, KnownParamTypePlain, Serialize)]
+pub struct NftMetadataUpdated;
+
+#[derive(Debug, Clone, PackAbi, PackAbiPlain, UnpackAbiPlain, KnownParamTypePlain, Serialize)]
+pub struct CollectionMetadataUpdated;
+
+#[derive(Debug, Clone, PackAbi, PackAbiPlain, UnpackAbiPlain, KnownParamTypePlain, Serialize)]
+pub struct MetadataUpdated;

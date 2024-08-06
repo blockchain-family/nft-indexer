@@ -33,6 +33,10 @@ pub enum EventType {
     RemoveCollectionRules,
 
     OwnershipTransferred,
+
+    MetadataUpdated,
+    NftMetadataUpdated,
+    CollectionMetadataUpdated,
 }
 
 impl sqlx::postgres::PgHasArrayType for EventType {
@@ -342,5 +346,26 @@ pub mod decoded {
         pub address: String,
         pub denominator: i32,
         pub numerator: i32,
+    }
+
+    #[derive(Debug, Clone)]
+    pub struct MetadataUpdated {
+        pub address: String,
+        pub tx_lt: u64,
+        pub timestamp: NaiveDateTime,
+    }
+
+    #[derive(Debug, Clone)]
+    pub struct NftMetadataUpdated {
+        pub collection: String,
+        pub tx_lt: u64,
+        pub timestamp: NaiveDateTime,
+    }
+
+    #[derive(Debug, Clone)]
+    pub struct CollectionMetadataUpdated {
+        pub address: String,
+        pub tx_lt: u64,
+        pub timestamp: NaiveDateTime,
     }
 }

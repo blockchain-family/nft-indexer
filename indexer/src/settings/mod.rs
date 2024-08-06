@@ -54,10 +54,6 @@ pub async fn init_transaction_buffer(
 }
 
 fn get_any_extractable() -> Vec<AnyExtractable> {
-    // NOTE: из-за того, что есть два ивента NftCreated,
-    // но с разными полями, будет выскакивать ошибка
-    // для ивента из Nft.abi.json
-
     let extractables = vec![
         auction_root_tip3(),
         auction_tip3(),
@@ -69,6 +65,8 @@ fn get_any_extractable() -> Vec<AnyExtractable> {
         mint_and_sell(),
         nft(),
         collection(),
+        nft4_2_2(),
+        collection4_2_2(),
     ]
     .into_iter()
     .flat_map(|c| {

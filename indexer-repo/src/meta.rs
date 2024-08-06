@@ -1,8 +1,7 @@
+use crate::types::NftCollectionMeta;
 use anyhow::Result;
 use chrono::NaiveDateTime;
 use sqlx::{postgres::PgQueryResult, PgPool, Postgres, Transaction};
-
-use crate::types::NftCollectionMeta;
 
 #[derive(Clone)]
 pub struct MetadataModelService {
@@ -10,11 +9,6 @@ pub struct MetadataModelService {
 }
 
 const FAILED_META_COOLDOWN_SECS: i64 = 120 * 60;
-
-pub struct NftAddressData {
-    pub nft: String,
-    pub collection: String,
-}
 
 pub struct NftMeta<'a> {
     pub address: &'a str,
@@ -60,14 +54,10 @@ impl MetadataModelService {
         .await?)
     }
 
-    pub async fn get_nfts_for_meta_update(
-        &self,
-        items_per_page: i64,
-    ) -> Result<Vec<NftAddressData>> {
-        Ok(sqlx::query_as!(
-                    NftAddressData,
+    pub async fn get_nfts_for_meta_update(&self, items_per_page: i64) -> Result<Vec<String>> {
+        Ok(sqlx::query_scalar!(
                     r#"
-                    select n.address as nft, n.collection
+                    select n.address as nft
                     from nft n
                              join nft_collection nc on nc.address = n.collection
                              left join meta_handled_addresses mha on mha.address = n.address
@@ -105,27 +95,18 @@ impl MetadataModelService {
             .fetch_all(&self.pool)
             .await?)
     }
-
-    pub async fn start_transaction(&self) -> Result<MetadataModelTransaction> {
-        let tx = self.pool.begin().await?;
-
-        Ok(MetadataModelTransaction { tx })
-    }
 }
 
-pub struct MetadataModelTransaction<'a> {
-    tx: Transaction<'a, Postgres>,
-}
-
-impl<'a> MetadataModelTransaction<'a> {
+impl MetadataModelService {
     pub async fn update_nft_basic_meta(
-        &mut self,
+        &self,
         addr: &str,
         name: Option<&str>,
         description: Option<&str>,
         updated: NaiveDateTime,
+        tx: Option<&mut Transaction<'_, Postgres>>,
     ) -> Result<PgQueryResult> {
-        Ok(sqlx::query!(
+        let query = sqlx::query!(
             r#"
                 update nft
                 set name = $2,
@@ -137,53 +118,71 @@ impl<'a> MetadataModelTransaction<'a> {
             name,
             description,
             updated.and_utc().timestamp()
-        )
-        .execute(&mut self.tx)
-        .await?)
+        );
+
+        Ok(if let Some(tx) = tx {
+            query.execute(tx).await?
+        } else {
+            query.execute(&self.pool).await?
+        })
     }
 
-    pub async fn update_nft_attributes(
-        &mut self,
-        address_data: &NftAddressData,
-        attr: &[NftMetaAttribute<'a>],
+    pub async fn update_nft_attributes<'b>(
+        &self,
+        nft_address: &str,
+        attr: &[NftMetaAttribute<'b>],
         updated: NaiveDateTime,
+        mut tx: Option<&mut Transaction<'_, Postgres>>,
     ) -> Result<()> {
         for nft_attribute in attr {
-            sqlx::query!(
+            let query = sqlx::query!(
                 r#"
                     insert into nft_attributes (nft, collection, raw, trait_type, value, updated)
-                    values ($1, $2, $3, $4, $5, $6)
-                    on conflict (nft, trait_type) where updated < $6 do update
+                    select address, collection, $2, $3, $4, $5
+                    from nft
+                    where address = $1
+                    on conflict (nft, trait_type) where updated < $5 do update
                     set raw = excluded.raw, value = excluded.value, updated = excluded.updated;
                 "#,
-                &address_data.nft as _,
-                &address_data.collection as _,
+                nft_address as _,
                 nft_attribute.raw,
                 nft_attribute.trait_type,
                 nft_attribute.value,
                 updated,
-            )
-            .execute(&mut self.tx)
-            .await?;
+            );
+
+            if let Some(tx) = tx.as_deref_mut() {
+                query.execute(tx).await?;
+            } else {
+                query.execute(&self.pool).await?;
+            }
         }
 
         let nft_trait_types = attr
             .iter()
             .map(|a| a.trait_type.to_string())
             .collect::<Vec<_>>();
-        sqlx::query!(
+        let query = sqlx::query!(
             r#"delete from nft_attributes where nft = $1 and trait_type != all($2);"#,
-            &address_data.nft,
+            &nft_address,
             &nft_trait_types[..]
-        )
-        .execute(&mut self.tx)
-        .await?;
+        );
+
+        if let Some(tx) = tx {
+            query.execute(tx).await?;
+        } else {
+            query.execute(&self.pool).await?;
+        }
 
         Ok(())
     }
 
-    pub async fn update_nft_meta(&mut self, meta: &NftMeta<'a>) -> Result<PgQueryResult> {
-        Ok(sqlx::query!(
+    pub async fn update_nft_meta<'b>(
+        &self,
+        meta: &NftMeta<'b>,
+        tx: Option<&mut Transaction<'_, Postgres>>,
+    ) -> Result<PgQueryResult> {
+        let query = sqlx::query!(
             r#"
                 insert into nft_metadata (nft, meta, updated)
                 values ($1, $2, $3)
@@ -193,13 +192,21 @@ impl<'a> MetadataModelTransaction<'a> {
             &meta.address as _,
             &meta.meta,
             &meta.updated
-        )
-        .execute(&mut self.tx)
-        .await?)
+        );
+
+        Ok(if let Some(tx) = tx {
+            query.execute(tx).await?
+        } else {
+            query.execute(&self.pool).await?
+        })
     }
 
-    pub async fn update_collection(&mut self, meta: &NftCollectionMeta) -> Result<PgQueryResult> {
-        Ok(sqlx::query!(
+    pub async fn update_collection(
+        &self,
+        meta: &NftCollectionMeta,
+        tx: Option<&mut Transaction<'_, Postgres>>,
+    ) -> Result<PgQueryResult> {
+        let query = sqlx::query!(
             r#"
             update nft_collection
             set
@@ -220,21 +227,26 @@ impl<'a> MetadataModelTransaction<'a> {
             meta.updated,
             meta.owner as _,
             meta.royalty as _,
-        )
-        .execute(&mut self.tx)
-        .await?)
+        );
+
+        Ok(if let Some(tx) = tx {
+            query.execute(tx).await?
+        } else {
+            query.execute(&self.pool).await?
+        })
     }
 
     pub async fn add_to_proceeded(
-        &mut self,
+        &self,
         addr: &str,
         failed: Option<bool>,
+        tx: Option<&mut Transaction<'_, Postgres>>,
     ) -> Result<PgQueryResult> {
         let failed = failed.unwrap_or(false);
 
         let now = chrono::Utc::now().timestamp();
 
-        Ok(sqlx::query!(
+        let query = sqlx::query!(
             r#"
                 insert into meta_handled_addresses (
                     address,
@@ -254,12 +266,12 @@ impl<'a> MetadataModelTransaction<'a> {
             addr as _,
             now as _,
             failed,
-        )
-        .execute(&mut self.tx)
-        .await?)
-    }
+        );
 
-    pub async fn commit(self) -> Result<()> {
-        Ok(self.tx.commit().await?)
+        Ok(if let Some(tx) = tx {
+            query.execute(tx).await?
+        } else {
+            query.execute(&self.pool).await?
+        })
     }
 }
