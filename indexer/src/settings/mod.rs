@@ -10,6 +10,7 @@ use transaction_buffer::models::{
 };
 use transaction_buffer::start_parsing_and_get_channels;
 use transaction_consumer::{ConsumerOptions, TransactionConsumer};
+use url::Url;
 
 pub mod config;
 pub async fn init_consumer(config: &Config) -> Result<Arc<TransactionConsumer>> {
@@ -103,10 +104,6 @@ fn get_extractable_name(extractable: &AnyExtractable) -> String {
     }
 }
 
-pub async fn get_jrpc_client(config: &Config) -> Result<RpcClient> {
-    RpcClient::new(
-        config.states_rpc_endpoints.clone(),
-        ClientOptions::default(),
-    )
-    .await
+pub async fn get_jrpc_client(endpoints: Vec<Url>) -> Result<RpcClient> {
+    RpcClient::new(endpoints, ClientOptions::default()).await
 }

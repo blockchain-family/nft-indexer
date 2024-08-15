@@ -41,7 +41,7 @@ async fn main() -> Result<()> {
         .run(&pg_pool)
         .await?;
 
-    let jrpc_client = settings::get_jrpc_client(&config).await?;
+    let jrpc_client = settings::get_jrpc_client(config.states_rpc_endpoints.clone()).await?;
     log::info!("Connected to jrpc endpoint");
 
     let price_reader = PriceReader::new(

@@ -17,6 +17,23 @@
 			]
 		},
 		{
+			"name": "getUrlParts",
+			"inputs": [
+				{"name":"answerId","type":"uint32"}
+			],
+			"outputs": [
+				{"name":"value0","type":"cell"}
+			]
+		},
+		{
+			"name": "setNftUrlPart",
+			"inputs": [
+				{"name":"newNftPart","type":"cell"}
+			],
+			"outputs": [
+			]
+		},
+		{
 			"name": "burn",
 			"inputs": [
 				{"name":"sendGasTo","type":"address"},
@@ -53,15 +70,6 @@
 			],
 			"outputs": [
 				{"name":"index","type":"address"}
-			]
-		},
-		{
-			"name": "getUrlParts",
-			"inputs": [
-				{"name":"answerId","type":"uint32"}
-			],
-			"outputs": [
-				{"name":"part","type":"cell"}
 			]
 		},
 		{
@@ -180,6 +188,7 @@
 		{"name":"_manager","type":"address"},
 		{"name":"_indexDeployValue","type":"uint128"},
 		{"name":"_indexDestroyValue","type":"uint128"},
-		{"name":"_codeIndex","type":"cell"}
+		{"name":"_codeIndex","type":"cell"},
+		{"name":"nftPart","type":"optional(cell)"}
 	]
 }

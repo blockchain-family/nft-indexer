@@ -353,7 +353,7 @@ async fn save_to_db(
                     .iter()
                     .map(|nmu| nmu.collection.as_str())
                     .collect::<Vec<_>>(),
-                true,
+                false,
                 Some(&mut pg_pool_tx),
             )
             .await;
@@ -366,7 +366,7 @@ async fn save_to_db(
                     .iter()
                     .map(|nmu| nmu.address.as_str())
                     .collect::<Vec<_>>(),
-                false,
+                true,
                 Some(&mut pg_pool_tx),
             )
             .await;
@@ -446,15 +446,23 @@ fn unpack_entity(event: &ExtractedOwned) -> Result<Option<Box<dyn Decode>>> {
 
 #[cfg(test)]
 mod test {
-    use std::collections::{BTreeMap, HashMap};
-
+    use crate::parser::save_to_db;
+    use crate::persistence::collections_queue::CollectionsQueue;
+    use crate::persistence::entities::Decoded;
+    use crate::settings::get_jrpc_client;
+    use crate::{abi::scope::events, models::events::*, parser::unpack_entity};
+    use chrono::NaiveDateTime;
+    use data_reader::{MetaUpdater, MetaUpdaterContext, PriceReader};
+    use indexer_repo::types::{decoded, BcName};
+    use indexer_repo::utils::init_pg_pool;
     use nekoton_abi::{transaction_parser::ExtractedOwned, PackAbiPlain, UnpackAbiPlain};
     use num::{BigInt, BigUint};
+    use std::collections::{BTreeMap, HashMap};
+    use std::str::FromStr;
     use ton_abi::{Int, Param, ParamType, Token, TokenValue, Uint};
     use ton_block::{Grams, Message, MsgAddrStd, MsgAddress, Transaction};
     use ton_types::{Cell, UInt256};
-
-    use crate::{abi::scope::events, models::events::*, parser::unpack_entity};
+    use url::Url;
 
     fn create_default_token_value(param_kind: &ParamType) -> TokenValue {
         match &param_kind {
@@ -512,6 +520,72 @@ mod test {
         }
 
         tokens
+    }
+
+    #[tokio::test]
+    #[ignore]
+    async fn test_save_to_db() {
+        let pool = init_pg_pool(
+            "postgresql://postgres:123@localhost:5432/nft-indexer-prod-venom-test",
+            10,
+            None,
+        )
+        .await
+        .unwrap();
+
+        let mut collection_queue = CollectionsQueue::new(pool.clone()).await;
+
+        let price_reader = PriceReader::new(
+            pool.clone(),
+            BcName::Venom,
+            "https://xxx.yyy".to_string(),
+            1,
+            1,
+        )
+        .await;
+        let meta_updater = MetaUpdater::new(MetaUpdaterContext {
+            jrpc_client: get_jrpc_client(vec![
+                Url::from_str("https://jrpc.venom.foundation/rpc").unwrap()
+            ])
+            .await
+            .unwrap(),
+            http_client: Default::default(),
+            pool: pool.clone(),
+            jrpc_req_latency_millis: 1,
+            idle_after_loop: 1,
+        });
+
+        let nft_metadata_updated = decoded::NftMetadataUpdated {
+            collection: "0:8086fb61082b0b54b0024461f9222d40c6d908cd9c91aba9ecfad65520f50094"
+                .to_string(),
+            tx_lt: 123,
+            timestamp: NaiveDateTime::default(),
+        };
+        let collection_metadata_updated = decoded::CollectionMetadataUpdated {
+            address: "0:b9983230ee55543b27b81f3fe1fb74f089a1dc7907947aa52359388e0084a19c"
+                .to_string(),
+            tx_lt: 123,
+            timestamp: NaiveDateTime::default(),
+        };
+        let metadata_updated = decoded::MetadataUpdated {
+            address: "0:3fe56412937374ccf72ae1a0af51448c2796cb24277784ba66ace378be127454"
+                .to_string(),
+            tx_lt: 123,
+            timestamp: NaiveDateTime::default(),
+        };
+
+        let _x = save_to_db(
+            &pool.clone(),
+            &price_reader,
+            &meta_updater,
+            vec![
+                Decoded::CollectionNftMetadataUpdated(nft_metadata_updated),
+                Decoded::CollectionMetadataUpdated(collection_metadata_updated),
+                Decoded::MetadataUpdatedNft(metadata_updated),
+            ],
+            &mut collection_queue,
+        )
+        .await;
     }
 
     #[test]
