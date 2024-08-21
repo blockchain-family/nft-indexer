@@ -10,6 +10,7 @@ use transaction_buffer::models::{
 };
 use transaction_buffer::start_parsing_and_get_channels;
 use transaction_consumer::{ConsumerOptions, TransactionConsumer};
+use url::Url;
 
 pub mod config;
 pub async fn init_consumer(config: &Config) -> Result<Arc<TransactionConsumer>> {
@@ -54,10 +55,6 @@ pub async fn init_transaction_buffer(
 }
 
 fn get_any_extractable() -> Vec<AnyExtractable> {
-    // NOTE: из-за того, что есть два ивента NftCreated,
-    // но с разными полями, будет выскакивать ошибка
-    // для ивента из Nft.abi.json
-
     let extractables = vec![
         auction_root_tip3(),
         auction_tip3(),
@@ -69,6 +66,8 @@ fn get_any_extractable() -> Vec<AnyExtractable> {
         mint_and_sell(),
         nft(),
         collection(),
+        nft4_2_2(),
+        collection4_2_2(),
     ]
     .into_iter()
     .flat_map(|c| {
@@ -105,10 +104,6 @@ fn get_extractable_name(extractable: &AnyExtractable) -> String {
     }
 }
 
-pub async fn get_jrpc_client(config: &Config) -> Result<RpcClient> {
-    RpcClient::new(
-        config.states_rpc_endpoints.clone(),
-        ClientOptions::default(),
-    )
-    .await
+pub async fn get_jrpc_client(endpoints: Vec<Url>) -> Result<RpcClient> {
+    RpcClient::new(endpoints, ClientOptions::default()).await
 }

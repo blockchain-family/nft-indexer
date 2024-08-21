@@ -8,6 +8,7 @@ RUN mkdir src && touch src/lib.rs
 COPY data-reader data-reader
 COPY indexer indexer
 COPY indexer-api indexer-api
+COPY indexer-jobs indexer-jobs
 COPY indexer-repo indexer-repo
 COPY Cargo.toml Cargo.lock ./
 RUN RUSTFLAGS=-g cargo build --release
@@ -17,7 +18,7 @@ COPY . .
 RUN RUSTFLAGS=-g cargo build --release
 
 FROM europe-west1-docker.pkg.dev/broxus-infrastructure/docker/rust-runtime:stable
-COPY --from=builder /build/target/release/model /app/application
+COPY --from=builder /build/target/release/nft-indexer /app/application
 COPY --from=builder /build/indexer-repo/migrations /app/migrations
 COPY --from=builder /build/indexer/src/abi/json /app/abi
 COPY --from=builder /build/entrypoint.sh /app/entrypoint.sh

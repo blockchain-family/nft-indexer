@@ -27,6 +27,11 @@ pub fn events() -> Vec<&'static str> {
         /* Nft */
         "ManagerChanged",
         "OwnerChanged",
+        /* Collection 4.2.2 */
+        "NftMetadataUpdated",
+        "CollectionMetadataUpdated",
+        /* Nft 4.2.2 */
+        "MetadataUpdated",
         /* common for all events */
         "OwnershipTransferred",
         "MarketFeeDefaultChanged",

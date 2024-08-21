@@ -1,13 +1,13 @@
 use anyhow::Result;
 use indexer_repo::types::{decoded, EventCategory, EventType};
 
+use super::{to_address, types::Decoded, Decode};
+use crate::models::events::{CollectionMetadataUpdated, NftMetadataUpdated};
 use crate::utils::{timestamp_to_datetime, u256_to_bigdecimal};
 use crate::{
     models::events::{NftBurned, NftCreated},
     utils::{DecodeContext, KeyInfo},
 };
-
-use super::{to_address, types::Decoded, Decode};
 
 impl Decode for NftCreated {
     fn decode(&self, ctx: &DecodeContext) -> Result<Decoded> {
@@ -61,6 +61,62 @@ impl Decode for NftBurned {
             created_at: ctx.tx_data.get_timestamp(),
             message_hash: ctx.message_hash.to_string(),
             nft: Some(self.nft.to_string()),
+            collection: Some(ctx.tx_data.get_account()),
+
+            raw_data: serde_json::to_value(self).unwrap_or_default(),
+        }))
+    }
+}
+
+impl Decode for NftMetadataUpdated {
+    fn decode(&self, ctx: &DecodeContext) -> Result<Decoded> {
+        let metadata_updated = decoded::NftMetadataUpdated {
+            collection: ctx.tx_data.get_account(),
+            tx_lt: ctx.tx_data.logical_time(),
+            timestamp: timestamp_to_datetime(ctx.tx_data.get_timestamp()),
+        };
+
+        Ok(Decoded::CollectionNftMetadataUpdated(metadata_updated))
+    }
+
+    fn decode_event(&self, ctx: &DecodeContext) -> Result<Decoded> {
+        Ok(Decoded::RawEventRecord(decoded::EventRecord {
+            event_category: EventCategory::Collection,
+            event_type: EventType::NftMetadataUpdated,
+
+            address: ctx.tx_data.get_account(),
+            created_lt: ctx.tx_data.logical_time() as i64,
+            created_at: ctx.tx_data.get_timestamp(),
+            message_hash: ctx.message_hash.to_string(),
+            nft: None,
+            collection: Some(ctx.tx_data.get_account()),
+
+            raw_data: serde_json::to_value(self).unwrap_or_default(),
+        }))
+    }
+}
+
+impl Decode for CollectionMetadataUpdated {
+    fn decode(&self, ctx: &DecodeContext) -> Result<Decoded> {
+        let metadata_updated = decoded::CollectionMetadataUpdated {
+            address: ctx.tx_data.get_account(),
+            tx_lt: ctx.tx_data.logical_time(),
+            timestamp: timestamp_to_datetime(ctx.tx_data.get_timestamp()),
+        };
+
+        Ok(Decoded::CollectionMetadataUpdated(metadata_updated))
+    }
+
+    fn decode_event(&self, ctx: &DecodeContext) -> Result<Decoded> {
+        Ok(Decoded::RawEventRecord(decoded::EventRecord {
+            event_category: EventCategory::Collection,
+            event_type: EventType::CollectionMetadataUpdated,
+
+            address: ctx.tx_data.get_account(),
+            created_lt: ctx.tx_data.logical_time() as i64,
+            created_at: ctx.tx_data.get_timestamp(),
+            message_hash: ctx.message_hash.to_string(),
+            nft: None,
             collection: Some(ctx.tx_data.get_account()),
 
             raw_data: serde_json::to_value(self).unwrap_or_default(),
