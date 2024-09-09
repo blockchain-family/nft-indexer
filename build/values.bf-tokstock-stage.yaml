@@ -2,13 +2,13 @@ env:
   RUST_LOG: info
   RUST_BACKTRACE: 1
 
-  DATABASE_URL: postgresql://$(PROD_MAINNET_VENOM_PG_USER):$(PROD_MAINNET_VENOM_PG_PASSWORD)@postgresql-bf.europe-west1-c.c.broxus.internal:5432/nft-indexer-prod-mainnet-venom
+  DATABASE_URL: postgresql://$(PROD_V1_PG_USER):$(PROD_V1_PG_PASSWORD)@postgresql-bf.europe-west1-c.c.broxus.internal:5432/tokstock-indexer-stage
   DATABASE_MAX_CONNECTIONS: 5
 
-  KAFKA_CONSUMER_GROUP: nft-indexer-tokstock-stage
+  KAFKA_CONSUMER_GROUP: nft-indexer-tokstock-prod
   KAFKA_TOPIC: mainnet-raw-transactions
 
-  KAFKA_SETTINGS__BOOTSTRAP_SERVERS: kafka-venom-1.europe-west1-c.c.broxus.internal:9092,kafka-venom-2.europe-west1-c.c.broxus.internal:9092,kafka-venom-3.europe-west1-c.c.broxus.internal:9092
+  KAFKA_SETTINGS__BOOTSTRAP_SERVERS: kafka-broker-1.europe-west1-c.c.broxus.internal:9092,kafka-broker-2.europe-west1-c.c.broxus.internal:9092,kafka-broker-3.europe-west1-c.c.broxus.internal:9092
   KAFKA_SETTINGS__SECURITY_PROTOCOL: PLAINTEXT
 
   STATES_RPC_ENDPOINTS: http://34.78.208.233:8081/rpc
@@ -29,14 +29,14 @@ service:
 ingress:
   enabled: false
   hosts:
-    - host: indexer-everscale-stage-mainnet.bf.works
+    - host: tokstock-indexer-stage.bf.works
       paths:
         - path: /
           pathType: ImplementationSpecific
   tls:
-    - secretName: indexer-venom-prod-mainnet-tls
+    - secretName: tokstock-indexer-stage-tls
       hosts:
-        - indexer-venom-prod-mainnet.bf.works
+        - tokstock-indexer-stage.bf.works
 
 controller: statefulset
 
