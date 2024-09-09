@@ -58,16 +58,12 @@ fn get_any_extractable() -> Vec<AnyExtractable> {
     let extractables = vec![
         auction_root_tip3(),
         auction_tip3(),
-        callbacks(),
         direct_buy(),
         direct_sell(),
         factory_direct_buy(),
         factory_direct_sell(),
-        mint_and_sell(),
         nft(),
         collection(),
-        nft4_2_2(),
-        collection4_2_2(),
     ]
     .into_iter()
     .flat_map(|c| {

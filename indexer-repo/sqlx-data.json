@@ -327,6 +327,50 @@
     },
     "query": "\n                select token\n                from token_to_dex\n                where source = $1\n            "
   },
+  "72fa52675ea68e6828e43e3d675741f7c9170070b71e4504a4eafb9ff106923e": {
+    "describe": {
+      "columns": [
+        {
+          "name": "nft",
+          "ordinal": 0,
+          "type_info": "Varchar"
+        },
+        {
+          "name": "collection",
+          "ordinal": 1,
+          "type_info": "Varchar"
+        },
+        {
+          "name": "nft_owner",
+          "ordinal": 2,
+          "type_info": "Varchar"
+        },
+        {
+          "name": "price_token",
+          "ordinal": 3,
+          "type_info": "Varchar"
+        },
+        {
+          "name": "start_time",
+          "ordinal": 4,
+          "type_info": "Int8"
+        }
+      ],
+      "nullable": [
+        false,
+        false,
+        false,
+        true,
+        null
+      ],
+      "parameters": {
+        "Left": [
+          "Text"
+        ]
+      }
+    },
+    "query": "\n        select nft,\n               collection,\n               nft_owner,\n               price_token,\n               extract('epoch' from created_at)::bigint start_time\n        from nft_auction\n        where address = $1\n        "
+  },
   "861d9c3757649d8f7d18e08fcfb77d3bfd31f92639ba779d8f8d7fdcacdc9e03": {
     "describe": {
       "columns": [],
@@ -388,7 +432,10 @@
                         "market_fee_changed",
                         "add_collection_rules",
                         "remove_collection_rules",
-                        "ownership_transferred"
+                        "ownership_transferred",
+                        "metadata_updated",
+                        "nft_metadata_updated",
+                        "collection_metadata_updated"
                       ]
                     },
                     "name": "event_type"
@@ -788,6 +835,26 @@
       }
     },
     "query": "\n            insert into nft_auction_bid (\n                auction,\n                buyer,\n                price,\n                next_bid_value, \n                created_at,\n                tx_lt,\n                declined,\n                nft,\n                nft_owner,\n                collection,\n                price_token\n            )\n            select\n                unnest($1::varchar[]),\n                unnest($2::varchar[]),\n                unnest($3::numeric[]),\n                unnest($4::numeric[]),\n                unnest($5::timestamp[]),\n                unnest($6::bigint[]),\n                unnest($7::boolean[]),\n                unnest($8::varchar[]),\n                unnest($9::varchar[]),\n                unnest($10::varchar[]),\n                unnest($11::varchar[])\n        "
+  },
+  "ea4c764b24d60f12ce3fce7783e44a2c54c2aab0fd656c327c04188ec628b567": {
+    "describe": {
+      "columns": [
+        {
+          "name": "collection",
+          "ordinal": 0,
+          "type_info": "Varchar"
+        }
+      ],
+      "nullable": [
+        false
+      ],
+      "parameters": {
+        "Left": [
+          "Text"
+        ]
+      }
+    },
+    "query": "\n        select collection\n        from nft\n        where address = $1\n        "
   },
   "efbe3d086177df5c413b66a7e63e5fcde6a1e46221ca11ac78488525453212a6": {
     "describe": {

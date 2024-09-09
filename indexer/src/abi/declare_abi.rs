@@ -14,16 +14,12 @@ macro_rules! declare_abi {
 declare_abi! {
     auction_root_tip3 => "json/FactoryAuction.abi.json",
     auction_tip3 => "json/Auction.abi.json",
-    callbacks => "json/Callbacks.abi.json",
     collection => "json/Collection.abi.json",
     direct_buy => "json/DirectBuy.abi.json",
     direct_sell => "json/DirectSell.abi.json",
     factory_direct_buy => "json/FactoryDirectBuy.abi.json",
     factory_direct_sell => "json/FactoryDirectSell.abi.json",
-    mint_and_sell => "json/MintAndSell.abi.json",
     nft => "json/Nft.abi.json" exclude events("NftCreated"),
-    collection4_2_2 => "json/Collection4_2_2.abi.json" only events("NftMetadataUpdated", "CollectionMetadataUpdated"),
-    nft4_2_2 => "json/Nft4_2_2.abi.json" only events("MetadataUpdated")
 }
 
 trait OnceCellExt {

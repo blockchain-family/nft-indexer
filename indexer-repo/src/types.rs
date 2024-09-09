@@ -369,3 +369,12 @@ pub mod decoded {
         pub timestamp: NaiveDateTime,
     }
 }
+
+#[derive(Clone)]
+pub struct AuctionCachedInfo {
+    pub nft: String,
+    pub collection: String,
+    pub nft_owner: String,
+    pub price_token: Option<String>,
+    pub start_time: Option<i64>,
+}

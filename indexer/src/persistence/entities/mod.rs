@@ -1,4 +1,5 @@
 use anyhow::Result;
+use async_trait::async_trait;
 use ton_block::MsgAddressInt;
 
 use crate::utils::DecodeContext;
@@ -14,12 +15,12 @@ mod factory_auction;
 mod factory_direct_buy;
 mod factory_direct_sell;
 mod nft;
-mod royalty;
 mod types;
 
+#[async_trait]
 pub trait Decode {
-    fn decode(&self, ctx: &DecodeContext) -> Result<Decoded>;
-    fn decode_event(&self, ctx: &DecodeContext) -> Result<Decoded>;
+    async fn decode(&self, ctx: &DecodeContext) -> Result<Decoded>;
+    async fn decode_event(&self, ctx: &DecodeContext) -> Result<Decoded>;
 }
 
 fn to_address(addr: &MsgAddressInt) -> String {

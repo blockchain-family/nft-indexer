@@ -1,4 +1,5 @@
 use anyhow::Result;
+use async_trait::async_trait;
 use indexer_repo::types::{decoded, DirectSellState, EventCategory, EventType};
 
 use crate::persistence::entities::{Decode, Decoded};
@@ -8,8 +9,9 @@ use crate::{
     utils::{DecodeContext, KeyInfo},
 };
 
+#[async_trait]
 impl Decode for DirectSellDeployed {
-    fn decode(&self, ctx: &DecodeContext) -> Result<Decoded> {
+    async fn decode(&self, ctx: &DecodeContext) -> Result<Decoded> {
         Ok(Decoded::DirectSellDeployed((
             decoded::DirectSell {
                 address: self.direct_sell.to_string(),
@@ -34,7 +36,7 @@ impl Decode for DirectSellDeployed {
         )))
     }
 
-    fn decode_event(&self, ctx: &DecodeContext) -> Result<Decoded> {
+    async fn decode_event(&self, ctx: &DecodeContext) -> Result<Decoded> {
         Ok(Decoded::RawEventRecord(decoded::EventRecord {
             event_category: EventCategory::DirectSell,
             event_type: EventType::DirectSellDeployed,
@@ -50,12 +52,13 @@ impl Decode for DirectSellDeployed {
     }
 }
 
+#[async_trait]
 impl Decode for DirectSellDeclined {
-    fn decode(&self, _ctx: &DecodeContext) -> Result<Decoded> {
+    async fn decode(&self, _ctx: &DecodeContext) -> Result<Decoded> {
         Ok(Decoded::ShouldSkip)
     }
 
-    fn decode_event(&self, ctx: &DecodeContext) -> Result<Decoded> {
+    async fn decode_event(&self, ctx: &DecodeContext) -> Result<Decoded> {
         Ok(Decoded::RawEventRecord(decoded::EventRecord {
             event_category: EventCategory::DirectSell,
             event_type: EventType::DirectSellDeclined,

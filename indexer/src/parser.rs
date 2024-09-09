@@ -1,10 +1,11 @@
 use crate::models::events::*;
+use crate::nft_cache::NftCacheService;
 use crate::persistence::collections_queue::CollectionsQueue;
 use crate::persistence::entities::*;
 use crate::settings;
 use crate::utils::DecodeContext;
 use anyhow::Result;
-use data_reader::{MetaUpdater, PriceReader};
+use data_reader::PriceReader;
 use futures::channel::mpsc::{Receiver, Sender};
 use futures::{future, SinkExt, StreamExt};
 use indexer_repo::batch::*;
@@ -21,7 +22,6 @@ pub async fn start_parsing(
     config: settings::config::Config,
     pg_pool: PgPool,
     price_reader: Arc<PriceReader>,
-    meta_updater: MetaUpdater,
 ) -> Result<()> {
     let BufferedConsumerChannels {
         rx_parsed_events,
@@ -36,7 +36,6 @@ pub async fn start_parsing(
         tx_commit,
         pg_pool,
         price_reader,
-        meta_updater,
     ));
 
     notify_for_services.notified().await;
@@ -49,11 +48,11 @@ pub async fn run_nft_indexer(
     mut tx_commit: Sender<()>,
     pool: PgPool,
     price_reader: Arc<PriceReader>,
-    meta_updater: MetaUpdater,
 ) {
     log::info!("Start nft indexer...");
 
     let mut collection_queue = CollectionsQueue::new(pool.clone()).await;
+    let nft_cache_service = NftCacheService::new(pool.clone());
 
     while let Some(message) = rx_raw_transactions.next().await {
         let mut data = Vec::with_capacity(EVENTS_PER_ITERATION * 3);
@@ -79,15 +78,16 @@ pub async fn run_nft_indexer(
                     tx_data: tx.data.clone(),
                     _function_inputs: function_inputs.clone(),
                     message_hash: event.message_hash,
+                    nft_cache_service: &nft_cache_service,
                 };
 
                 if let Ok(Some(entity)) = unpack_entity(&event) {
-                    if let Ok(decoded) = entity.decode(&ctx) {
+                    if let Ok(decoded) = entity.decode(&ctx).await {
                         data.push(decoded);
                     } else {
                         log::error!("Error while decode");
                     }
-                    if let Ok(event) = entity.decode_event(&ctx) {
+                    if let Ok(event) = entity.decode_event(&ctx).await {
                         data.push(event);
                     } else {
                         log::error!("Error while decode_event");
@@ -97,15 +97,9 @@ pub async fn run_nft_indexer(
         }
 
         let now = std::time::Instant::now();
-        save_to_db(
-            &pool,
-            &price_reader,
-            &meta_updater,
-            data,
-            &mut collection_queue,
-        )
-        .await
-        .expect("Error saving to DB");
+        save_to_db(&pool, &price_reader, data, &mut collection_queue)
+            .await
+            .expect("Error saving to DB");
         let elapsed = now.elapsed();
 
         log::info!("METRIC | Saving to db, elapsed {}ms", elapsed.as_millis());
@@ -119,7 +113,6 @@ pub async fn run_nft_indexer(
 async fn save_to_db(
     pool: &PgPool,
     price_reader: &PriceReader,
-    meta_updater: &MetaUpdater,
     data: Vec<Decoded>,
     collections_queue: &mut CollectionsQueue,
 ) -> Result<()> {
@@ -142,10 +135,6 @@ async fn save_to_db(
     let mut direct_buy_deployed = Vec::with_capacity(EVENTS_PER_ITERATION);
     let mut direct_buy_state_changed = Vec::with_capacity(EVENTS_PER_ITERATION);
     let mut deployed_offers = Vec::with_capacity(EVENTS_PER_ITERATION);
-    let mut set_royalty = Vec::with_capacity(EVENTS_PER_ITERATION);
-    let mut collection_nft_metadata_updated = Vec::with_capacity(EVENTS_PER_ITERATION);
-    let mut collection_metadata_updated = Vec::with_capacity(EVENTS_PER_ITERATION);
-    let mut metadata_updated = Vec::with_capacity(EVENTS_PER_ITERATION);
 
     for element in data {
         match element {
@@ -193,10 +182,6 @@ async fn save_to_db(
                     prices.push(price);
                 }
             }
-            Decoded::RoyaltySet(rs) => set_royalty.push(rs),
-            Decoded::CollectionNftMetadataUpdated(m) => collection_nft_metadata_updated.push(m),
-            Decoded::CollectionMetadataUpdated(m) => collection_metadata_updated.push(m),
-            Decoded::MetadataUpdatedNft(m) => metadata_updated.push(m),
             Decoded::ShouldSkip => (),
         }
     }
@@ -222,10 +207,6 @@ async fn save_to_db(
         direct_buy_deployed: {},
         direct_buy_state_changed: {},
         deployed_offers: {},
-        set_royalty: {},
-        collection_nft_metadata_updated: {},
-        collection_metadata_updated: {},
-        metadata_updated: {}
         "#,
         raw_events.len(),
         collections.len(),
@@ -246,10 +227,6 @@ async fn save_to_db(
         direct_buy_deployed.len(),
         direct_buy_state_changed.len(),
         deployed_offers.len(),
-        set_royalty.len(),
-        collection_nft_metadata_updated.len(),
-        collection_metadata_updated.len(),
-        metadata_updated.len()
     );
 
     // IMPORTANT: Order matters!
@@ -339,51 +316,6 @@ async fn save_to_db(
         save_price_history(&mut pg_pool_tx, &prices).await?;
     }
 
-    if !set_royalty.is_empty() {
-        update_direct_sell(&mut pg_pool_tx, &set_royalty).await?;
-        update_direct_buy(&mut pg_pool_tx, &set_royalty).await?;
-        update_auction(&mut pg_pool_tx, &set_royalty).await?;
-        log::info!("ROYALTY WAS SAVED");
-    }
-
-    if !collection_nft_metadata_updated.is_empty() {
-        meta_updater
-            .update_collections_meta(
-                &collection_nft_metadata_updated
-                    .iter()
-                    .map(|nmu| nmu.collection.as_str())
-                    .collect::<Vec<_>>(),
-                false,
-                Some(&mut pg_pool_tx),
-            )
-            .await;
-    }
-
-    if !collection_metadata_updated.is_empty() {
-        meta_updater
-            .update_collections_meta(
-                &collection_metadata_updated
-                    .iter()
-                    .map(|nmu| nmu.address.as_str())
-                    .collect::<Vec<_>>(),
-                true,
-                Some(&mut pg_pool_tx),
-            )
-            .await;
-    }
-
-    if !metadata_updated.is_empty() {
-        meta_updater
-            .update_nfts_meta(
-                &metadata_updated
-                    .iter()
-                    .map(|nmu| nmu.address.as_str())
-                    .collect::<Vec<_>>(),
-                Some(&mut pg_pool_tx),
-            )
-            .await;
-    }
-
     pg_pool_tx.commit().await?;
 
     Ok(())
@@ -400,7 +332,7 @@ macro_rules! try_unpack_entity {
     };
 }
 
-fn unpack_entity(event: &ExtractedOwned) -> Result<Option<Box<dyn Decode>>> {
+fn unpack_entity(event: &ExtractedOwned) -> Result<Option<Box<dyn Decode + Send>>> {
     try_unpack_entity!(
         event,
         /* FactoryAuction */
@@ -413,7 +345,6 @@ fn unpack_entity(event: &ExtractedOwned) -> Result<Option<Box<dyn Decode>>> {
         BidDeclined,
         AuctionComplete,
         AuctionCancelled,
-        RoyaltySet,
         /* Collection */
         NftCreated,
         NftBurned,
@@ -430,11 +361,6 @@ fn unpack_entity(event: &ExtractedOwned) -> Result<Option<Box<dyn Decode>>> {
         /* Nft */
         ManagerChanged,
         OwnerChanged,
-        /* Collection 4.2.2 */
-        NftMetadataUpdated,
-        CollectionMetadataUpdated,
-        /* Nft 4.2.2 */
-        MetadataUpdated,
         /* common for all events */
         OwnershipTransferred,
         MarketFeeDefaultChanged,
@@ -446,23 +372,13 @@ fn unpack_entity(event: &ExtractedOwned) -> Result<Option<Box<dyn Decode>>> {
 
 #[cfg(test)]
 mod test {
-    use crate::parser::save_to_db;
-    use crate::persistence::collections_queue::CollectionsQueue;
-    use crate::persistence::entities::Decoded;
-    use crate::settings::get_jrpc_client;
     use crate::{abi::scope::events, models::events::*, parser::unpack_entity};
-    use chrono::NaiveDateTime;
-    use data_reader::{MetaUpdater, MetaUpdaterContext, PriceReader};
-    use indexer_repo::types::{decoded, BcName};
-    use indexer_repo::utils::init_pg_pool;
     use nekoton_abi::{transaction_parser::ExtractedOwned, PackAbiPlain, UnpackAbiPlain};
     use num::{BigInt, BigUint};
     use std::collections::{BTreeMap, HashMap};
-    use std::str::FromStr;
     use ton_abi::{Int, Param, ParamType, Token, TokenValue, Uint};
     use ton_block::{Grams, Message, MsgAddrStd, MsgAddress, Transaction};
     use ton_types::{Cell, UInt256};
-    use url::Url;
 
     fn create_default_token_value(param_kind: &ParamType) -> TokenValue {
         match &param_kind {
@@ -522,72 +438,6 @@ mod test {
         tokens
     }
 
-    #[tokio::test]
-    #[ignore]
-    async fn test_save_to_db() {
-        let pool = init_pg_pool(
-            "postgresql://postgres:123@localhost:5432/nft-indexer-prod-venom-test",
-            10,
-            None,
-        )
-        .await
-        .unwrap();
-
-        let mut collection_queue = CollectionsQueue::new(pool.clone()).await;
-
-        let price_reader = PriceReader::new(
-            pool.clone(),
-            BcName::Venom,
-            "https://xxx.yyy".to_string(),
-            1,
-            1,
-        )
-        .await;
-        let meta_updater = MetaUpdater::new(MetaUpdaterContext {
-            jrpc_client: get_jrpc_client(vec![
-                Url::from_str("https://jrpc.venom.foundation/rpc").unwrap()
-            ])
-            .await
-            .unwrap(),
-            http_client: Default::default(),
-            pool: pool.clone(),
-            jrpc_req_latency_millis: 1,
-            idle_after_loop: 1,
-        });
-
-        let nft_metadata_updated = decoded::NftMetadataUpdated {
-            collection: "0:8086fb61082b0b54b0024461f9222d40c6d908cd9c91aba9ecfad65520f50094"
-                .to_string(),
-            tx_lt: 123,
-            timestamp: NaiveDateTime::default(),
-        };
-        let collection_metadata_updated = decoded::CollectionMetadataUpdated {
-            address: "0:b9983230ee55543b27b81f3fe1fb74f089a1dc7907947aa52359388e0084a19c"
-                .to_string(),
-            tx_lt: 123,
-            timestamp: NaiveDateTime::default(),
-        };
-        let metadata_updated = decoded::MetadataUpdated {
-            address: "0:3fe56412937374ccf72ae1a0af51448c2796cb24277784ba66ace378be127454"
-                .to_string(),
-            tx_lt: 123,
-            timestamp: NaiveDateTime::default(),
-        };
-
-        let _x = save_to_db(
-            &pool.clone(),
-            &price_reader,
-            &meta_updater,
-            vec![
-                Decoded::CollectionNftMetadataUpdated(nft_metadata_updated),
-                Decoded::CollectionMetadataUpdated(collection_metadata_updated),
-                Decoded::MetadataUpdatedNft(metadata_updated),
-            ],
-            &mut collection_queue,
-        )
-        .await;
-    }
-
     #[test]
     fn test_correct_parsing() {
         let mut total_events_parsed = 0;
@@ -596,8 +446,6 @@ mod test {
             ton_abi::Contract::load(include_str!("abi/json/FactoryAuction.abi.json")).unwrap();
         let auction_tip3_contract =
             ton_abi::Contract::load(include_str!("abi/json/Auction.abi.json")).unwrap();
-        let callbacks_contract =
-            ton_abi::Contract::load(include_str!("abi/json/Callbacks.abi.json")).unwrap();
         let collection_contract =
             ton_abi::Contract::load(include_str!("abi/json/Collection.abi.json")).unwrap();
         let direct_buy_contract =
@@ -608,17 +456,10 @@ mod test {
             ton_abi::Contract::load(include_str!("abi/json/FactoryDirectBuy.abi.json")).unwrap();
         let factory_direct_sell_contract =
             ton_abi::Contract::load(include_str!("abi/json/FactoryDirectSell.abi.json")).unwrap();
-        let mint_and_sell_contract =
-            ton_abi::Contract::load(include_str!("abi/json/MintAndSell.abi.json")).unwrap();
         let nft_contract = ton_abi::Contract::load(include_str!("abi/json/Nft.abi.json")).unwrap();
-        let collection_4_2_2_contract =
-            ton_abi::Contract::load(include_str!("abi/json/Collection4_2_2.abi.json")).unwrap();
-        let nft_4_2_2_contract =
-            ton_abi::Contract::load(include_str!("abi/json/Nft4_2_2.abi.json")).unwrap();
 
         let mut nft_events = auction_root_tip3_contract.events;
         nft_events.extend(auction_tip3_contract.events);
-        nft_events.extend(callbacks_contract.events);
         nft_events.extend(
             nft_contract
                 .events
@@ -631,23 +472,6 @@ mod test {
         nft_events.extend(direct_sell_contract.events);
         nft_events.extend(factory_direct_buy_contract.events);
         nft_events.extend(factory_direct_sell_contract.events);
-        nft_events.extend(mint_and_sell_contract.events);
-        nft_events.extend(
-            collection_4_2_2_contract
-                .events
-                .into_iter()
-                .filter(|(name, _)| {
-                    name == "NftMetadataUpdated" || name == "CollectionMetadataUpdated"
-                })
-                .collect::<HashMap<_, _>>(),
-        );
-        nft_events.extend(
-            nft_4_2_2_contract
-                .events
-                .into_iter()
-                .filter(|(name, _)| name == "MetadataUpdated")
-                .collect::<HashMap<_, _>>(),
-        );
 
         for (name, event) in nft_events {
             let event_raw = build_default_event(event.input_params());
@@ -702,7 +526,6 @@ mod test {
                     BidDeclined,
                     AuctionComplete,
                     AuctionCancelled,
-                    RoyaltySet,
                     /* Collection */
                     NftCreated,
                     NftBurned,
@@ -719,11 +542,6 @@ mod test {
                     /* Nft */
                     ManagerChanged,
                     OwnerChanged,
-                    /* Collection 4.2.2 */
-                    NftMetadataUpdated,
-                    CollectionMetadataUpdated,
-                    /* Nft 4.2.2 */
-                    MetadataUpdated,
                     /* common for all events */
                     OwnershipTransferred,
                     MarketFeeDefaultChanged,

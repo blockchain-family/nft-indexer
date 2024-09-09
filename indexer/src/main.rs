@@ -1,3 +1,5 @@
+extern crate num;
+extern crate num_derive;
 use crate::settings::config::Config;
 use anyhow::Result;
 use data_reader::{MetaUpdater, MetaUpdaterContext, PriceReader};
@@ -8,13 +10,11 @@ use std::str::FromStr;
 
 mod abi;
 mod models;
+mod nft_cache;
 mod parser;
 mod persistence;
 mod settings;
 mod utils;
-
-extern crate num;
-extern crate num_derive;
 
 #[tokio::main]
 async fn main() -> Result<()> {
@@ -71,7 +71,6 @@ async fn main() -> Result<()> {
         config.clone(),
         pg_pool.clone(),
         price_reader,
-        meta_updater.clone(),
     ));
 
     let socket_addr: SocketAddr =

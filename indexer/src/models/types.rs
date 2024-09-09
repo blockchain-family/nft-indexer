@@ -11,23 +11,23 @@ use crate::utils::{serialize_msg_address_int, serialize_uint256};
 
 #[derive(UnpackAbi, PackAbi, PartialEq, Eq, Clone, Debug, Serialize)]
 pub struct MarketOffer {
-    #[abi]
     #[serde(serialize_with = "serialize_msg_address_int")]
+    #[abi(address)]
     pub collection: MsgAddressInt,
-    #[abi(name = "nftOwner")]
     #[serde(serialize_with = "serialize_msg_address_int")]
+    #[abi(name = "nftOwner", address)]
     pub nft_owner: MsgAddressInt,
-    #[abi]
     #[serde(serialize_with = "serialize_msg_address_int")]
+    #[abi(address)]
     pub nft: MsgAddressInt,
-    #[abi]
     #[serde(serialize_with = "serialize_msg_address_int")]
+    #[abi(address)]
     pub offer: MsgAddressInt,
-    #[abi]
+    #[abi(uint128)]
     pub price: u128,
-    #[abi(name = "auctionDuration")]
+    #[abi(name = "auctionDuration", uint128)]
     pub auction_duration: u128,
-    #[abi(name = "deployNonce")]
+    #[abi(name = "deployNonce", uint64)]
     pub deploy_nonce: u64,
 }
 
@@ -59,33 +59,30 @@ impl BuildTokenValue for AuctionStatus {
 
 #[derive(UnpackAbi, PackAbi, PartialEq, Eq, Clone, Debug, Serialize)]
 pub struct AuctionDetails {
-    #[abi(name = "auctionSubject")]
     #[serde(serialize_with = "serialize_msg_address_int")]
+    #[abi(name = "auctionSubject", address)]
     pub auction_subject: MsgAddressInt,
-    #[abi(name = "subjectOwner")]
     #[serde(serialize_with = "serialize_msg_address_int")]
+    #[abi(name = "subjectOwner", address)]
     pub subject_owner: MsgAddressInt,
-    #[abi(name = "paymentToken")]
     #[serde(serialize_with = "serialize_msg_address_int")]
+    #[abi(name = "_paymentToken", address)]
     pub payment_token: MsgAddressInt,
-    #[abi(name = "walletForBids")]
     #[serde(serialize_with = "serialize_msg_address_int")]
+    #[abi(name = "walletForBids", address)]
     pub wallet_for_bids: MsgAddressInt,
-    #[abi(name = "startTime")]
+    #[abi(name = "startTime", uint64)]
     pub start_time: u64,
-    #[abi]
+    #[abi(uint64)]
     pub duration: u64,
-    #[abi(name = "endTime")]
-    pub end_time: u64,
-    #[abi]
+    #[abi(name = "finishTime", uint64)]
+    pub finish_time: u64,
+    #[abi(name = "_price", uint128)]
     pub price: u128,
-    #[abi]
+    #[abi(name = "_nonce", uint64)]
     pub nonce: u64,
-    #[abi]
-    pub status: AuctionStatus,
-    #[abi]
-    #[serde(serialize_with = "serialize_msg_address_int")]
-    pub collection: MsgAddressInt,
+    #[abi(uint8)]
+    pub status: u8,
 }
 
 #[derive(UnpackAbi, PackAbi, PartialEq, Eq, Clone, Debug, Serialize)]
@@ -117,9 +114,6 @@ pub struct DirectBuyInfo {
     pub duration_time_buy: u64,
     #[abi(name = "endTimeBuy")]
     pub end_time_buy: u64,
-    #[abi]
-    #[serde(serialize_with = "serialize_msg_address_int")]
-    pub collection: MsgAddressInt,
 }
 
 #[derive(UnpackAbi, PackAbi, PartialEq, Eq, Clone, Debug, Serialize)]
@@ -149,9 +143,6 @@ pub struct DirectSellInfo {
     pub wallet: MsgAddressInt,
     #[abi]
     pub status: u8,
-    #[abi]
-    #[serde(serialize_with = "serialize_msg_address_int")]
-    pub collection: MsgAddressInt,
 }
 
 #[derive(UnpackAbi, PackAbi, PartialEq, Eq, Clone, Debug, Serialize)]
@@ -173,15 +164,4 @@ pub struct CollectionFeeInfo {
     pub numerator: u32,
     #[abi]
     pub denominator: u32,
-}
-
-#[derive(UnpackAbi, PackAbi, PartialEq, Eq, Clone, Debug, Serialize)]
-pub struct Royalty {
-    #[abi]
-    pub numerator: u32,
-    #[abi]
-    pub denominator: u32,
-    #[abi]
-    #[serde(serialize_with = "serialize_msg_address_int")]
-    pub receiver: MsgAddressInt,
 }

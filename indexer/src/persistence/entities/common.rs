@@ -1,4 +1,5 @@
 use anyhow::Result;
+use async_trait::async_trait;
 use indexer_repo::types::{decoded, EventCategory, EventType};
 
 use crate::utils::timestamp_to_datetime;
@@ -12,12 +13,13 @@ use crate::{
 
 use super::{Decode, Decoded};
 
+#[async_trait]
 impl Decode for OwnershipTransferred {
-    fn decode(&self, _: &DecodeContext) -> Result<Decoded> {
+    async fn decode(&self, _: &DecodeContext) -> Result<Decoded> {
         Ok(Decoded::ShouldSkip)
     }
 
-    fn decode_event(&self, ctx: &DecodeContext) -> Result<Decoded> {
+    async fn decode_event(&self, ctx: &DecodeContext) -> Result<Decoded> {
         Ok(Decoded::RawEventRecord(decoded::EventRecord {
             event_category: EventCategory::Common,
             event_type: EventType::OwnershipTransferred,
@@ -34,12 +36,13 @@ impl Decode for OwnershipTransferred {
     }
 }
 
+#[async_trait]
 impl Decode for MarketFeeDefaultChanged {
-    fn decode(&self, _: &DecodeContext) -> Result<Decoded> {
+    async fn decode(&self, _: &DecodeContext) -> Result<Decoded> {
         Ok(Decoded::ShouldSkip)
     }
 
-    fn decode_event(&self, ctx: &DecodeContext) -> Result<Decoded> {
+    async fn decode_event(&self, ctx: &DecodeContext) -> Result<Decoded> {
         Ok(Decoded::RawEventRecord(decoded::EventRecord {
             event_category: EventCategory::Collection,
             event_type: EventType::MarketFeeDefaultChanged,
@@ -56,12 +59,13 @@ impl Decode for MarketFeeDefaultChanged {
     }
 }
 
+#[async_trait]
 impl Decode for MarketFeeChanged {
-    fn decode(&self, _: &DecodeContext) -> Result<Decoded> {
+    async fn decode(&self, _: &DecodeContext) -> Result<Decoded> {
         Ok(Decoded::ShouldSkip)
     }
 
-    fn decode_event(&self, ctx: &DecodeContext) -> Result<Decoded> {
+    async fn decode_event(&self, ctx: &DecodeContext) -> Result<Decoded> {
         Ok(Decoded::RawEventRecord(decoded::EventRecord {
             event_category: EventCategory::Collection,
             event_type: EventType::MarketFeeChanged,
@@ -78,8 +82,9 @@ impl Decode for MarketFeeChanged {
     }
 }
 
+#[async_trait]
 impl Decode for AddCollectionRules {
-    fn decode(&self, ctx: &DecodeContext) -> Result<Decoded> {
+    async fn decode(&self, ctx: &DecodeContext) -> Result<Decoded> {
         Ok(Decoded::AuctionRulesChanged(decoded::CollectionFee {
             address: self.collection.to_string(),
             timestamp: timestamp_to_datetime(ctx.tx_data.get_timestamp()),
@@ -88,7 +93,7 @@ impl Decode for AddCollectionRules {
         }))
     }
 
-    fn decode_event(&self, ctx: &DecodeContext) -> Result<Decoded> {
+    async fn decode_event(&self, ctx: &DecodeContext) -> Result<Decoded> {
         Ok(Decoded::RawEventRecord(decoded::EventRecord {
             event_category: EventCategory::Collection,
             event_type: EventType::AddCollectionRules,
@@ -105,8 +110,9 @@ impl Decode for AddCollectionRules {
     }
 }
 
+#[async_trait]
 impl Decode for RemoveCollectionRules {
-    fn decode(&self, ctx: &DecodeContext) -> Result<Decoded> {
+    async fn decode(&self, ctx: &DecodeContext) -> Result<Decoded> {
         Ok(Decoded::AuctionRulesChanged(decoded::CollectionFee {
             address: self.collection.to_string(),
             timestamp: timestamp_to_datetime(ctx.tx_data.get_timestamp()),
@@ -115,7 +121,7 @@ impl Decode for RemoveCollectionRules {
         }))
     }
 
-    fn decode_event(&self, ctx: &DecodeContext) -> Result<Decoded> {
+    async fn decode_event(&self, ctx: &DecodeContext) -> Result<Decoded> {
         Ok(Decoded::RawEventRecord(decoded::EventRecord {
             event_category: EventCategory::Collection,
             event_type: EventType::RemoveCollectionRules,

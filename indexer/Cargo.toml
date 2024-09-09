@@ -43,3 +43,4 @@ ton_types = { git = "https://github.com/broxus/ton-labs-types" }
 url = { version = "2", features = ["serde"] }
 cpu-time = "1.0.0"
 reqwest = "0.11.27"
+moka = { version = "0.12.8", features = ["sync"] }

@@ -10,7 +10,6 @@ pub fn events() -> Vec<&'static str> {
         "BidDeclined",
         "AuctionComplete",
         "AuctionCancelled",
-        "RoyaltySet",
         /* Collection */
         "NftCreated",
         "NftBurned",

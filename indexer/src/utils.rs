@@ -1,3 +1,4 @@
+use crate::nft_cache::NftCacheService;
 use anyhow::Result;
 use bigdecimal::num_bigint::Sign;
 use bigdecimal::BigDecimal;
@@ -34,10 +35,11 @@ impl KeyInfo for ton_block::Transaction {
     }
 }
 
-pub struct DecodeContext {
+pub struct DecodeContext<'a> {
     pub tx_data: ton_block::Transaction,
     pub _function_inputs: Vec<ton_abi::Token>,
     pub message_hash: UInt256,
+    pub nft_cache_service: &'a NftCacheService,
 }
 
 pub fn serialize_msg_address_int<S>(addr: &MsgAddressInt, s: S) -> Result<S::Ok, S::Error>

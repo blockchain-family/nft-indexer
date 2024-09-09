@@ -1,4 +1,5 @@
 use anyhow::Result;
+use async_trait::async_trait;
 use indexer_repo::types::{decoded, EventCategory, EventType};
 
 use crate::utils::timestamp_to_datetime;
@@ -9,8 +10,9 @@ use crate::{
 
 use super::{Decode, Decoded};
 
+#[async_trait]
 impl Decode for AuctionDeployed {
-    fn decode(&self, ctx: &DecodeContext) -> Result<Decoded> {
+    async fn decode(&self, ctx: &DecodeContext) -> Result<Decoded> {
         Ok(Decoded::AuctionDeployed((
             decoded::AuctionDeployed {
                 address: self.offer_info.offer.to_string(),
@@ -28,7 +30,7 @@ impl Decode for AuctionDeployed {
         )))
     }
 
-    fn decode_event(&self, ctx: &DecodeContext) -> Result<Decoded> {
+    async fn decode_event(&self, ctx: &DecodeContext) -> Result<Decoded> {
         Ok(Decoded::RawEventRecord(decoded::EventRecord {
             event_category: EventCategory::Auction,
             event_type: EventType::AuctionDeployed,
@@ -44,12 +46,13 @@ impl Decode for AuctionDeployed {
     }
 }
 
+#[async_trait]
 impl Decode for AuctionDeclined {
-    fn decode(&self, _ctx: &DecodeContext) -> Result<Decoded> {
+    async fn decode(&self, _ctx: &DecodeContext) -> Result<Decoded> {
         Ok(Decoded::ShouldSkip)
     }
 
-    fn decode_event(&self, ctx: &DecodeContext) -> Result<Decoded> {
+    async fn decode_event(&self, ctx: &DecodeContext) -> Result<Decoded> {
         Ok(Decoded::RawEventRecord(decoded::EventRecord {
             event_category: EventCategory::Auction,
             event_type: EventType::AuctionDeclined,

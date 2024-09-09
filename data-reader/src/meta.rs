@@ -337,7 +337,7 @@ impl MetaUpdater {
 
         if let Err(e) = self
             .meta_model_service
-            .add_to_proceeded(&address, Some(failed), tx)
+            .add_to_proceeded(address, Some(failed), tx)
             .await
         {
             bail!(

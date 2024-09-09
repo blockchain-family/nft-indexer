@@ -1,4 +1,5 @@
 use anyhow::Result;
+use async_trait::async_trait;
 use indexer_repo::types::{decoded, DirectBuyState, EventCategory, EventType, NftPriceSource};
 
 use crate::persistence::entities::{Decode, Decoded};
@@ -8,8 +9,9 @@ use crate::{
     utils::{DecodeContext, KeyInfo},
 };
 
+#[async_trait]
 impl Decode for DirectBuyStateChanged {
-    fn decode(&self, ctx: &DecodeContext) -> Result<Decoded> {
+    async fn decode(&self, ctx: &DecodeContext) -> Result<Decoded> {
         let state = self.to.into();
 
         if state == DirectBuyState::Create || state == DirectBuyState::AwaitTokens {
@@ -22,6 +24,9 @@ impl Decode for DirectBuyStateChanged {
             None
         };
 
+        let nft = self.value2.nft.to_string();
+        let collection = ctx.nft_cache_service.get_collection_of_nft(&nft).await?;
+
         let price_history = if state == DirectBuyState::Filled {
             Some(decoded::NftPriceHistory {
                 source: ctx.tx_data.get_account(),
@@ -30,8 +35,8 @@ impl Decode for DirectBuyStateChanged {
                 price: u128_to_bigdecimal(self.value2._price),
                 price_token: self.value2.spent_token.to_string(),
                 usd_price: None,
-                nft: self.value2.nft.to_string(),
-                collection: self.value2.collection.to_string(),
+                nft: nft.clone(),
+                collection: collection.clone().unwrap_or_default(),
             })
         } else {
             None
@@ -40,8 +45,8 @@ impl Decode for DirectBuyStateChanged {
         let direct_buy = decoded::DirectBuy {
             address: ctx.tx_data.get_account(),
             root: self.value2.factory.to_string(),
-            nft: self.value2.nft.to_string(),
-            collection: Some(self.value2.collection.to_string()),
+            nft,
+            collection,
             price_token: self.value2.spent_token.to_string(),
             price: u128_to_bigdecimal(self.value2._price),
             buyer: self.value2.creator.to_string(),
@@ -56,7 +61,10 @@ impl Decode for DirectBuyStateChanged {
         Ok(Decoded::DirectBuyStateChanged((direct_buy, price_history)))
     }
 
-    fn decode_event(&self, ctx: &DecodeContext) -> Result<Decoded> {
+    async fn decode_event(&self, ctx: &DecodeContext) -> Result<Decoded> {
+        let nft = self.value2.nft.to_string();
+        let collection = ctx.nft_cache_service.get_collection_of_nft(&nft).await?;
+
         Ok(Decoded::RawEventRecord(decoded::EventRecord {
             event_category: EventCategory::DirectBuy,
             event_type: EventType::DirectBuyStateChanged,
@@ -65,8 +73,8 @@ impl Decode for DirectBuyStateChanged {
             created_lt: ctx.tx_data.logical_time() as i64,
             created_at: ctx.tx_data.get_timestamp(),
             message_hash: ctx.message_hash.to_string(),
-            nft: Some(self.value2.nft.to_string()),
-            collection: Some(self.value2.collection.to_string()),
+            nft: Some(nft),
+            collection,
             raw_data: serde_json::to_value(self).unwrap_or_default(),
         }))
     }

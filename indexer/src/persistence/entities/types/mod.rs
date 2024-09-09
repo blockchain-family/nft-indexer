@@ -7,9 +7,6 @@ pub enum Decoded {
     BurnNft(NftBurned),
     OwnerChangedNft(AddressChanged),
     ManagerChangedNft(AddressChanged),
-    MetadataUpdatedNft(MetadataUpdated),
-    CollectionNftMetadataUpdated(NftMetadataUpdated),
-    CollectionMetadataUpdated(CollectionMetadataUpdated),
     AuctionDeployed((AuctionDeployed, OfferDeployed)),
     AuctionActive(AuctionActive),
     AuctionBidPlaced(AuctionBid),
@@ -22,5 +19,4 @@ pub enum Decoded {
     DirectBuyStateChanged((DirectBuy, Option<NftPriceHistory>)),
     DirectSellDeployed((DirectSell, OfferDeployed)),
     DirectSellStateChanged((DirectSell, Option<NftPriceHistory>)),
-    RoyaltySet(SetRoyalty),
 }
