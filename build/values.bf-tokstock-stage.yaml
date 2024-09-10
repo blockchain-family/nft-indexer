@@ -11,7 +11,7 @@ env:
   KAFKA_SETTINGS__BOOTSTRAP_SERVERS: kafka-broker-1.europe-west1-c.c.broxus.internal:9092,kafka-broker-2.europe-west1-c.c.broxus.internal:9092,kafka-broker-3.europe-west1-c.c.broxus.internal:9092
   KAFKA_SETTINGS__SECURITY_PROTOCOL: PLAINTEXT
 
-  STATES_RPC_ENDPOINTS: http://34.78.208.233:8081/rpc
+  STATES_RPC_ENDPOINTS: http://34.140.105.43:8081/rpc
   JRPC_REQ_LATENCY_MILLIS: 0
 
   SERVER_API_URL: 0.0.0.0:3001
