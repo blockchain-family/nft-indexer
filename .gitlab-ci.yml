@@ -13,6 +13,7 @@ stages:
 cloudbuild:image:stage:
   only:
     - oasis-stage
+    - tokstock-stage
   except:
     - tags
   extends: .cloudbuild:common
@@ -37,6 +38,28 @@ stop:stage-mainnet-venom:
   variables:
     K8S_NAMESPACE: ${CI_PROJECT_ROOT_NAMESPACE}-stage
     APP_CONFIG: stage-mainnet-venom
+
+deploy:tockstock-stage:
+  only:
+    - tockstock-stage
+  extends: .deploy
+  environment:
+    name: bf
+    on_stop: stop:tockstock-stage
+  variables:
+    K8S_NAMESPACE: ${CI_PROJECT_ROOT_NAMESPACE}-stage
+    APP_CONFIG: tockstock-stage
+
+stop:tockstock-stage:
+  only:
+    - tockstock-stage
+  extends: .stop
+  environment:
+    name: bf
+  variables:
+    K8S_NAMESPACE: ${CI_PROJECT_ROOT_NAMESPACE}-stage
+    APP_CONFIG: tockstock-stage
+
 
 cloudbuild:image:prod:
   only:

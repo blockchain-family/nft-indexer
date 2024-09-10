@@ -2,7 +2,7 @@ env:
   RUST_LOG: info
   RUST_BACKTRACE: 1
 
-  DATABASE_URL: postgresql://$(PROD_V1_PG_USER):$(PROD_V1_PG_PASSWORD)@postgresql-bf.europe-west1-c.c.broxus.internal:5432/tokstock-indexer-stage
+  DATABASE_URL: postgresql://$(TOKSTOCK_STAGE_PG_USER):$(TOKSTOCK_STAGE_PG_PASSWORD)@postgresql-bf.europe-west1-c.c.broxus.internal:5432/tokstock-indexer-stage
   DATABASE_MAX_CONNECTIONS: 5
 
   KAFKA_CONSUMER_GROUP: nft-indexer-tokstock-prod
