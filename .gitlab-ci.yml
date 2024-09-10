@@ -64,6 +64,7 @@ stop:tokstock-stage:
 cloudbuild:image:prod:
   only:
     - oasis-prod
+    - tokstock-prod
   except:
     - tags
   extends: .cloudbuild:common
@@ -88,3 +89,24 @@ stop:prod-mainnet-venom:
   variables:
     K8S_NAMESPACE: ${CI_PROJECT_ROOT_NAMESPACE}-prod
     APP_CONFIG: prod-mainnet-venom
+
+deploy:tokstock-prod:
+  only:
+    - tokstock-prod
+  extends: .deploy
+  variables:
+    K8S_NAMESPACE: ${CI_PROJECT_ROOT_NAMESPACE}-prod
+    APP_CONFIG: tokstock-prod
+  environment:
+    name: bf
+    on_stop: stop:tokstock-prod
+
+stop:tokstock-prod:
+  only:
+    - tokstock-prod
+  extends: .stop
+  variables:
+    K8S_NAMESPACE: ${CI_PROJECT_ROOT_NAMESPACE}-prod
+    APP_CONFIG: tokstock-prod
+  environment:
+    name: bf

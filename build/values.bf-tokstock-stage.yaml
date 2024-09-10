@@ -5,7 +5,7 @@ env:
   DATABASE_URL: postgresql://$(TOKSTOCK_STAGE_PG_USER):$(TOKSTOCK_STAGE_PG_PASSWORD)@postgresql-bf.europe-west1-c.c.broxus.internal:5432/tokstock-indexer-stage
   DATABASE_MAX_CONNECTIONS: 5
 
-  KAFKA_CONSUMER_GROUP: nft-indexer-tokstock-prod
+  KAFKA_CONSUMER_GROUP: nft-indexer-tokstock-stage
   KAFKA_TOPIC: mainnet-raw-transactions
 
   KAFKA_SETTINGS__BOOTSTRAP_SERVERS: kafka-broker-1.europe-west1-c.c.broxus.internal:9092,kafka-broker-2.europe-west1-c.c.broxus.internal:9092,kafka-broker-3.europe-west1-c.c.broxus.internal:9092
