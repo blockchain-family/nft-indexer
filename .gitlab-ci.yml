@@ -39,26 +39,26 @@ stop:stage-mainnet-venom:
     K8S_NAMESPACE: ${CI_PROJECT_ROOT_NAMESPACE}-stage
     APP_CONFIG: stage-mainnet-venom
 
-deploy:tockstock-stage:
+deploy:tokstock-stage:
   only:
-    - tockstock-stage
+    - tokstock-stage
   extends: .deploy
   environment:
     name: bf
-    on_stop: stop:tockstock-stage
+    on_stop: stop:tokstock-stage
   variables:
     K8S_NAMESPACE: ${CI_PROJECT_ROOT_NAMESPACE}-stage
-    APP_CONFIG: tockstock-stage
+    APP_CONFIG: tokstock-stage
 
-stop:tockstock-stage:
+stop:tokstock-stage:
   only:
-    - tockstock-stage
+    - tokstock-stage
   extends: .stop
   environment:
     name: bf
   variables:
     K8S_NAMESPACE: ${CI_PROJECT_ROOT_NAMESPACE}-stage
-    APP_CONFIG: tockstock-stage
+    APP_CONFIG: tokstock-stage
 
 
 cloudbuild:image:prod:
