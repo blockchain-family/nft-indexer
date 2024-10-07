@@ -252,6 +252,16 @@
     },
     "query": "\n        update nft_auction set\n            status = data.status\n        from\n        (\n            select \n                unnest($1::varchar[]) as address,\n                $2::auction_status as status\n        ) as data\n        where nft_auction.address = data.address\n    "
   },
+  "63be96af3cfc70a8345946f256bbb1498458f25adaaaea89b7263cf928e56ca8": {
+    "describe": {
+      "columns": [],
+      "nullable": [],
+      "parameters": {
+        "Left": []
+      }
+    },
+    "query": "refresh materialized view concurrently nft_type_mv"
+  },
   "6541c04d83e3b45927d0472100e752550a10b667fddf4ff6e8cdbb92348daa11": {
     "describe": {
       "columns": [],
@@ -388,7 +398,10 @@
                         "market_fee_changed",
                         "add_collection_rules",
                         "remove_collection_rules",
-                        "ownership_transferred"
+                        "ownership_transferred",
+                        "metadata_updated",
+                        "nft_metadata_updated",
+                        "collection_metadata_updated"
                       ]
                     },
                     "name": "event_type"
@@ -753,6 +766,16 @@
       }
     },
     "query": "refresh materialized view concurrently nft_events_verified_mv"
+  },
+  "dc3ca205b7f16671b31cbce748583c2e440670bbb590aa24a3ee0db0c8f3b7af": {
+    "describe": {
+      "columns": [],
+      "nullable": [],
+      "parameters": {
+        "Left": []
+      }
+    },
+    "query": "refresh materialized view concurrently collection_type_mv"
   },
   "df26d3c8e860957cafb5fb637bcad68056c8d7529d7f1c15cea58621a096bad9": {
     "describe": {

@@ -21,6 +21,22 @@ pub async fn refresh_nft_events_verified_materialized_view(pool: &PgPool) -> Res
     )
 }
 
+pub async fn refresh_nft_types_materialized_view(pool: &PgPool) -> Result<PgQueryResult> {
+    Ok(
+        sqlx::query!("refresh materialized view concurrently nft_type_mv")
+            .execute(pool)
+            .await?,
+    )
+}
+
+pub async fn refresh_collection_types_materialized_view(pool: &PgPool) -> Result<PgQueryResult> {
+    Ok(
+        sqlx::query!("refresh materialized view concurrently collection_type_mv")
+            .execute(pool)
+            .await?,
+    )
+}
+
 pub async fn update_latest_collections(pool: &PgPool) -> Result<PgQueryResult> {
     Ok(
         sqlx::query!("call update_latest_collections(interval '30 minutes')")
