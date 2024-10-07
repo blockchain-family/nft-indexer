@@ -10,8 +10,8 @@ from nft_collection c
          join nft_metadata nm on nm.nft = n.address
 where jsonb_typeof(nm.meta -> 'files') = 'array';
 
-create unique index on nft_type_mv (nft_address, mimetype);
-create index nft_type_verified_index on nft_type_mv (verified, mimetype);
+create unique index on nft_type_mv (nft_address, mimetype, verified);
+create index nft_type_index on nft_type_mv (nft_address, mimetype);
 
 create materialized view collection_type_mv as
 select distinct nc.address   as "collection_address",
@@ -21,5 +21,5 @@ from nft_type_mv ntm
          join nft n on n.address = ntm.nft_address
          join nft_collection nc on nc.address = n.collection;
 
-create unique index on collection_type_mv (collection_address, mimetype);
-create index collection_type_verified_index on nft_type_mv (verified, mimetype);
+create unique index on collection_type_mv (collection_address, mimetype, verified);
+create index collection_type_verified_index on collection_type_mv (collection_address, mimetype);
