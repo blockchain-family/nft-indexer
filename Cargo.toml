@@ -1,8 +1,10 @@
 [workspace]
+resolver = "2"
 
 members = [
-    "model",
-    "rpc",
-    "storage",
-    "traits_derive"
+    "indexer",
+    "indexer-repo",
+    "data-reader",
+    "indexer-api",
+    "indexer-jobs"
 ]
