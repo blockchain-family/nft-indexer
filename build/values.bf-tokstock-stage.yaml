@@ -1,0 +1,44 @@
+env:
+  RUST_LOG: info
+  RUST_BACKTRACE: 1
+
+  DATABASE_URL: postgresql://$(TOKSTOCK_STAGE_PG_USER):$(TOKSTOCK_STAGE_PG_PASSWORD)@postgresql-bf.europe-west1-c.c.broxus.internal:5432/tokstock-indexer-stage
+  DATABASE_MAX_CONNECTIONS: 5
+
+  KAFKA_CONSUMER_GROUP: nft-indexer-tokstock-stage
+  KAFKA_TOPIC: mainnet-raw-transactions
+
+  KAFKA_SETTINGS__BOOTSTRAP_SERVERS: kafka-broker-1.europe-west1-c.c.broxus.internal:9092,kafka-broker-2.europe-west1-c.c.broxus.internal:9092,kafka-broker-3.europe-west1-c.c.broxus.internal:9092
+  KAFKA_SETTINGS__SECURITY_PROTOCOL: PLAINTEXT
+
+  STATES_RPC_ENDPOINTS: http://34.140.105.43:8081/rpc
+  JRPC_REQ_LATENCY_MILLIS: 0
+
+  SERVER_API_URL: 0.0.0.0:3001
+
+  IDLE_AFTER_PRICE_LOOP_SEC: 100
+  IDLE_AFTER_META_LOOP_SEC: 100
+  PRICE_UPDATE_FREQUENCY_SEC: 180
+
+  BC_NAME: Everscale
+  DEX_HOST_URL: https://flatqube.io
+
+service:
+  port: 3001
+
+ingress:
+  enabled: false
+  hosts:
+    - host: tokstock-indexer-stage.bf.works
+      paths:
+        - path: /
+          pathType: ImplementationSpecific
+  tls:
+    - secretName: tokstock-indexer-stage-tls
+      hosts:
+        - tokstock-indexer-stage.bf.works
+
+controller: statefulset
+
+sharedSecrets:
+  - nftIndexer

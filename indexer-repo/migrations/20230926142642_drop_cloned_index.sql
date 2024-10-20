@@ -1,0 +1,1 @@
+DROP INDEX nft_verified_mv_address_idx;
