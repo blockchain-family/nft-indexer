@@ -2,16 +2,16 @@ env:
   RUST_LOG: info
   RUST_BACKTRACE: 1
 
-  DATABASE_URL: postgresql://$(STAGE_MAINNET_VENOM_PG_USER):$(STAGE_MAINNET_VENOM_PG_PASSWORD)@postgresql-bf.europe-west1-c.c.broxus.internal:5432/nft-indexer-stage-mainnet-venom
+  DATABASE_URL: postgresql://$(STAGE_MAINNET_VENOM_PG_USER):$(STAGE_MAINNET_VENOM_PG_PASSWORD)@postgresql-bf.europe-west1-c.c.broxus.internal:5432/nft-indexer-stage-tycho-tnet
   DATABASE_MAX_CONNECTIONS: 5
 
-  KAFKA_CONSUMER_GROUP: nft-indexer-stage-mainnet-venom
-  KAFKA_TOPIC: sahara-raw-transactions
+  KAFKA_CONSUMER_GROUP: ????
+  KAFKA_TOPIC: ????
 
-  KAFKA_SETTINGS__BOOTSTRAP_SERVERS: kafka-venom-1.europe-west1-c.c.broxus.internal:9092,kafka-venom-2.europe-west1-c.c.broxus.internal:9092,kafka-venom-3.europe-west1-c.c.broxus.internal:9092
-  KAFKA_SETTINGS__SECURITY_PROTOCOL: PLAINTEXT
+  KAFKA_SETTINGS__BOOTSTRAP_SERVERS: ????
+  KAFKA_SETTINGS__SECURITY_PROTOCOL: ????
 
-  STATES_RPC_ENDPOINTS: https://jrpc.venom.foundation/rpc
+  STATES_RPC_ENDPOINTS: https://rpc-testnet.tychoprotocol.com
   JRPC_REQ_LATENCY_MILLIS: 0
 
   SERVER_API_URL: 0.0.0.0:3001
@@ -20,8 +20,8 @@ env:
   IDLE_AFTER_META_LOOP_SEC: 100
   PRICE_UPDATE_FREQUENCY_SEC: 180
 
-  BC_NAME: Venom
-  DEX_HOST_URL: https://api.web3.world
+  BC_NAME: Tycho
+  DEX_HOST_URL: https://api-test-tycho.flatqube.io/
 
 service:
   port: 3001
