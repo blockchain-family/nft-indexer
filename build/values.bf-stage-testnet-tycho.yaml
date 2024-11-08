@@ -29,14 +29,14 @@ service:
 ingress:
   enabled: false
   hosts:
-    - host: indexer-venom-stage-mainnet.bf.works
+    - host: indexer-tycho-stage-testnet.bf.works
       paths:
         - path: /
           pathType: ImplementationSpecific
   tls:
-    - secretName: indexer-venom-stage-mainnet-tls
+    - secretName: indexer-tycho-stage-testnet-tls
       hosts:
-        - indexer-venom-stage-mainnet.bf.works
+        - indexer-tycho-stage-testnet.bf.works
 
 controller: statefulset
 
