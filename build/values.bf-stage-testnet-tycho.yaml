@@ -2,7 +2,7 @@ env:
   RUST_LOG: info
   RUST_BACKTRACE: 1
 
-  DATABASE_URL: postgresql://$(STAGE_MAINNET_VENOM_PG_USER):$(STAGE_MAINNET_VENOM_PG_PASSWORD)@postgresql-bf.europe-west1-c.c.broxus.internal:5432/nft-indexer-stage-tycho-tnet
+  DATABASE_URL: postgresql://$(STAGE_TESTNET_TYCHO_PG_USER):$(STAGE_TESTNET_TYCHO_PG_PASSWORD)@postgresql-bf.europe-west1-c.c.broxus.internal:5432/nft-indexer-stage-tycho-tnet
   DATABASE_MAX_CONNECTIONS: 5
 
   KAFKA_CONSUMER_GROUP: ????
