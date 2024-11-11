@@ -10,30 +10,30 @@ stages:
   - cloudbuild
   - deploy
 
-cloudbuild:image:stage:
+cloudbuild:image:stage-tycho-testnet:
   only:
     - tycho-tnet-stage
   except:
     - tags
   extends: .cloudbuild:common
 
-deploy:stage-testnet-tycho:
+deploy:stage-tycho-testnet:
   only:
     - tycho-tnet-stage
   extends: .deploy
   environment:
-    name: bf
-    on_stop: stop:stage-testnet-tycho
+    name: stage
+    on_stop: stop:stage-tycho-testnet
   variables:
-    K8S_NAMESPACE: ${CI_PROJECT_ROOT_NAMESPACE}-stage
-    APP_CONFIG: stage-testnet-tycho
+    K8S_NAMESPACE: ${CI_PROJECT_ROOT_NAMESPACE}-tycho-testent
+    APP_CONFIG: tycho-testnet
 
-stop:stage-testnet-tycho:
+stop:stage-tycho-testnet:
   only:
     - tycho-tnet-stage
   extends: .stop
   environment:
-    name: bf
+    name: stage
   variables:
-    K8S_NAMESPACE: ${CI_PROJECT_ROOT_NAMESPACE}-stage
-    APP_CONFIG: stage-testnet-tycho
+    K8S_NAMESPACE: ${CI_PROJECT_ROOT_NAMESPACE}-tycho-testent
+    APP_CONFIG: tycho-testnet
