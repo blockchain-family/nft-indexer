@@ -164,6 +164,7 @@ impl From<u8> for AuctionStatus {
 #[sqlx(type_name = "bc_name", rename_all = "snake_case")]
 pub enum BcName {
     Everscale,
+    Tycho,
     Venom,
 }
 

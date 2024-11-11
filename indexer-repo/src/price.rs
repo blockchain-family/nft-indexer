@@ -95,6 +95,7 @@ impl NftPriceModel {
         match bc {
             BcName::Everscale => self.get_pair_address(token_addr, BcName::Everscale).await,
             BcName::Venom => self.get_pair_address(token_addr, BcName::Venom).await,
+            BcName::Tycho => self.get_pair_address(token_addr, BcName::Tycho).await,
         }
     }
 

@@ -22,6 +22,7 @@ pub async fn request_prices(
         BcName::Everscale => {
             flatqube_request_prices(client, from, to, pair_addr, dex_host_url).await
         }
+        BcName::Tycho => web3world_request_prices(client, from, to, pair_addr, dex_host_url).await,
     }
 }
 
