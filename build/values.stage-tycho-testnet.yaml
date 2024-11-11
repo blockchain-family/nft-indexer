@@ -9,7 +9,6 @@ env:
   KAFKA_TOPIC: tycho-testnet-raw-transactions
 
   KAFKA_SETTINGS__BOOTSTRAP_SERVERS: kafka-f8ec3b33-o1174e556.database.cloud.ovh.net:20186
-  KAFKA_SETTINGS__SECURITY_PROTOCOL: ????
 
   STATES_RPC_ENDPOINTS: https://rpc-testnet.tychoprotocol.com
   JRPC_REQ_LATENCY_MILLIS: 0
@@ -22,6 +21,7 @@ env:
 
   BC_NAME: Tycho
   DEX_HOST_URL: https://api-test-tycho.flatqube.io/
+  IS_NEED_CERT_FOR_KAFKA: true
 
 service:
   port: 3001
