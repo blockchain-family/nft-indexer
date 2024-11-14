@@ -19,7 +19,7 @@ pub struct Config {
     pub idle_after_price_loop_sec: u64,
     pub idle_after_meta_loop_sec: u64,
     pub price_update_frequency_sec: u64,
-    pub is_need_cert_for_kafka: Option<bool>,
+    pub use_kafka_options: Option<bool>,
 }
 
 impl Default for Config {

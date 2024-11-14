@@ -16,18 +16,12 @@ pub mod config;
 pub async fn init_consumer(config: &Config) -> Result<Arc<TransactionConsumer>> {
     log::info!("initializing transaction consumer");
 
-    let mut kafka_options = HashMap::from_iter(
-        config
-            .kafka_settings
-            .iter()
-            .map(|(param, val)| (param.as_str(), val.as_str())),
-    );
+    let mut kafka_options = HashMap::with_capacity(config.kafka_settings.len());
 
-    if let Some(true) = config.is_need_cert_for_kafka {
-        kafka_options.insert("security.protocol", "SSL");
-        kafka_options.insert("ssl.ca.location", "/tmp/ca.pem");
-        kafka_options.insert("ssl.key.location", "/tmp/service.key");
-        kafka_options.insert("ssl.certificate.location", "/tmp/service.crt");
+    if let Some(true) = config.use_kafka_options {
+        for (param, val) in config.kafka_settings.iter() {
+            kafka_options.insert(param.as_str(), val.as_str());
+        }
     }
 
     let con_opt = ConsumerOptions {
