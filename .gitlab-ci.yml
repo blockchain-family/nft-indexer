@@ -25,7 +25,7 @@ deploy:stage-tycho-testnet:
     name: stage
     on_stop: stop:stage-tycho-testnet
   variables:
-    K8S_NAMESPACE: ${CI_PROJECT_ROOT_NAMESPACE}-tycho-testent
+    K8S_NAMESPACE: ${CI_PROJECT_ROOT_NAMESPACE}-tycho-testnet
     APP_CONFIG: tycho-testnet
 
 stop:stage-tycho-testnet:
@@ -35,5 +35,5 @@ stop:stage-tycho-testnet:
   environment:
     name: stage
   variables:
-    K8S_NAMESPACE: ${CI_PROJECT_ROOT_NAMESPACE}-tycho-testent
+    K8S_NAMESPACE: ${CI_PROJECT_ROOT_NAMESPACE}-tycho-testnet
     APP_CONFIG: tycho-testnet
