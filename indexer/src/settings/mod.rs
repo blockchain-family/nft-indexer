@@ -18,11 +18,9 @@ pub async fn init_consumer(config: &Config) -> Result<Arc<TransactionConsumer>> 
 
     let mut kafka_options = HashMap::with_capacity(config.kafka_settings.len());
 
-    if let Some(true) = config.use_kafka_options {
-        log::warn!("Using kafka options...");
-        for (param, val) in config.kafka_settings.iter() {
-            kafka_options.insert(param.as_str(), val.as_str());
-        }
+    for (param, val) in config.kafka_settings.iter() {
+        log::warn!("Setting kafka option: {param} = {val}");
+        kafka_options.insert(param.as_str(), val.as_str());
     }
 
     let con_opt = ConsumerOptions {

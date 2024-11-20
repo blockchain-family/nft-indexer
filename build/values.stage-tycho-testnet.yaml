@@ -1,5 +1,5 @@
 env:
-  RUST_LOG: DEBUG
+  RUST_LOG: INFO
   RUST_BACKTRACE: 1
 
   DATABASE_URL: postgresql://$(PG_USER_TYCHO_TESTNET):$(PG_PASSWORD_TYCHO_TESTNET)@cloudsqlproxy.default:5432/nft-indexer-stage-tycho-testnet
@@ -25,7 +25,6 @@ env:
 
   BC_NAME: Tycho
   DEX_HOST_URL: https://api-test-tycho.flatqube.io/
-  USE_KAFKA_OPTIONS: true
 
 service:
   port: 3001
