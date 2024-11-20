@@ -1,12 +1,9 @@
 use anyhow::{anyhow, Result};
-use sqlx::{Postgres, Transaction};
+use sqlx::PgConnection;
 
 use crate::types::decoded::NftBurned;
 
-pub async fn save_nft_burned(
-    tx: &mut Transaction<'_, Postgres>,
-    nft_burned: &[NftBurned],
-) -> Result<()> {
+pub async fn save_nft_burned(tx: &mut PgConnection, nft_burned: &[NftBurned]) -> Result<()> {
     let addresses = nft_burned
         .iter()
         .map(|n| n.address.as_str())

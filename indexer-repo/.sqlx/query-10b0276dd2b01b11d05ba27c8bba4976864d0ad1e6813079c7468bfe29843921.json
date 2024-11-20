@@ -1,0 +1,12 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "call update_all_collections()",
+  "describe": {
+    "columns": [],
+    "parameters": {
+      "Left": []
+    },
+    "nullable": []
+  },
+  "hash": "10b0276dd2b01b11d05ba27c8bba4976864d0ad1e6813079c7468bfe29843921"
+}

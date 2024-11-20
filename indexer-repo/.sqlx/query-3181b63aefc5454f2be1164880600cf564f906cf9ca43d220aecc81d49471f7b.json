@@ -1,0 +1,39 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "\n            insert into nft_price_history (\n                source, \n                source_type, \n                ts, \n                price,\n                price_token, \n                nft,\n                usd_price,\n                collection\n            )\n            select\n                unnest($1::varchar[]),\n                unnest($2::nft_price_source[]),\n                unnest($3::timestamp[]),\n                unnest($4::numeric[]),\n                unnest($5::varchar[]),\n                unnest($6::varchar[]),\n                unnest($7::numeric[]),\n                unnest($8::varchar[])\n        ",
+  "describe": {
+    "columns": [],
+    "parameters": {
+      "Left": [
+        "VarcharArray",
+        {
+          "Custom": {
+            "name": "_nft_price_source",
+            "kind": {
+              "Array": {
+                "Custom": {
+                  "name": "nft_price_source",
+                  "kind": {
+                    "Enum": [
+                      "auctionBid",
+                      "directBuy",
+                      "directSell"
+                    ]
+                  }
+                }
+              }
+            }
+          }
+        },
+        "TimestampArray",
+        "NumericArray",
+        "VarcharArray",
+        "VarcharArray",
+        "NumericArray",
+        "VarcharArray"
+      ]
+    },
+    "nullable": []
+  },
+  "hash": "3181b63aefc5454f2be1164880600cf564f906cf9ca43d220aecc81d49471f7b"
+}

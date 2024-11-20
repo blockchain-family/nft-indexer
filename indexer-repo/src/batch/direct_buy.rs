@@ -1,9 +1,9 @@
 use crate::types::decoded::DirectBuy;
 use anyhow::{anyhow, Result};
-use sqlx::{Postgres, Transaction};
+use sqlx::PgConnection;
 use std::collections::HashMap;
 
-pub async fn save_direct_buy(tx: &mut Transaction<'_, Postgres>, dbs: &[DirectBuy]) -> Result<()> {
+pub async fn save_direct_buy(tx: &mut PgConnection, dbs: &[DirectBuy]) -> Result<()> {
     let addresses = dbs.iter().map(|db| db.address.as_str()).collect::<Vec<_>>();
     let roots = dbs.iter().map(|db| db.root.as_str()).collect::<Vec<_>>();
     let nfts = dbs.iter().map(|db| db.nft.as_str()).collect::<Vec<_>>();
@@ -77,10 +77,7 @@ pub async fn save_direct_buy(tx: &mut Transaction<'_, Postgres>, dbs: &[DirectBu
     .map(|_| ())
 }
 
-pub async fn update_direct_buy_state(
-    tx: &mut Transaction<'_, Postgres>,
-    dbs: &mut [DirectBuy],
-) -> Result<()> {
+pub async fn update_direct_buy_state(tx: &mut PgConnection, dbs: &mut [DirectBuy]) -> Result<()> {
     dbs.sort_by(|a, b| b.tx_lt.cmp(&a.tx_lt));
     let mut last_state_change = HashMap::with_capacity(dbs.len());
 

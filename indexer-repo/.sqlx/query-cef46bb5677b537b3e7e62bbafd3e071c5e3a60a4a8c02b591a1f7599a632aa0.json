@@ -1,0 +1,46 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "\n        update nft_direct_buy set\n            state = data.state,\n            nft = data.nft,\n            collection = data.collection,\n            price_token = data.price_token,\n            price = data.price,\n            buyer = data.buyer,\n            expired_at = data.expired_at,\n            finished_at = data.finished_at,\n            created = data.created,\n            updated = data.updated,\n            tx_lt = data.tx_lt\n        from\n        (\n            select \n                unnest($1::varchar[]) as address,\n                unnest($2::direct_buy_state[]) as state,\n                unnest($3::timestamp[]) as finished_at,\n                unnest($4::timestamp[]) as updated,\n                unnest($5::bigint[]) as tx_lt,\n                unnest($6::varchar[]) as nft,\n                unnest($7::varchar[]) as collection,\n                unnest($8::varchar[]) as price_token,\n                unnest($9::numeric[]) as price,\n                unnest($10::varchar[]) as buyer,\n                unnest($11::timestamp[]) as expired_at,\n                unnest($12::timestamp[]) as created\n        ) as data\n        where nft_direct_buy.address = data.address\n        ",
+  "describe": {
+    "columns": [],
+    "parameters": {
+      "Left": [
+        "VarcharArray",
+        {
+          "Custom": {
+            "name": "_direct_buy_state",
+            "kind": {
+              "Array": {
+                "Custom": {
+                  "name": "direct_buy_state",
+                  "kind": {
+                    "Enum": [
+                      "create",
+                      "await_tokens",
+                      "active",
+                      "filled",
+                      "cancelled",
+                      "expired"
+                    ]
+                  }
+                }
+              }
+            }
+          }
+        },
+        "TimestampArray",
+        "TimestampArray",
+        "Int8Array",
+        "VarcharArray",
+        "VarcharArray",
+        "VarcharArray",
+        "NumericArray",
+        "VarcharArray",
+        "TimestampArray",
+        "TimestampArray"
+      ]
+    },
+    "nullable": []
+  },
+  "hash": "cef46bb5677b537b3e7e62bbafd3e071c5e3a60a4a8c02b591a1f7599a632aa0"
+}

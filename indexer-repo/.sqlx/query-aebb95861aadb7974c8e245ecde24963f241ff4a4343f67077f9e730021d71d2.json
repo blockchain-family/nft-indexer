@@ -1,0 +1,21 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "\n            insert into nft (\n                id,\n                address, \n                collection, \n                owner, \n                manager, \n                updated, \n                owner_update_lt, \n                manager_update_lt\n            )\n            select\n                unnest($1::numeric[]),\n                unnest($2::varchar[]),\n                unnest($3::varchar[]), \n                unnest($4::varchar[]), \n                unnest($5::varchar[]), \n                unnest($6::timestamp[]),\n                unnest($7::bigint[]),\n                unnest($8::bigint[]) \n            on conflict(address) do nothing\n        ",
+  "describe": {
+    "columns": [],
+    "parameters": {
+      "Left": [
+        "NumericArray",
+        "VarcharArray",
+        "VarcharArray",
+        "VarcharArray",
+        "VarcharArray",
+        "TimestampArray",
+        "Int8Array",
+        "Int8Array"
+      ]
+    },
+    "nullable": []
+  },
+  "hash": "aebb95861aadb7974c8e245ecde24963f241ff4a4343f67077f9e730021d71d2"
+}

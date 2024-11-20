@@ -1,0 +1,35 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "\n        update nft_auction set\n            wallet_for_bids = data.wallet,\n            price_token = data.price_token,\n            start_price = data.start_price,\n            min_bid = data.min_bid,\n            created_at = data.created,\n            finished_at = data.finished,\n            tx_lt = data.tx_lt,\n            status = data.status\n        from (\n            select\n                unnest($1::varchar[]) as address,\n                unnest($2::varchar[]) as wallet,\n                unnest($3::varchar[]) as price_token,\n                unnest($4::numeric[]) as start_price,\n                unnest($5::numeric[]) as min_bid,\n                unnest($6::timestamp[]) as created,\n                unnest($7::timestamp[]) as finished,\n                unnest($8::bigint[]) as tx_lt,\n                $9::auction_status as status\n        ) as data\n        where nft_auction.address = data.address\n        ",
+  "describe": {
+    "columns": [],
+    "parameters": {
+      "Left": [
+        "VarcharArray",
+        "VarcharArray",
+        "VarcharArray",
+        "NumericArray",
+        "NumericArray",
+        "TimestampArray",
+        "TimestampArray",
+        "Int8Array",
+        {
+          "Custom": {
+            "name": "auction_status",
+            "kind": {
+              "Enum": [
+                "created",
+                "active",
+                "cancelled",
+                "completed",
+                "expired"
+              ]
+            }
+          }
+        }
+      ]
+    },
+    "nullable": []
+  },
+  "hash": "87c7656e7a329b854c371af8ce70e93b3acdc7c3577159ea6bdcd800b20d809a"
+}

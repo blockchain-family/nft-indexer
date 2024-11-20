@@ -1,0 +1,15 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "\n                update nft_price_history\n                set usd_price = $1\n                where source = $2\n            ",
+  "describe": {
+    "columns": [],
+    "parameters": {
+      "Left": [
+        "Numeric",
+        "Text"
+      ]
+    },
+    "nullable": []
+  },
+  "hash": "a882440abab9dc417035fd58384e57291d634439c7ff3c16bce6bbb12f65e227"
+}

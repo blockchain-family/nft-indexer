@@ -1,0 +1,17 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "\n        update nft_collection set\n            fee_numerator   = data.num, \n            fee_denominator = data.den,\n            updated         = greatest(data.ts, nft_collection.updated)\n        from\n        (\n            select \n                unnest($1::varchar[]) as address,\n                unnest($2::integer[]) as num,\n                unnest($3::integer[]) as den,\n                unnest($4::timestamp[]) as ts\n        ) as data\n        where nft_collection.address = data.address\n    ",
+  "describe": {
+    "columns": [],
+    "parameters": {
+      "Left": [
+        "VarcharArray",
+        "Int4Array",
+        "Int4Array",
+        "TimestampArray"
+      ]
+    },
+    "nullable": []
+  },
+  "hash": "5e51b09eb38779001303cf4a7bd8e19970f8741eef32844e802cbed56ba5cd6d"
+}

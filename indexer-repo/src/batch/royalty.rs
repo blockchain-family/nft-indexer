@@ -1,12 +1,9 @@
 use anyhow::{anyhow, Result};
-use sqlx::{Postgres, Transaction};
+use sqlx::PgConnection;
 
 use crate::types::decoded::SetRoyalty;
 
-pub async fn update_direct_sell(
-    tx: &mut Transaction<'_, Postgres>,
-    royalties: &[SetRoyalty],
-) -> Result<()> {
+pub async fn update_direct_sell(tx: &mut PgConnection, royalties: &[SetRoyalty]) -> Result<()> {
     let address = royalties
         .iter()
         .map(|e| e.address.as_str())
@@ -37,10 +34,7 @@ pub async fn update_direct_sell(
     .map(|_| ())
 }
 
-pub async fn update_direct_buy(
-    tx: &mut Transaction<'_, Postgres>,
-    royalties: &[SetRoyalty],
-) -> Result<()> {
+pub async fn update_direct_buy(tx: &mut PgConnection, royalties: &[SetRoyalty]) -> Result<()> {
     let address = royalties
         .iter()
         .map(|e| e.address.as_str())
@@ -71,10 +65,7 @@ pub async fn update_direct_buy(
     .map(|_| ())
 }
 
-pub async fn update_auction(
-    tx: &mut Transaction<'_, Postgres>,
-    royalties: &[SetRoyalty],
-) -> Result<()> {
+pub async fn update_auction(tx: &mut PgConnection, royalties: &[SetRoyalty]) -> Result<()> {
     let address = royalties
         .iter()
         .map(|e| e.address.as_str())

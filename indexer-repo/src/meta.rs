@@ -1,7 +1,7 @@
 use crate::types::NftCollectionMeta;
 use anyhow::Result;
 use chrono::NaiveDateTime;
-use sqlx::{postgres::PgQueryResult, PgPool, Postgres, Transaction};
+use sqlx::{postgres::PgQueryResult, PgConnection, PgPool};
 
 #[derive(Clone)]
 pub struct MetadataModelService {
@@ -104,7 +104,7 @@ impl MetadataModelService {
         name: Option<&str>,
         description: Option<&str>,
         updated: NaiveDateTime,
-        tx: Option<&mut Transaction<'_, Postgres>>,
+        tx: Option<&mut PgConnection>,
     ) -> Result<PgQueryResult> {
         let query = sqlx::query!(
             r#"
@@ -132,7 +132,7 @@ impl MetadataModelService {
         nft_address: &str,
         attr: &[NftMetaAttribute<'b>],
         updated: NaiveDateTime,
-        mut tx: Option<&mut Transaction<'_, Postgres>>,
+        mut tx: Option<&mut PgConnection>,
     ) -> Result<()> {
         for nft_attribute in attr {
             let query = sqlx::query!(
@@ -180,7 +180,7 @@ impl MetadataModelService {
     pub async fn update_nft_meta<'b>(
         &self,
         meta: &NftMeta<'b>,
-        tx: Option<&mut Transaction<'_, Postgres>>,
+        tx: Option<&mut PgConnection>,
     ) -> Result<PgQueryResult> {
         let query = sqlx::query!(
             r#"
@@ -204,7 +204,7 @@ impl MetadataModelService {
     pub async fn update_collection(
         &self,
         meta: &NftCollectionMeta,
-        tx: Option<&mut Transaction<'_, Postgres>>,
+        tx: Option<&mut PgConnection>,
     ) -> Result<PgQueryResult> {
         let query = sqlx::query!(
             r#"
@@ -240,7 +240,7 @@ impl MetadataModelService {
         &self,
         addr: &str,
         failed: Option<bool>,
-        tx: Option<&mut Transaction<'_, Postgres>>,
+        tx: Option<&mut PgConnection>,
     ) -> Result<PgQueryResult> {
         let failed = failed.unwrap_or(false);
 

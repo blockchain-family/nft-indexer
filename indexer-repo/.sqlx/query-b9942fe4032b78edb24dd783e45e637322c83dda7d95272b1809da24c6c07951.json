@@ -1,0 +1,12 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "call update_latest_collections(interval '30 minutes')",
+  "describe": {
+    "columns": [],
+    "parameters": {
+      "Left": []
+    },
+    "nullable": []
+  },
+  "hash": "b9942fe4032b78edb24dd783e45e637322c83dda7d95272b1809da24c6c07951"
+}

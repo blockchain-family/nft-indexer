@@ -1,0 +1,21 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "\n            update nft_collection\n            set\n                name         = coalesce($2, nft_collection.name),\n                description  = coalesce($3, nft_collection.description),\n                logo         = coalesce($4, nft_collection.logo),\n                wallpaper    = coalesce($5, nft_collection.wallpaper),\n                updated      = greatest($6, nft_collection.updated),\n                owner        = coalesce($7, nft_collection.owner),\n                royalty      = coalesce($8, nft_collection.royalty)\n            where address = $1\n            ",
+  "describe": {
+    "columns": [],
+    "parameters": {
+      "Left": [
+        "Text",
+        "Text",
+        "Text",
+        "Varchar",
+        "Varchar",
+        "Timestamp",
+        "Varchar",
+        "Jsonb"
+      ]
+    },
+    "nullable": []
+  },
+  "hash": "3d7908795676eb7e2896022697ba0457668b2a0502905a5f66baed44da26f9ee"
+}

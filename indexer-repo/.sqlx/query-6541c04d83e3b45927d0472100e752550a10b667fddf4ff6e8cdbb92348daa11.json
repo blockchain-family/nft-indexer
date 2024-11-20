@@ -1,0 +1,47 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "\n            insert into nft_direct_buy(\n                address,\n                root,\n                nft,\n                collection,\n                price_token, \n                price, \n                buyer,\n                finished_at,\n                expired_at,\n                state,\n                created,\n                updated,\n                tx_lt\n            )\n            select\n                unnest($1::varchar[]),\n                unnest($2::varchar[]),\n                unnest($3::varchar[]), \n                unnest($4::varchar[]),\n                unnest($5::varchar[]), \n                unnest($6::numeric[]),\n                unnest($7::varchar[]),\n                unnest($8::timestamp[]),\n                unnest($9::timestamp[]),\n                unnest($10::direct_buy_state[]),\n                unnest($11::timestamp[]),\n                unnest($12::timestamp[]),\n                unnest($13::bigint[])\n            on conflict(address) do nothing\n        ",
+  "describe": {
+    "columns": [],
+    "parameters": {
+      "Left": [
+        "VarcharArray",
+        "VarcharArray",
+        "VarcharArray",
+        "VarcharArray",
+        "VarcharArray",
+        "NumericArray",
+        "VarcharArray",
+        "TimestampArray",
+        "TimestampArray",
+        {
+          "Custom": {
+            "name": "_direct_buy_state",
+            "kind": {
+              "Array": {
+                "Custom": {
+                  "name": "direct_buy_state",
+                  "kind": {
+                    "Enum": [
+                      "create",
+                      "await_tokens",
+                      "active",
+                      "filled",
+                      "cancelled",
+                      "expired"
+                    ]
+                  }
+                }
+              }
+            }
+          }
+        },
+        "TimestampArray",
+        "TimestampArray",
+        "Int8Array"
+      ]
+    },
+    "nullable": []
+  },
+  "hash": "6541c04d83e3b45927d0472100e752550a10b667fddf4ff6e8cdbb92348daa11"
+}

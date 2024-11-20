@@ -1,0 +1,16 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "\n        update nft_auction set\n            royalty_numerator = data.numerator,\n            royalty_denominator = data.denominator\n        from\n        (\n            select\n                unnest($1::varchar[]) as address,\n                unnest($2::integer[]) as numerator,\n                unnest($3::integer[]) as denominator\n        ) as data\n        where nft_auction.address = data.address\n    ",
+  "describe": {
+    "columns": [],
+    "parameters": {
+      "Left": [
+        "VarcharArray",
+        "Int4Array",
+        "Int4Array"
+      ]
+    },
+    "nullable": []
+  },
+  "hash": "d1f7a3bffb14e4753aa27f201d388962bc987f866dfc0b895df4e5243c70a900"
+}

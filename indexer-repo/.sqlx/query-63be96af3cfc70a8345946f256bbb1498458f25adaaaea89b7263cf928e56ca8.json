@@ -1,0 +1,12 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "refresh materialized view concurrently nft_type_mv",
+  "describe": {
+    "columns": [],
+    "parameters": {
+      "Left": []
+    },
+    "nullable": []
+  },
+  "hash": "63be96af3cfc70a8345946f256bbb1498458f25adaaaea89b7263cf928e56ca8"
+}

@@ -1,12 +1,12 @@
 use std::collections::HashMap;
 
 use anyhow::{anyhow, Result};
-use sqlx::{Postgres, Transaction};
+use sqlx::PgConnection;
 
 use crate::types::decoded::AddressChanged;
 
 pub async fn save_nft_owner_changed(
-    tx: &mut Transaction<'_, Postgres>,
+    tx: &mut PgConnection,
     data: &mut [AddressChanged],
 ) -> Result<()> {
     data.sort_by(|a, b| b.logical_time.cmp(&a.logical_time));

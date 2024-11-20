@@ -1,0 +1,15 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "delete from nft_attributes where nft = $1 and trait_type != all($2);",
+  "describe": {
+    "columns": [],
+    "parameters": {
+      "Left": [
+        "Text",
+        "TextArray"
+      ]
+    },
+    "nullable": []
+  },
+  "hash": "bfe196c120fa5ca8becfb04cc34cb2764fb8b8acdf63a4d79243480e69ac1ad5"
+}

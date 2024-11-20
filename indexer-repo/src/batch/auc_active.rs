@@ -1,12 +1,9 @@
 use anyhow::{anyhow, Result};
-use sqlx::{Postgres, Transaction};
+use sqlx::PgConnection;
 
 use crate::types::{decoded::AuctionActive, AuctionStatus};
 
-pub async fn save_auc_active(
-    tx: &mut Transaction<'_, Postgres>,
-    data: &[AuctionActive],
-) -> Result<()> {
+pub async fn save_auc_active(tx: &mut PgConnection, data: &[AuctionActive]) -> Result<()> {
     let addresses = data.iter().map(|a| a.address.as_str()).collect::<Vec<_>>();
     let wallets = data
         .iter()
@@ -37,13 +34,13 @@ pub async fn save_auc_active(
             tx_lt = data.tx_lt,
             status = data.status
         from (
-            select 
+            select
                 unnest($1::varchar[]) as address,
                 unnest($2::varchar[]) as wallet,
                 unnest($3::varchar[]) as price_token,
                 unnest($4::numeric[]) as start_price,
                 unnest($5::numeric[]) as min_bid,
-                unnest($6::timestamp[]) as created, 
+                unnest($6::timestamp[]) as created,
                 unnest($7::timestamp[]) as finished,
                 unnest($8::bigint[]) as tx_lt,
                 $9::auction_status as status

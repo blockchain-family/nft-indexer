@@ -35,7 +35,7 @@ pub async fn init_consumer(config: &Config) -> Result<Arc<TransactionConsumer>> 
         &config.kafka_topic,
         con_opt,
     )
-        .await
+    .await
 }
 
 pub async fn init_transaction_buffer(
@@ -71,22 +71,22 @@ fn get_any_extractable() -> Vec<AnyExtractable> {
         nft4_2_2(),
         collection4_2_2(),
     ]
-        .into_iter()
-        .flat_map(|c| {
-            c.events
-                .clone()
-                .into_values()
-                .filter(|e| scope::events().contains(&e.name.as_str()))
-                .map(AnyExtractable::Event)
-                .chain(
-                    c.functions
-                        .clone()
-                        .into_values()
-                        .filter(|f| scope::functions().contains(&f.name.as_str()))
-                        .map(AnyExtractable::Function),
-                )
-        })
-        .collect::<Vec<_>>();
+    .into_iter()
+    .flat_map(|c| {
+        c.events
+            .clone()
+            .into_values()
+            .filter(|e| scope::events().contains(&e.name.as_str()))
+            .map(AnyExtractable::Event)
+            .chain(
+                c.functions
+                    .clone()
+                    .into_values()
+                    .filter(|f| scope::functions().contains(&f.name.as_str()))
+                    .map(AnyExtractable::Function),
+            )
+    })
+    .collect::<Vec<_>>();
 
     log::info!(
         "List of extractables to parse:\n{:#?}",

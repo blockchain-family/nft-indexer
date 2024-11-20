@@ -1,0 +1,18 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "\n                    insert into nft_attributes (nft, collection, raw, trait_type, value, updated)\n                    select address, collection, $2, $3, $4, $5\n                    from nft\n                    where address = $1\n                    on conflict (nft, trait_type) where updated < $5 do update\n                    set raw = excluded.raw, value = excluded.value, updated = excluded.updated;\n                ",
+  "describe": {
+    "columns": [],
+    "parameters": {
+      "Left": [
+        "Text",
+        "Jsonb",
+        "Varchar",
+        "Jsonb",
+        "Timestamp"
+      ]
+    },
+    "nullable": []
+  },
+  "hash": "f18939178a949574e501cfa6ad7cd04b68a1703e142913be60aedee2e6f58e3b"
+}

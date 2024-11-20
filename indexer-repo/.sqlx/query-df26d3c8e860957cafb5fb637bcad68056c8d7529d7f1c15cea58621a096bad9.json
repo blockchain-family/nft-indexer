@@ -1,0 +1,15 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "\n            insert into nft_collection (\n                address, \n                first_mint, \n                created, \n                updated            \n            )\n            select\n                unnest($1::varchar[]), \n                unnest($2::timestamp[]), \n                unnest($2::timestamp[]), \n                unnest($2::timestamp[])\n            on conflict(address) do nothing\n        ",
+  "describe": {
+    "columns": [],
+    "parameters": {
+      "Left": [
+        "VarcharArray",
+        "TimestampArray"
+      ]
+    },
+    "nullable": []
+  },
+  "hash": "df26d3c8e860957cafb5fb637bcad68056c8d7529d7f1c15cea58621a096bad9"
+}

@@ -1,0 +1,88 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "\n            insert into nft_events (\n                event_cat,  \n                event_type, \n                address, \n                nft,\n                collection, \n                created_lt,\n                created_at, \n                args, \n                message_hash\n            )\n            select \n                unnest($1::event_category[]),\n                unnest($2::event_type[]), \n                unnest($3::varchar[]), \n                unnest($4::varchar[]), \n                unnest($5::varchar[]),\n                unnest($6::bigint[]), \n                unnest($7::bigint[]),\n                unnest($8::jsonb[]),\n                unnest($9::text[])\n            on conflict(message_hash) do nothing\n        ",
+  "describe": {
+    "columns": [],
+    "parameters": {
+      "Left": [
+        {
+          "Custom": {
+            "name": "_event_category",
+            "kind": {
+              "Array": {
+                "Custom": {
+                  "name": "event_category",
+                  "kind": {
+                    "Enum": [
+                      "auction",
+                      "direct_buy",
+                      "direct_sell",
+                      "nft",
+                      "collection",
+                      "common"
+                    ]
+                  }
+                }
+              }
+            }
+          }
+        },
+        {
+          "Custom": {
+            "name": "_event_type",
+            "kind": {
+              "Array": {
+                "Custom": {
+                  "name": "event_type",
+                  "kind": {
+                    "Enum": [
+                      "auction_deployed",
+                      "auction_created",
+                      "auction_root_ownership_transferred",
+                      "auction_active",
+                      "auction_declined",
+                      "auction_bid_placed",
+                      "auction_bid_declined",
+                      "auction_cancelled",
+                      "auction_complete",
+                      "direct_buy_deployed",
+                      "direct_buy_declined",
+                      "factory_direct_buy_ownership_transferred",
+                      "direct_buy_state_changed",
+                      "direct_sell_deployed",
+                      "direct_sell_declined",
+                      "factory_direct_sell_ownership_transferred",
+                      "direct_sell_state_changed",
+                      "nft_owner_changed",
+                      "nft_manager_changed",
+                      "collection_ownership_transferred",
+                      "nft_created",
+                      "nft_burned",
+                      "market_fee_default_changed",
+                      "market_fee_changed",
+                      "add_collection_rules",
+                      "remove_collection_rules",
+                      "ownership_transferred",
+                      "metadata_updated",
+                      "nft_metadata_updated",
+                      "collection_metadata_updated"
+                    ]
+                  }
+                }
+              }
+            }
+          }
+        },
+        "VarcharArray",
+        "VarcharArray",
+        "VarcharArray",
+        "Int8Array",
+        "Int8Array",
+        "JsonbArray",
+        "TextArray"
+      ]
+    },
+    "nullable": []
+  },
+  "hash": "861d9c3757649d8f7d18e08fcfb77d3bfd31f92639ba779d8f8d7fdcacdc9e03"
+}

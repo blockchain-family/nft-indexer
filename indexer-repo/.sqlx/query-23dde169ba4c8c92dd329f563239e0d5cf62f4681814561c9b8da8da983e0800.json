@@ -1,0 +1,17 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "\n        update nft_auction set\n            min_bid = data.min_bid,\n            max_bid = data.max_bid,\n            tx_lt = data.tx_lt\n        from\n        (\n            select \n                unnest($1::varchar[]) as address,\n                unnest($2::numeric[]) as min_bid,\n                unnest($3::numeric[]) as max_bid,\n                unnest($4::bigint[]) as tx_lt\n        ) as data\n        where nft_auction.address = data.address\n    ",
+  "describe": {
+    "columns": [],
+    "parameters": {
+      "Left": [
+        "VarcharArray",
+        "NumericArray",
+        "NumericArray",
+        "Int8Array"
+      ]
+    },
+    "nullable": []
+  },
+  "hash": "23dde169ba4c8c92dd329f563239e0d5cf62f4681814561c9b8da8da983e0800"
+}

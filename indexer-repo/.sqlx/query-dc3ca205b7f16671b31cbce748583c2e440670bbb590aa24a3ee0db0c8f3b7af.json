@@ -1,0 +1,12 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "refresh materialized view concurrently collection_type_mv",
+  "describe": {
+    "columns": [],
+    "parameters": {
+      "Left": []
+    },
+    "nullable": []
+  },
+  "hash": "dc3ca205b7f16671b31cbce748583c2e440670bbb590aa24a3ee0db0c8f3b7af"
+}

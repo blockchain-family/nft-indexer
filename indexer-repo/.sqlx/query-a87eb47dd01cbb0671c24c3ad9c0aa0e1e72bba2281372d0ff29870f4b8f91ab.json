@@ -1,0 +1,23 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "\n                        select c.address\n                        from nft_collection c\n                        left join meta_handled_addresses mha on mha.address = c.address\n                        where\n                            /*c.verified and*/\n                            (mha.address is null)\n                            or (mha.updated_at < (extract(epoch from now()) - $2)::bigint and failed)\n                        order by updated desc\n                        limit $1\n                        ",
+  "describe": {
+    "columns": [
+      {
+        "ordinal": 0,
+        "name": "address",
+        "type_info": "Varchar"
+      }
+    ],
+    "parameters": {
+      "Left": [
+        "Int8",
+        "Numeric"
+      ]
+    },
+    "nullable": [
+      false
+    ]
+  },
+  "hash": "a87eb47dd01cbb0671c24c3ad9c0aa0e1e72bba2281372d0ff29870f4b8f91ab"
+}

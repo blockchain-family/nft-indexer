@@ -1,12 +1,9 @@
 use anyhow::{anyhow, Result};
-use sqlx::{Postgres, Transaction};
+use sqlx::PgConnection;
 
 use crate::types::decoded::CollectionFee;
 
-pub async fn update_collection_fee(
-    tx: &mut Transaction<'_, Postgres>,
-    data: &[CollectionFee],
-) -> Result<()> {
+pub async fn update_collection_fee(tx: &mut PgConnection, data: &[CollectionFee]) -> Result<()> {
     let addresses = data.iter().map(|e| e.address.as_str()).collect::<Vec<_>>();
     let nums = data.iter().map(|e| e.numerator).collect::<Vec<_>>();
     let denoms = data.iter().map(|e| e.denominator).collect::<Vec<_>>();

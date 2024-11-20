@@ -1,0 +1,17 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "\n                update nft\n                set name = $2,\n                    description = $3,\n                    metadata_updated_at = $4\n                where address = $1\n            ",
+  "describe": {
+    "columns": [],
+    "parameters": {
+      "Left": [
+        "Text",
+        "Varchar",
+        "Text",
+        "Int8"
+      ]
+    },
+    "nullable": []
+  },
+  "hash": "b99c5dbb7f75b0e5fc7ee3c1c1e410c7716ceba7ae10729c7d314ab47dddd193"
+}

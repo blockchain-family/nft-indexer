@@ -1,0 +1,33 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "\n                select token\n                from token_to_dex\n                where source = $1\n            ",
+  "describe": {
+    "columns": [
+      {
+        "ordinal": 0,
+        "name": "token",
+        "type_info": "Varchar"
+      }
+    ],
+    "parameters": {
+      "Left": [
+        {
+          "Custom": {
+            "name": "bc_name",
+            "kind": {
+              "Enum": [
+                "everscale",
+                "venom",
+                "tycho"
+              ]
+            }
+          }
+        }
+      ]
+    },
+    "nullable": [
+      false
+    ]
+  },
+  "hash": "727ae64851bbfa9c79ce7c939638a19483b8a2a3b2f8f50c5fc2b5135753ba18"
+}

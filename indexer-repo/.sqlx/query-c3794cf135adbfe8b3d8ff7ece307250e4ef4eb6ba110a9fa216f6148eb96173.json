@@ -1,0 +1,22 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "select safe_refresh_nft_verified_extended($1)",
+  "describe": {
+    "columns": [
+      {
+        "ordinal": 0,
+        "name": "safe_refresh_nft_verified_extended",
+        "type_info": "Void"
+      }
+    ],
+    "parameters": {
+      "Left": [
+        "Bool"
+      ]
+    },
+    "nullable": [
+      null
+    ]
+  },
+  "hash": "c3794cf135adbfe8b3d8ff7ece307250e4ef4eb6ba110a9fa216f6148eb96173"
+}

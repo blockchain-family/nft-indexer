@@ -1,0 +1,16 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "\n        update nft set\n            manager = data.manager,\n            updated = data.time\n        from\n        (\n            select \n                unnest($1::varchar[]) as address,\n                unnest($2::varchar[]) as manager,\n                unnest($3::timestamp[]) as time\n        ) as data\n        where nft.address = data.address\n    ",
+  "describe": {
+    "columns": [],
+    "parameters": {
+      "Left": [
+        "VarcharArray",
+        "VarcharArray",
+        "TimestampArray"
+      ]
+    },
+    "nullable": []
+  },
+  "hash": "fe6605371497cf9f59c6633361e1214b02d7eaa876274bdae69495cecaf96215"
+}

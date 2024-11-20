@@ -1,0 +1,16 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "\n        update nft set\n            burned = true,\n            owner = data.owner,\n            manager = data.manager\n        from\n        (\n            select \n                unnest($1::varchar[]) as address,\n                unnest($2::varchar[]) as owner,\n                unnest($3::varchar[]) as manager\n        ) as data\n        where nft.address = data.address\n    ",
+  "describe": {
+    "columns": [],
+    "parameters": {
+      "Left": [
+        "VarcharArray",
+        "VarcharArray",
+        "VarcharArray"
+      ]
+    },
+    "nullable": []
+  },
+  "hash": "a76e7676bc83e0d7ce7a25db1772552bd60eb7376fd761ed748dc622046d2748"
+}

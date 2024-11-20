@@ -1,0 +1,23 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "\n                insert into meta_handled_addresses (\n                    address,\n                    updated_at,\n                    failed\n                )\n                values (\n                    $1,\n                    $2,\n                    $3\n                )\n                on conflict (address) do update\n                set\n                    updated_at = $2,\n                    failed = $3\n            ",
+  "describe": {
+    "columns": [],
+    "parameters": {
+      "Left": [
+        {
+          "Custom": {
+            "name": "t_address",
+            "kind": {
+              "Domain": "Varchar"
+            }
+          }
+        },
+        "Int8",
+        "Bool"
+      ]
+    },
+    "nullable": []
+  },
+  "hash": "8b5cad7aecc93fc1f3c1f72160858398e26687861db3a482ab4c1881ad22da9c"
+}

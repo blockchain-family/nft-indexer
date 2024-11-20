@@ -1,15 +1,12 @@
 use anyhow::{anyhow, Result};
-use sqlx::{Postgres, Transaction};
+use sqlx::PgConnection;
 
 use crate::types::{
     decoded::{AuctionCancelled, AuctionComplete},
     AuctionStatus,
 };
 
-pub async fn save_auc_complete(
-    tx: &mut Transaction<'_, Postgres>,
-    data: &[AuctionComplete],
-) -> Result<()> {
+pub async fn save_auc_complete(tx: &mut PgConnection, data: &[AuctionComplete]) -> Result<()> {
     let addresses = data.iter().map(|e| e.address.as_str()).collect::<Vec<_>>();
     let max_bids = data.iter().map(|e| e.max_bid.clone()).collect::<Vec<_>>();
 
@@ -37,10 +34,7 @@ pub async fn save_auc_complete(
     .map(|_| ())
 }
 
-pub async fn save_auc_cancelled(
-    tx: &mut Transaction<'_, Postgres>,
-    data: &[AuctionCancelled],
-) -> Result<()> {
+pub async fn save_auc_cancelled(tx: &mut PgConnection, data: &[AuctionCancelled]) -> Result<()> {
     let addresses = data.iter().map(|e| e.address.as_str()).collect::<Vec<_>>();
 
     sqlx::query!(

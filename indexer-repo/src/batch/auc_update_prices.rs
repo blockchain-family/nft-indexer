@@ -1,12 +1,9 @@
 use anyhow::{anyhow, Result};
-use sqlx::{Postgres, Transaction};
+use sqlx::PgConnection;
 
 use crate::types::decoded::AuctionBid;
 
-pub async fn update_auc_maxmin(
-    tx: &mut Transaction<'_, Postgres>,
-    data: &[AuctionBid],
-) -> Result<()> {
+pub async fn update_auc_maxmin(tx: &mut PgConnection, data: &[AuctionBid]) -> Result<()> {
     let addresses = data.iter().map(|e| e.address.as_str()).collect::<Vec<_>>();
     let min_bids = data
         .iter()
