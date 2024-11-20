@@ -25,7 +25,7 @@ env:
 
   BC_NAME: Tycho
   DEX_HOST_URL: https://api-test-tycho.flatqube.io/
-  IS_NEED_CERT_FOR_KAFKA: true
+  USE_KAFKA_OPTIONS: true
 
 service:
   port: 3001
