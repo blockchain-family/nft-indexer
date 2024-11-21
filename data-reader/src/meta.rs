@@ -5,10 +5,8 @@ use indexer_repo::{
     meta::{MetadataModelService, NftMeta, NftMetaAttribute},
     types::NftCollectionMeta,
 };
-use nekoton_utils::TrustMe;
 use serde_json::Value;
-use sqlx::postgres::any::AnyConnectionBackend;
-use sqlx::{types::chrono, Acquire, PgConnection, PgPool};
+use sqlx::{types::chrono, PgPool, Postgres, Transaction};
 use std::{str::FromStr, time::Duration};
 use ton_block::MsgAddressInt;
 
@@ -92,7 +90,7 @@ impl MetaUpdater {
         &self,
         addresses: &[&str],
         collection_only: bool,
-        mut existing_tx: Option<&mut PgConnection>,
+        mut existing_tx: Option<&mut Transaction<'_, Postgres>>,
     ) {
         for &address in addresses.iter() {
             if let Err(e) = self
@@ -110,7 +108,7 @@ impl MetaUpdater {
         &self,
         address: &str,
         collection_only: bool,
-        existing_tx: Option<&mut PgConnection>,
+        existing_tx: Option<&mut Transaction<'_, Postgres>>,
     ) -> Result<()> {
         let Ok(collection_address) = MsgAddressInt::from_str(address) else {
             bail!(
@@ -134,15 +132,14 @@ impl MetaUpdater {
             }
         };
 
-        let Ok(mut tx) = self.context.pool.begin().await else {
-            bail!("Cant start transaction for saving metadata");
-        };
-
-        let mut owned_tx = false;
+        let mut owned_tx = None;
         let mut tx = match existing_tx {
             None => {
-                owned_tx = true;
-                Some(tx.acquire().await?)
+                let Ok(tx) = self.context.pool.begin().await else {
+                    bail!("Cant start transaction for saving metadata");
+                };
+                owned_tx = Some(tx);
+                owned_tx.as_mut()
             }
             Some(tx) => Some(tx),
         };
@@ -224,15 +221,12 @@ impl MetaUpdater {
                 .get_nfts_by_collection(address)
                 .await?;
 
-            self.update_nfts_meta(
-                &nfts.iter().map(|n| n.as_str()).collect::<Vec<_>>(),
-                tx.as_deref_mut(),
-            )
-            .await;
+            self.update_nfts_meta(&nfts.iter().map(|n| n.as_str()).collect::<Vec<_>>(), tx)
+                .await;
         }
 
-        if owned_tx {
-            if let Err(e) = tx.trust_me().commit().await {
+        if let Some(tx) = owned_tx {
+            if let Err(e) = tx.commit().await {
                 bail!(
                     "Nft address: {}, error while commiting transaction: {e:#?}",
                     &address,
@@ -246,7 +240,7 @@ impl MetaUpdater {
     pub async fn update_nfts_meta(
         &self,
         addresses: &[&str],
-        mut existing_tx: Option<&mut PgConnection>,
+        mut existing_tx: Option<&mut Transaction<'_, Postgres>>,
     ) {
         for &address in addresses.iter() {
             if let Err(e) = self
@@ -263,7 +257,7 @@ impl MetaUpdater {
     pub async fn update_nft_meta(
         &self,
         address: &str,
-        existing_tx: Option<&mut PgConnection>,
+        existing_tx: Option<&mut Transaction<'_, Postgres>>,
     ) -> Result<()> {
         let Ok(nft_address) = MsgAddressInt::from_str(address) else {
             bail!(
@@ -284,15 +278,14 @@ impl MetaUpdater {
             })
             .unwrap_or_default();
 
-        let Ok(mut tx) = self.context.pool.begin().await else {
-            bail!("Cant start transaction for saving metadata");
-        };
-
-        let mut owned_tx = false;
+        let mut owned_tx = None;
         let mut tx = match existing_tx {
             None => {
-                owned_tx = true;
-                Some(tx.acquire().await?)
+                let Ok(tx) = self.context.pool.begin().await else {
+                    bail!("Cant start transaction for saving metadata");
+                };
+                owned_tx = Some(tx);
+                owned_tx.as_mut()
             }
             Some(tx) => Some(tx),
         };
@@ -344,7 +337,7 @@ impl MetaUpdater {
 
         if let Err(e) = self
             .meta_model_service
-            .add_to_proceeded(address, Some(failed), tx.as_deref_mut())
+            .add_to_proceeded(address, Some(failed), tx)
             .await
         {
             bail!(
@@ -353,8 +346,8 @@ impl MetaUpdater {
             );
         };
 
-        if owned_tx {
-            if let Err(e) = tx.trust_me().commit().await {
+        if let Some(tx) = owned_tx {
+            if let Err(e) = tx.commit().await {
                 bail!(
                     "Nft address: {}, error while commiting transaction: {e:#?}",
                     &address,

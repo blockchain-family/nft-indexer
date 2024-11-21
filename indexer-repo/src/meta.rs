@@ -1,7 +1,7 @@
 use crate::types::NftCollectionMeta;
 use anyhow::Result;
 use chrono::NaiveDateTime;
-use sqlx::{postgres::PgQueryResult, PgConnection, PgPool};
+use sqlx::{postgres::PgQueryResult, Acquire, PgPool, Postgres, Transaction};
 
 #[derive(Clone)]
 pub struct MetadataModelService {
@@ -104,7 +104,7 @@ impl MetadataModelService {
         name: Option<&str>,
         description: Option<&str>,
         updated: NaiveDateTime,
-        tx: Option<&mut PgConnection>,
+        tx: Option<&mut Transaction<'_, Postgres>>,
     ) -> Result<PgQueryResult> {
         let query = sqlx::query!(
             r#"
@@ -121,7 +121,7 @@ impl MetadataModelService {
         );
 
         Ok(if let Some(tx) = tx {
-            query.execute(tx).await?
+            query.execute(tx.acquire().await?).await?
         } else {
             query.execute(&self.pool).await?
         })
@@ -132,7 +132,7 @@ impl MetadataModelService {
         nft_address: &str,
         attr: &[NftMetaAttribute<'b>],
         updated: NaiveDateTime,
-        mut tx: Option<&mut PgConnection>,
+        mut tx: Option<&mut Transaction<'_, Postgres>>,
     ) -> Result<()> {
         for nft_attribute in attr {
             let query = sqlx::query!(
@@ -152,7 +152,7 @@ impl MetadataModelService {
             );
 
             if let Some(tx) = tx.as_deref_mut() {
-                query.execute(tx).await?;
+                query.execute(tx.acquire().await?).await?;
             } else {
                 query.execute(&self.pool).await?;
             }
@@ -169,7 +169,7 @@ impl MetadataModelService {
         );
 
         if let Some(tx) = tx {
-            query.execute(tx).await?;
+            query.execute(tx.acquire().await?).await?;
         } else {
             query.execute(&self.pool).await?;
         }
@@ -180,7 +180,7 @@ impl MetadataModelService {
     pub async fn update_nft_meta<'b>(
         &self,
         meta: &NftMeta<'b>,
-        tx: Option<&mut PgConnection>,
+        tx: Option<&mut Transaction<'_, Postgres>>,
     ) -> Result<PgQueryResult> {
         let query = sqlx::query!(
             r#"
@@ -195,7 +195,7 @@ impl MetadataModelService {
         );
 
         Ok(if let Some(tx) = tx {
-            query.execute(tx).await?
+            query.execute(tx.acquire().await?).await?
         } else {
             query.execute(&self.pool).await?
         })
@@ -204,7 +204,7 @@ impl MetadataModelService {
     pub async fn update_collection(
         &self,
         meta: &NftCollectionMeta,
-        tx: Option<&mut PgConnection>,
+        tx: Option<&mut Transaction<'_, Postgres>>,
     ) -> Result<PgQueryResult> {
         let query = sqlx::query!(
             r#"
@@ -230,7 +230,7 @@ impl MetadataModelService {
         );
 
         Ok(if let Some(tx) = tx {
-            query.execute(tx).await?
+            query.execute(tx.acquire().await?).await?
         } else {
             query.execute(&self.pool).await?
         })
@@ -240,7 +240,7 @@ impl MetadataModelService {
         &self,
         addr: &str,
         failed: Option<bool>,
-        tx: Option<&mut PgConnection>,
+        tx: Option<&mut Transaction<'_, Postgres>>,
     ) -> Result<PgQueryResult> {
         let failed = failed.unwrap_or(false);
 
@@ -269,7 +269,7 @@ impl MetadataModelService {
         );
 
         Ok(if let Some(tx) = tx {
-            query.execute(tx).await?
+            query.execute(tx.acquire().await?).await?
         } else {
             query.execute(&self.pool).await?
         })
