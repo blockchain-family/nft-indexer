@@ -22,7 +22,9 @@ pub async fn request_prices(
         BcName::Everscale => {
             flatqube_request_prices(client, from, to, pair_addr, dex_host_url).await
         }
-        BcName::Tycho => flatqube_request_prices(client, from, to, pair_addr, dex_host_url).await,
+        BcName::Tycho => {
+            flatqube_request_prices(client, from * 1000, to * 1000, pair_addr, dex_host_url).await
+        }
     }
 }
 
