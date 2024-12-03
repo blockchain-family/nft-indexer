@@ -24,7 +24,7 @@ env:
   PRICE_UPDATE_FREQUENCY_SEC: 180
 
   BC_NAME: Tycho
-  DEX_HOST_URL: https://api-test-tycho.flatqube.io/
+  DEX_HOST_URL: https://api-test-tycho.flatqube.io
 
 service:
   port: 3001
