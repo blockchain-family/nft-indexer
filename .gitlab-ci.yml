@@ -14,14 +14,14 @@ stages:
 
 cloudbuild:image:stage:
   only:
-    - oasis
+    - master
   except:
     - tags
   extends: .cloudbuild:common
 
 deploy:stage-mainnet-venom:
   only:
-    - oasis
+    - master
   extends: .deploy
   environment:
     name: bf
@@ -32,7 +32,7 @@ deploy:stage-mainnet-venom:
 
 stop:stage-mainnet-venom:
   only:
-    - oasis
+    - master
   extends: .stop
   environment:
     name: bf
@@ -44,14 +44,14 @@ stop:stage-mainnet-venom:
 
 cloudbuild:image:prod:
   only:
-    - oasis
+    - master
   except:
     - tags
   extends: .cloudbuild:common
 
 deploy:prod-mainnet-venom:
   only:
-    - oasis
+    - master
   extends: .deploy
   environment:
     name: bf
@@ -62,7 +62,7 @@ deploy:prod-mainnet-venom:
 
 stop:prod-mainnet-venom:
   only:
-    - oasis
+    - master
   extends: .stop
   environment:
     name: bf
@@ -74,14 +74,14 @@ stop:prod-mainnet-venom:
 
 cloudbuild:image:stage-tycho-testnet:
   only:
-    - oasis
+    - master
   except:
     - tags
   extends: .cloudbuild:common
 
 deploy:stage-tycho-testnet:
   only:
-    - oasis
+    - master
   extends: .deploy
   environment:
     name: stage
@@ -92,7 +92,7 @@ deploy:stage-tycho-testnet:
 
 stop:stage-tycho-testnet:
   only:
-    - oasis
+    - master
   extends: .stop
   environment:
     name: stage
