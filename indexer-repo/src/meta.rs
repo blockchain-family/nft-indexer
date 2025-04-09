@@ -127,10 +127,10 @@ impl MetadataModelService {
         })
     }
 
-    pub async fn update_nft_attributes<'b>(
+    pub async fn update_nft_attributes(
         &self,
         nft_address: &str,
-        attr: &[NftMetaAttribute<'b>],
+        attr: &[NftMetaAttribute<'_>],
         updated: NaiveDateTime,
         mut tx: Option<&mut Transaction<'_, Postgres>>,
     ) -> Result<()> {
@@ -177,9 +177,9 @@ impl MetadataModelService {
         Ok(())
     }
 
-    pub async fn update_nft_meta<'b>(
+    pub async fn update_nft_meta(
         &self,
-        meta: &NftMeta<'b>,
+        meta: &NftMeta<'_>,
         tx: Option<&mut Transaction<'_, Postgres>>,
     ) -> Result<PgQueryResult> {
         let query = sqlx::query!(

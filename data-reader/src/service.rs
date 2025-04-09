@@ -137,7 +137,7 @@ pub enum JsonInfo {
 #[derive(Debug)]
 pub struct CollectionContractState<'a>(pub &'a ExistingContract);
 
-impl<'a> CollectionContractState<'a> {
+impl CollectionContractState<'_> {
     pub fn check_collection_supported_interfaces(
         &self,
         clock: &dyn Clock,
@@ -212,7 +212,7 @@ pub struct NftInterfaces {
 #[derive(Debug)]
 pub struct NftContractState<'a>(pub &'a ExistingContract);
 
-impl<'a> NftContractState<'a> {
+impl NftContractState<'_> {
     pub fn check_supported_interfaces(&self, clock: &dyn Clock) -> Result<Option<NftInterfaces>> {
         let ctx = self.0.as_context(clock);
         let tip6_interface = tip6::SidContract(ctx);
@@ -260,7 +260,6 @@ enum NftError {
 
 #[cfg(test)]
 mod tests {
-
     use crate::MetadataRpcService;
     use everscale_rpc_client::{ClientOptions, RpcClient};
     use reqwest::Url;
