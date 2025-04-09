@@ -10,8 +10,6 @@ stages:
   - cloudbuild
   - deploy
 
-# ---------- Venom Stage ---------- #
-
 cloudbuild:image:stage:
   only:
     - master
@@ -40,7 +38,27 @@ stop:stage-mainnet-venom:
     K8S_NAMESPACE: ${CI_PROJECT_ROOT_NAMESPACE}-stage
     APP_CONFIG: stage-mainnet-venom
 
-# ---------- Venom Production ---------- #
+deploy:stage-tycho-testnet:
+  only:
+    - master
+  extends: .deploy
+  environment:
+    name: stage
+    on_stop: stop:stage-tycho-testnet
+  variables:
+    K8S_NAMESPACE: ${CI_PROJECT_ROOT_NAMESPACE}-tycho-testnet
+    APP_CONFIG: tycho-testnet
+
+stop:stage-tycho-testnet:
+  only:
+    - master
+  extends: .stop
+  environment:
+    name: stage
+  variables:
+    K8S_NAMESPACE: ${CI_PROJECT_ROOT_NAMESPACE}-tycho-testnet
+    APP_CONFIG: tycho-testnet
+
 
 cloudbuild:image:prod:
   only:
@@ -69,33 +87,3 @@ stop:prod-mainnet-venom:
   variables:
     K8S_NAMESPACE: ${CI_PROJECT_ROOT_NAMESPACE}-prod
     APP_CONFIG: prod-mainnet-venom
-
-# ---------- Tycho Testnet ---------- #
-
-cloudbuild:image:stage-tycho-testnet:
-  only:
-    - master
-  except:
-    - tags
-  extends: .cloudbuild:common
-
-deploy:stage-tycho-testnet:
-  only:
-    - master
-  extends: .deploy
-  environment:
-    name: stage
-    on_stop: stop:stage-tycho-testnet
-  variables:
-    K8S_NAMESPACE: ${CI_PROJECT_ROOT_NAMESPACE}-tycho-testnet
-    APP_CONFIG: tycho-testnet
-
-stop:stage-tycho-testnet:
-  only:
-    - master
-  extends: .stop
-  environment:
-    name: stage
-  variables:
-    K8S_NAMESPACE: ${CI_PROJECT_ROOT_NAMESPACE}-tycho-testnet
-    APP_CONFIG: tycho-testnet
