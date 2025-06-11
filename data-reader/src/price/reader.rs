@@ -1,22 +1,22 @@
-use std::sync::atomic::{AtomicU64, Ordering};
 use std::sync::Arc;
+use std::sync::atomic::{AtomicU64, Ordering};
 use std::time::UNIX_EPOCH;
 use std::{
     collections::{HashMap, HashSet},
     time::Duration,
 };
 
-use bigdecimal::{num_bigint::BigInt, BigDecimal};
+use bigdecimal::{BigDecimal, num_bigint::BigInt};
 use indexer_repo::{
     price::{NftPriceModel, RowWithoutUsdPrice},
     types::BcName,
 };
 use nekoton_utils::TrustMe;
-use sqlx::types::chrono::DateTime;
 use sqlx::PgPool;
+use sqlx::types::chrono::DateTime;
 use tokio::sync::RwLock;
 
-use super::price_requester::{request_prices, PriceInfo};
+use super::price_requester::{PriceInfo, request_prices};
 
 const NFT_PER_ITERATION: i64 = 1000;
 

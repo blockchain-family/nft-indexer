@@ -1,12 +1,12 @@
 use crate::service::MetadataRpcService;
-use anyhow::{bail, Result};
+use anyhow::{Result, bail};
 use everscale_rpc_client::RpcClient;
 use indexer_repo::{
     meta::{MetadataModelService, NftMeta, NftMetaAttribute},
     types::NftCollectionMeta,
 };
 use serde_json::Value;
-use sqlx::{types::chrono, PgPool, Postgres, Transaction};
+use sqlx::{PgPool, Postgres, Transaction, types::chrono};
 use std::{str::FromStr, time::Duration};
 use ton_block::MsgAddressInt;
 

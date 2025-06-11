@@ -12,11 +12,12 @@ path = "../data-reader"
 path = "../indexer-repo"
 
 [dependencies]
-actix-cors = "0.6.4"
-actix-web = "4.3.1"
 anyhow = "^1.0.44"
+axum = "0.8.4"
 log = { version = "0.4", features = ["std", "serde"] }
 serde = { version = "1.0", features = ["derive"] }
 serde_json = "1.0"
-opg = "0.2.1"
 serde_yaml = "0.9.25"
+tokio = { version = "1.45.1", features = ["net"] }
+tower = "0.5.2"
+tower-http = { version = "0.6.6", features = ["cors"] }

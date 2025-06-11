@@ -1,4 +1,4 @@
-use anyhow::{anyhow, Result};
+use anyhow::{Result, anyhow};
 use bigdecimal::BigDecimal;
 use indexer_repo::types::BcName;
 use serde::{Deserialize, Serialize};

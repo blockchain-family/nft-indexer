@@ -13,7 +13,6 @@ mod persistence;
 mod settings;
 mod utils;
 
-extern crate num;
 extern crate num_derive;
 
 #[tokio::main]

@@ -1,7 +1,7 @@
 [package]
 name = "data-reader"
 version = "0.1.0"
-edition = "2021"
+edition = "2024"
 
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
@@ -9,18 +9,13 @@ edition = "2021"
 path = "../indexer-repo"
 
 [dependencies]
-anyhow = "^1.0.44"
-log = { version = "0.4", features = ["std", "serde"] }
-sqlx = { version = "0.7.4", features = ["postgres", "runtime-tokio-native-tls"] }
 tokio = { version = "1.2", features = ["macros", "rt-multi-thread"] }
 transaction-consumer = { git = "https://github.com/broxus/transaction-consumer" }
-
 serde = { version = "1.0", features = ["derive"] }
 serde_json = "1.0"
 ton_block = { git = "https://github.com/broxus/ton-labs-block" }
 ton_types = { git = "https://github.com/broxus/ton-labs-types" }
 reqwest = { version = "0.11.27", features = ["json"] }
-bigdecimal = { version = "0.3.0", features = ["serde"] }
 nekoton-abi = { git = "https://github.com/broxus/nekoton" }
 everscale-rpc-client = { git = "https://github.com/broxus/everscale-jrpc" }
 nekoton-utils = { git = "https://github.com/broxus/nekoton" }
@@ -28,3 +23,7 @@ nekoton = { git = "https://github.com/broxus/nekoton" }
 ton_abi = { git = "https://github.com/broxus/ton-labs-abi" }
 thiserror = "1.0.61"
 once_cell = "1.12.0"
+anyhow = "1.0.98"
+log = "0.4.27"
+sqlx = "0.8.6"
+bigdecimal = { version = "0.4.8", features = ["serde"] }

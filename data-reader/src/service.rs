@@ -110,11 +110,7 @@ impl MetadataRpcService {
             .owner()
             .map(to_address)
             .map_err(|e| {
-                log::error!(
-                    "Can't get collection {} owner with 'owner' method: {:#?}",
-                    collection.to_string(),
-                    e
-                );
+                log::error!("Can't get collection {collection} owner with 'owner' method: {e}",);
                 e
             })
             .ok();

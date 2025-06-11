@@ -1,7 +1,6 @@
 use nekoton_abi::{BuildTokenValue, PackAbi, UnpackAbi, UnpackerError};
-use num::BigUint;
 use num_derive::{FromPrimitive, ToPrimitive};
-use num_traits::FromPrimitive;
+use num_traits::{FromPrimitive, ToPrimitive};
 use serde::Serialize;
 use ton_abi::TokenValue;
 use ton_block::MsgAddressInt;
@@ -42,7 +41,7 @@ pub enum AuctionStatus {
 impl UnpackAbi<AuctionStatus> for TokenValue {
     fn unpack(self) -> nekoton_abi::UnpackerResult<AuctionStatus> {
         UnpackAbi::<u8>::unpack(self)
-            .map(FromPrimitive::from_u8)
+            .map(num_traits::FromPrimitive::from_u8)
             .transpose()
             .ok_or(UnpackerError::InvalidAbi)?
     }
@@ -51,7 +50,7 @@ impl UnpackAbi<AuctionStatus> for TokenValue {
 impl BuildTokenValue for AuctionStatus {
     fn token_value(self) -> TokenValue {
         TokenValue::Uint(ton_abi::Uint {
-            number: BigUint::from_u8(num::ToPrimitive::to_u8(&self).unwrap()).unwrap(),
+            number: bigdecimal::num_bigint::BigUint::from_u8(self.to_u8().unwrap()).unwrap(),
             size: 8,
         })
     }

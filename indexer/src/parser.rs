@@ -451,12 +451,12 @@ mod test {
     use crate::persistence::entities::Decoded;
     use crate::settings::get_jrpc_client;
     use crate::{abi::scope::events, models::events::*, parser::unpack_entity};
+    use bigdecimal::num_bigint::{BigInt, BigUint};
     use chrono::NaiveDateTime;
     use data_reader::{MetaUpdater, MetaUpdaterContext, PriceReader};
     use indexer_repo::types::{decoded, BcName};
     use indexer_repo::utils::init_pg_pool;
     use nekoton_abi::{transaction_parser::ExtractedOwned, PackAbiPlain, UnpackAbiPlain};
-    use num::{BigInt, BigUint};
     use std::collections::{BTreeMap, HashMap};
     use std::str::FromStr;
     use ton_abi::{Int, Param, ParamType, Token, TokenValue, Uint};
@@ -493,7 +493,9 @@ mod test {
             ParamType::Map(k, v) => {
                 TokenValue::Map((**k).clone(), (**v).clone(), BTreeMap::default())
             }
-            ParamType::Address => TokenValue::Address(MsgAddress::AddrStd(MsgAddrStd::default())),
+            ParamType::AddressStd => {
+                TokenValue::Address(MsgAddress::AddrStd(MsgAddrStd::default()))
+            }
             ParamType::Bytes => TokenValue::Bytes(Vec::default()),
             ParamType::FixedBytes(_) => TokenValue::FixedBytes(Vec::default()),
             ParamType::String => TokenValue::String(String::default()),
@@ -505,6 +507,7 @@ mod test {
                 TokenValue::Optional((**v).clone(), Some(Box::new(create_default_token_value(v))))
             }
             ParamType::Ref(v) => TokenValue::Ref(Box::new(create_default_token_value(v))),
+            ParamType::Address => panic!("TON addresses not supported"),
         }
     }
 
@@ -593,28 +596,38 @@ mod test {
         let mut total_events_parsed = 0;
 
         let auction_root_tip3_contract =
-            ton_abi::Contract::load(include_str!("abi/json/FactoryAuction.abi.json")).unwrap();
+            ton_abi::Contract::load(include_str!("abi/json/FactoryAuction.abi.json").as_bytes())
+                .unwrap();
         let auction_tip3_contract =
-            ton_abi::Contract::load(include_str!("abi/json/Auction.abi.json")).unwrap();
+            ton_abi::Contract::load(include_str!("abi/json/Auction.abi.json").as_bytes()).unwrap();
         let callbacks_contract =
-            ton_abi::Contract::load(include_str!("abi/json/Callbacks.abi.json")).unwrap();
+            ton_abi::Contract::load(include_str!("abi/json/Callbacks.abi.json").as_bytes())
+                .unwrap();
         let collection_contract =
-            ton_abi::Contract::load(include_str!("abi/json/Collection.abi.json")).unwrap();
+            ton_abi::Contract::load(include_str!("abi/json/Collection.abi.json").as_bytes())
+                .unwrap();
         let direct_buy_contract =
-            ton_abi::Contract::load(include_str!("abi/json/DirectBuy.abi.json")).unwrap();
+            ton_abi::Contract::load(include_str!("abi/json/DirectBuy.abi.json").as_bytes())
+                .unwrap();
         let direct_sell_contract =
-            ton_abi::Contract::load(include_str!("abi/json/DirectSell.abi.json")).unwrap();
+            ton_abi::Contract::load(include_str!("abi/json/DirectSell.abi.json").as_bytes())
+                .unwrap();
         let factory_direct_buy_contract =
-            ton_abi::Contract::load(include_str!("abi/json/FactoryDirectBuy.abi.json")).unwrap();
+            ton_abi::Contract::load(include_str!("abi/json/FactoryDirectBuy.abi.json").as_bytes())
+                .unwrap();
         let factory_direct_sell_contract =
-            ton_abi::Contract::load(include_str!("abi/json/FactoryDirectSell.abi.json")).unwrap();
+            ton_abi::Contract::load(include_str!("abi/json/FactoryDirectSell.abi.json").as_bytes())
+                .unwrap();
         let mint_and_sell_contract =
-            ton_abi::Contract::load(include_str!("abi/json/MintAndSell.abi.json")).unwrap();
-        let nft_contract = ton_abi::Contract::load(include_str!("abi/json/Nft.abi.json")).unwrap();
+            ton_abi::Contract::load(include_str!("abi/json/MintAndSell.abi.json").as_bytes())
+                .unwrap();
+        let nft_contract =
+            ton_abi::Contract::load(include_str!("abi/json/Nft.abi.json").as_bytes()).unwrap();
         let collection_4_2_2_contract =
-            ton_abi::Contract::load(include_str!("abi/json/Collection4_2_2.abi.json")).unwrap();
+            ton_abi::Contract::load(include_str!("abi/json/Collection4_2_2.abi.json").as_bytes())
+                .unwrap();
         let nft_4_2_2_contract =
-            ton_abi::Contract::load(include_str!("abi/json/Nft4_2_2.abi.json")).unwrap();
+            ton_abi::Contract::load(include_str!("abi/json/Nft4_2_2.abi.json").as_bytes()).unwrap();
 
         let mut nft_events = auction_root_tip3_contract.events;
         nft_events.extend(auction_tip3_contract.events);

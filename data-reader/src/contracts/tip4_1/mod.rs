@@ -1,9 +1,9 @@
 use anyhow::Result;
 use nekoton_abi::*;
 
+use super::RunLocalSimple;
 use super::tip4_1::collection_contract::NftCodeHashOutputs;
 use super::tip4_1::nft_contract::{ChangeOwnerInputs, GetInfoOutputs};
-use super::RunLocalSimple;
 
 pub mod collection_contract;
 pub mod nft_contract;

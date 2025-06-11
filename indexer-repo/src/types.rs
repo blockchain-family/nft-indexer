@@ -39,12 +39,6 @@ pub enum EventType {
     CollectionMetadataUpdated,
 }
 
-impl sqlx::postgres::PgHasArrayType for EventType {
-    fn array_type_info() -> sqlx::postgres::PgTypeInfo {
-        sqlx::postgres::PgTypeInfo::with_name("_event_type")
-    }
-}
-
 #[derive(Copy, Clone, Debug, Serialize, sqlx::Type)]
 #[sqlx(type_name = "event_category", rename_all = "snake_case")]
 pub enum EventCategory {
@@ -54,12 +48,6 @@ pub enum EventCategory {
     Nft,
     Collection,
     Common,
-}
-
-impl sqlx::postgres::PgHasArrayType for EventCategory {
-    fn array_type_info() -> sqlx::postgres::PgTypeInfo {
-        sqlx::postgres::PgTypeInfo::with_name("_event_category")
-    }
 }
 
 #[derive(Clone, Debug, Serialize, sqlx::Type)]
@@ -83,12 +71,6 @@ pub enum DirectSellState {
     Expired,
 }
 
-impl sqlx::postgres::PgHasArrayType for DirectSellState {
-    fn array_type_info() -> sqlx::postgres::PgTypeInfo {
-        sqlx::postgres::PgTypeInfo::with_name("_direct_sell_state")
-    }
-}
-
 #[derive(Clone, Debug, Serialize, PartialEq, Eq, sqlx::Type)]
 #[sqlx(type_name = "direct_buy_state", rename_all = "snake_case")]
 pub enum DirectBuyState {
@@ -100,24 +82,12 @@ pub enum DirectBuyState {
     Expired,
 }
 
-impl sqlx::postgres::PgHasArrayType for DirectBuyState {
-    fn array_type_info() -> sqlx::postgres::PgTypeInfo {
-        sqlx::postgres::PgTypeInfo::with_name("_direct_buy_state")
-    }
-}
-
 #[derive(Copy, Clone, Debug, Serialize, PartialEq, Eq, sqlx::Type)]
 #[sqlx(type_name = "nft_price_source", rename_all = "camelCase")]
 pub enum NftPriceSource {
     AuctionBid = 0,
     DirectBuy,
     DirectSell,
-}
-
-impl sqlx::postgres::PgHasArrayType for NftPriceSource {
-    fn array_type_info() -> sqlx::postgres::PgTypeInfo {
-        sqlx::postgres::PgTypeInfo::with_name("_nft_price_source")
-    }
 }
 
 impl From<u8> for DirectSellState {

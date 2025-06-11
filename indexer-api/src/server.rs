@@ -1,34 +1,42 @@
-use actix_cors::Cors;
-use actix_web::middleware::Logger;
-use actix_web::web::Data;
-use actix_web::{get, App, HttpResponse, HttpServer};
+use axum::{
+    http::StatusCode,
+    routing::{get, post},
+    Router,
+};
 use data_reader::MetaUpdater;
 use std::net::SocketAddr;
+use tower::ServiceBuilder;
+use tower_http::cors::CorsLayer;
 
 use crate::api;
-use crate::api::docs::v1::{swagger_json, swagger_yaml};
 
-pub async fn run_api(address: &SocketAddr, meta_updater: MetaUpdater) -> std::io::Result<()> {
-    let address_str = address.to_string();
-
-    HttpServer::new(move || {
-        let cors = Cors::permissive();
-        App::new()
-            .wrap(Logger::default())
-            .wrap(cors)
-            .service(api::metadata::refresh_metadata_by_nft)
-            .service(swagger_yaml)
-            .service(swagger_json)
-            .service(health)
-            .app_data(Data::new(meta_updater.clone()))
-            .app_data(Data::new(address_str.clone()))
-    })
-    .bind(address)?
-    .run()
-    .await
+#[derive(Clone)]
+pub struct AppState {
+    pub meta_updater: MetaUpdater,
+    pub address: String,
 }
 
-#[get("/healthz")]
-async fn health() -> HttpResponse {
-    HttpResponse::Ok().finish()
+pub async fn run_api(address: &SocketAddr, meta_updater: MetaUpdater) -> std::io::Result<()> {
+    let state = AppState {
+        meta_updater,
+        address: address.to_string(),
+    };
+
+    // TODO: split /healthz and /metadata/refresh/"
+
+    let app = Router::new()
+        .route("/healthz", get(health))
+        .route(
+            "/metadata/refresh/",
+            post(api::metadata::refresh_metadata_by_nft),
+        )
+        .layer(ServiceBuilder::new().layer(CorsLayer::permissive()))
+        .with_state(state);
+
+    let listener = tokio::net::TcpListener::bind(address).await?;
+    axum::serve(listener, app).await
+}
+
+async fn health() -> StatusCode {
+    StatusCode::OK
 }

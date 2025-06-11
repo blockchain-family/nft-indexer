@@ -2,7 +2,6 @@ use anyhow::Result;
 use bigdecimal::num_bigint::Sign;
 use bigdecimal::BigDecimal;
 use chrono::{DateTime, NaiveDateTime};
-use num::BigInt;
 use serde::Serializer;
 use ton_block::{GetRepresentationHash, MsgAddressInt};
 use ton_types::UInt256;
@@ -55,11 +54,14 @@ where
 }
 
 pub fn u128_to_bigdecimal(i: u128) -> BigDecimal {
-    BigDecimal::new(BigInt::from(i), 0)
+    BigDecimal::new(bigdecimal::num_bigint::BigInt::from(i), 0)
 }
 
 pub fn u256_to_bigdecimal(i: &UInt256) -> BigDecimal {
-    BigDecimal::new(BigInt::from_bytes_be(Sign::Plus, i.as_slice()), 0)
+    BigDecimal::new(
+        bigdecimal::num_bigint::BigInt::from_bytes_be(Sign::Plus, i.as_slice()),
+        0,
+    )
 }
 
 pub fn timestamp_to_datetime(ts: i64) -> NaiveDateTime {

@@ -53,7 +53,7 @@ impl OnceCellExt for OnceCell<Contract> {
             }
         }
 
-        self.get_or_init(|| Contract::load_from_json(data).expect("Trust me"))
+        self.get_or_init(|| Contract::load(data.to_string().as_bytes()).expect("Trust me"))
     }
 }
 

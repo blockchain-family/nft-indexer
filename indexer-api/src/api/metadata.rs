@@ -1,56 +1,49 @@
-use actix_web::web::Json;
-use actix_web::{post, web, HttpResponse};
-use data_reader::MetaUpdater;
-use opg::OpgModel;
+use axum::{extract::State, http::StatusCode, response::Json};
 use serde::Deserialize;
 
-#[derive(Deserialize, OpgModel)]
+use crate::server::AppState;
+
+#[derive(Deserialize)]
 pub struct RefreshMetadataParams {
-    #[opg(optional, string)]
     nft: Option<String>,
-    #[opg(string)]
     collection: String,
-    #[opg(boolean)]
     only_collection_info: bool,
 }
 
-#[post("/metadata/refresh/")]
 pub async fn refresh_metadata_by_nft(
-    path: Json<RefreshMetadataParams>,
-    meta_updater: web::Data<MetaUpdater>,
-) -> HttpResponse {
-    let result = match path.0.nft {
-        None => update_collection_metadata(&path, meta_updater).await,
-        Some(nft) => update_nft_metadata(nft, meta_updater).await,
+    State(state): State<AppState>,
+    Json(params): Json<RefreshMetadataParams>,
+) -> StatusCode {
+    let result = match params.nft {
+        None => update_collection_metadata(&params, &state).await,
+        Some(nft) => update_nft_metadata(nft, &state).await,
     };
 
     respond_to_result(result)
 }
 
 async fn update_collection_metadata(
-    path: &Json<RefreshMetadataParams>,
-    meta_updater: web::Data<MetaUpdater>,
+    params: &RefreshMetadataParams,
+    state: &AppState,
 ) -> anyhow::Result<()> {
-    meta_updater
-        .update_collection_meta(&path.0.collection, path.only_collection_info, None)
+    state
+        .meta_updater
+        .update_collection_meta(&params.collection, params.only_collection_info, None)
         .await?;
 
     Ok(())
 }
 
-async fn update_nft_metadata(
-    nft: String,
-    meta_updater: web::Data<MetaUpdater>,
-) -> anyhow::Result<()> {
-    meta_updater.update_nft_meta(&nft, None).await
+async fn update_nft_metadata(nft: String, state: &AppState) -> anyhow::Result<()> {
+    state.meta_updater.update_nft_meta(&nft, None).await
 }
 
-fn respond_to_result(result: anyhow::Result<()>) -> HttpResponse {
+fn respond_to_result(result: anyhow::Result<()>) -> StatusCode {
     match result {
-        Ok(_) => HttpResponse::Ok().finish(),
+        Ok(_) => StatusCode::OK,
         Err(err) => {
             log::error!("calc metadata error {err}");
-            HttpResponse::InternalServerError().finish()
+            StatusCode::INTERNAL_SERVER_ERROR
         }
     }
 }
