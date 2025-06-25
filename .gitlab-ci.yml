@@ -22,21 +22,21 @@ deploy:stage-mainnet-venom:
     - master
   extends: .deploy
   environment:
-    name: bf
+    name: stage
     on_stop: stop:stage-mainnet-venom
   variables:
     K8S_NAMESPACE: ${CI_PROJECT_ROOT_NAMESPACE}-stage
-    APP_CONFIG: stage-mainnet-venom
+    APP_CONFIG: mainnet-venom
 
 stop:stage-mainnet-venom:
   only:
     - master
   extends: .stop
   environment:
-    name: bf
+    name: stage
   variables:
     K8S_NAMESPACE: ${CI_PROJECT_ROOT_NAMESPACE}-stage
-    APP_CONFIG: stage-mainnet-venom
+    APP_CONFIG: mainnet-venom
 
 deploy:stage-tycho-testnet:
   only:
