@@ -2,7 +2,7 @@ env:
   RUST_LOG: info
   RUST_BACKTRACE: 1
 
-  DATABASE_URL: postgresql://$(PROD_MAINNET_VENOM_PG_USER):$(PROD_MAINNET_VENOM_PG_PASSWORD)@postgresql-bf.europe-west1-c.c.broxus.internal:5432/nft-indexer-prod-mainnet-venom
+  DATABASE_URL: postgresql://$(PROD_MAINNET_VENOM_PG_USER):$(PROD_MAINNET_VENOM_PG_PASSWORD)@cloudsqlproxy.default:5432/nft-indexer-prod-mainnet-venom
   DATABASE_MAX_CONNECTIONS: 5
 
   KAFKA_CONSUMER_GROUP: nft-indexer-prod-mainnet-venom
