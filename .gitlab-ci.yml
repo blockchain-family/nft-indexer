@@ -22,21 +22,21 @@ deploy:tokstock-stage:
     - tokstock
   extends: .deploy
   environment:
-    name: bf
+    name: stage
     on_stop: stop:tokstock-stage
   variables:
     K8S_NAMESPACE: ${CI_PROJECT_ROOT_NAMESPACE}-stage
-    APP_CONFIG: tokstock-stage
+    APP_CONFIG: tokstock
 
 stop:tokstock-stage:
   only:
     - tokstock
   extends: .stop
   environment:
-    name: bf
+    name: stage
   variables:
     K8S_NAMESPACE: ${CI_PROJECT_ROOT_NAMESPACE}-stage
-    APP_CONFIG: tokstock-stage
+    APP_CONFIG: tokstock
 
 
 cloudbuild:image:prod:
@@ -53,9 +53,9 @@ deploy:tokstock-prod:
   extends: .deploy
   variables:
     K8S_NAMESPACE: ${CI_PROJECT_ROOT_NAMESPACE}-prod
-    APP_CONFIG: tokstock-prod
+    APP_CONFIG: tokstock
   environment:
-    name: bf
+    name: prod
     on_stop: stop:tokstock-prod
 
 stop:tokstock-prod:
@@ -64,6 +64,6 @@ stop:tokstock-prod:
   extends: .stop
   variables:
     K8S_NAMESPACE: ${CI_PROJECT_ROOT_NAMESPACE}-prod
-    APP_CONFIG: tokstock-prod
+    APP_CONFIG: tokstock
   environment:
-    name: bf
+    name: prod
