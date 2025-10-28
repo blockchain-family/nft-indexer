@@ -58,3 +58,24 @@ stop:stage-tycho-testnet:
   variables:
     K8S_NAMESPACE: ${CI_PROJECT_ROOT_NAMESPACE}-tycho-testnet
     APP_CONFIG: tycho-testnet
+
+deploy:prod-msha:
+  only:
+    - master
+  extends: .deploy
+  environment:
+    name: prod
+    on_stop: stop:prod-msha
+  variables:
+    K8S_NAMESPACE: ${CI_PROJECT_ROOT_NAMESPACE}-msha
+    APP_CONFIG: msha
+
+stop:prod-msha:
+  only:
+    - master
+  extends: .stop
+  environment:
+    name: prod
+  variables:
+    K8S_NAMESPACE: ${CI_PROJECT_ROOT_NAMESPACE}-msha
+    APP_CONFIG: msha

@@ -1,0 +1,40 @@
+env:
+  RUST_LOG: INFO
+  RUST_BACKTRACE: 1
+
+  DATABASE_URL: postgresql://$(PROD_MSHA_PG_USER):$(PROD_MSHA_PG_PASSWORD)@cloudsqlproxy.default:5432/nft-indexer-prod-msha
+  DATABASE_MAX_CONNECTIONS: 5
+
+  KAFKA_CONSUMER_GROUP: nft-indexer-msha
+  KAFKA_TOPIC: msha-raw-transactions
+
+  KAFKA_SETTINGS__BOOTSTRAP_SERVERS: kafka-a050fc9d-o468b9b17.database.cloud.ovh.net:20186
+  KAFKA_SETTINGS__SECURITY_PROTOCOL: SSL
+  KAFKA_SETTINGS__SSL_CA_LOCATION: /tmp/ca.pem
+  KAFKA_SETTINGS__SSL_KEY_LOCATION: /tmp/service.key
+  KAFKA_SETTINGS__SSL_CERTIFICATE_LOCATION: /tmp/service.crt
+
+  STATES_RPC_ENDPOINTS: "$(MSHA_RPC)"
+  JRPC_REQ_LATENCY_MILLIS: 0
+
+  SERVER_API_URL: 0.0.0.0:3001
+
+  IDLE_AFTER_PRICE_LOOP_SEC: 100
+  IDLE_AFTER_META_LOOP_SEC: 100
+  PRICE_UPDATE_FREQUENCY_SEC: 180
+
+  BC_NAME: Tycho
+  DEX_HOST_URL: https://api-test-tycho.flatqube.io
+
+service:
+  port: 3001
+
+ingress:
+  enabled: false
+
+controller: statefulset
+
+sharedSecrets:
+  - nftIndexer
+  - kafkaMsha
+  - rpcEndpoints
