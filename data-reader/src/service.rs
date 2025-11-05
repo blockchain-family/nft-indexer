@@ -257,7 +257,7 @@ mod tests {
 
     async fn get_rpc_client() -> RpcClient {
         RpcClient::new(
-            vec![Url::from_str("https://jrpc.venom.foundation/rpc").unwrap()],
+            vec![Url::from_str("https://rpc.msharia.io/").unwrap()],
             ClientOptions::default(),
         )
         .await
@@ -269,13 +269,15 @@ mod tests {
         let service = MetadataRpcService::new(get_rpc_client().await, reqwest::Client::new());
 
         let address = MsgAddressInt::from_str(
-            "0:78732a9677c0045cf3dbbeaea3f0de6b7e4be9606e47c9bab22059075317fe27",
+            "0:8e6fa1c1d3d9a5929eecb992696cf6eb4fff59b357ce82b3e8977579550648ff",
         )
         .unwrap();
-        let meta = service.get_nft_meta(&address).await.unwrap();
+        let (_, meta) = service.get_collection_meta(address).await.unwrap();
+        println!("{meta:#?}");
+
         assert_eq!(
-            meta.get("external_url").unwrap().as_str().unwrap(),
-            "https://hackgirl.club"
+            meta.get("name").unwrap().as_str().unwrap(),
+            "Mobisaria NFTs"
         );
     }
 }

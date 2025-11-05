@@ -191,6 +191,8 @@ impl MetaUpdater {
             updated: now,
         };
 
+        log::info!("got {address} collection meta: {collection:#?}");
+
         if !failed
             && let Err(e) = self
                 .meta_model_service
@@ -234,6 +236,8 @@ impl MetaUpdater {
                 &address,
             );
         }
+
+        log::info!("successfully updated {address} collection meta");
 
         Ok(())
     }
