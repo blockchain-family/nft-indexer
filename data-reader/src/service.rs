@@ -139,17 +139,12 @@ impl CollectionContractState<'_> {
         let ctx = self.0.as_context(clock);
         let tip6_interface = tip6::SidContract(ctx);
 
-        let mut result = CollectionInterfaces::default();
-
-        if tip6_interface.supports_interface(tip4_3::collection_contract::INTERFACE_ID)? {
-            result.tip4_3 = true;
-            result.tip4_2_2 =
-                tip6_interface.supports_interface(tip4_2_2::collection_contract::INTERFACE_ID)?;
-            result.tip4_2 =
-                tip6_interface.supports_interface(tip4_2::metadata_contract::INTERFACE_ID)?;
-        }
-
-        Ok(result)
+        Ok(CollectionInterfaces {
+            tip4_3: tip6_interface.supports_interface(tip4_3::collection_contract::INTERFACE_ID)?,
+            tip4_2_2: tip6_interface
+                .supports_interface(tip4_2_2::collection_contract::INTERFACE_ID)?,
+            tip4_2: tip6_interface.supports_interface(tip4_2::metadata_contract::INTERFACE_ID)?,
+        })
     }
 
     pub fn resolve_collection_index_code(&self, clock: &dyn Clock) -> Result<Cell> {
@@ -188,7 +183,7 @@ impl CollectionContractState<'_> {
     }
 }
 
-#[derive(Copy, Clone, Default)]
+#[derive(Debug, Copy, Clone, Default)]
 pub struct CollectionInterfaces {
     pub tip4_3: bool,
     pub tip4_2_2: bool,
