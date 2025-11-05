@@ -58,3 +58,53 @@ stop:stage-tycho-testnet:
   variables:
     K8S_NAMESPACE: ${CI_PROJECT_ROOT_NAMESPACE}-tycho-testnet
     APP_CONFIG: tycho-testnet
+
+
+cloudbuild:image:prod:
+  only:
+    - prod
+  except:
+    - tags
+  extends: .cloudbuild:common
+
+deploy:prod-mainnet-venom:
+  only:
+    - prod
+  extends: .deploy
+  environment:
+    name: prod
+    on_stop: stop:prod-mainnet-venom
+  variables:
+    K8S_NAMESPACE: ${CI_PROJECT_ROOT_NAMESPACE}-prod
+    APP_CONFIG: mainnet-venom
+
+stop:prod-mainnet-venom:
+  only:
+    - prod
+  extends: .stop
+  environment:
+    name: prod
+  variables:
+    K8S_NAMESPACE: ${CI_PROJECT_ROOT_NAMESPACE}-prod
+    APP_CONFIG: mainnet-venom
+
+deploy:prod-msha:
+  only:
+    - prod
+  extends: .deploy
+  environment:
+    name: prod
+    on_stop: stop:prod-msha
+  variables:
+    K8S_NAMESPACE: ${CI_PROJECT_ROOT_NAMESPACE}-msha
+    APP_CONFIG: msha
+
+stop:prod-msha:
+  only:
+    - prod
+  extends: .stop
+  environment:
+    name: prod
+  variables:
+    K8S_NAMESPACE: ${CI_PROJECT_ROOT_NAMESPACE}-msha
+    APP_CONFIG: msha
