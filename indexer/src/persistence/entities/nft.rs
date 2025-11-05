@@ -1,13 +1,10 @@
 use anyhow::Result;
 use indexer_repo::types::{decoded, EventCategory, EventType};
 
-use super::{types::Decoded, Decode};
-use crate::models::events::MetadataUpdated;
-use crate::utils::timestamp_to_datetime;
-use crate::{
-    models::events::{ManagerChanged, OwnerChanged},
-    utils::{DecodeContext, KeyInfo},
-};
+use super::types::Decoded;
+use super::Decode;
+use crate::models::events::{ManagerChanged, MetadataUpdated, OwnerChanged};
+use crate::utils::{timestamp_to_datetime, DecodeContext, KeyInfo};
 
 impl Decode for OwnerChanged {
     fn decode(&self, ctx: &DecodeContext) -> Result<Decoded> {

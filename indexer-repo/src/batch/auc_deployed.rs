@@ -1,6 +1,8 @@
-use crate::types::{decoded::AuctionDeployed, AuctionStatus};
 use anyhow::{anyhow, Result};
 use sqlx::PgConnection;
+
+use crate::types::decoded::AuctionDeployed;
+use crate::types::AuctionStatus;
 
 pub async fn save_auc_deployed(tx: &mut PgConnection, data: &[AuctionDeployed]) -> Result<()> {
     let addresses = data.iter().map(|a| a.address.as_str()).collect::<Vec<_>>();

@@ -14,7 +14,7 @@ pub struct IndexGetInfoOutputs {
     pub nft: MsgAddressInt,
 }
 
-///Get NFT info
+/// Get NFT info
 ///
 /// # Type
 /// Responsible getter method
@@ -26,7 +26,6 @@ pub struct IndexGetInfoOutputs {
 /// * `collection: address` - Collection token contract address
 /// * `owner: address` - Token owner contract address
 /// * `nft: address` - Token contract address
-///
 pub fn get_info() -> &'static ton_abi::Function {
     declare_function! {
         name: "getInfo",

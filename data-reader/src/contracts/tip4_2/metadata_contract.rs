@@ -1,5 +1,6 @@
-use crate::contracts::utils::declare_function;
 use ton_abi::{Param, ParamType};
+
+use crate::contracts::utils::declare_function;
 
 pub const INTERFACE_ID: u32 = 0x24D7D5F5;
 
@@ -10,7 +11,6 @@ pub const INTERFACE_ID: u32 = 0x24D7D5F5;
 ///
 /// # Outputs
 /// * `json: string` - The JSON string with metadata
-///
 pub fn get_json() -> &'static ton_abi::Function {
     declare_function! {
         name: "getJson",

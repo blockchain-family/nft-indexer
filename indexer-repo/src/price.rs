@@ -1,6 +1,7 @@
 use anyhow::{anyhow, Result};
 use chrono::{Local, NaiveDateTime};
-use sqlx::{types::BigDecimal, PgPool};
+use sqlx::types::BigDecimal;
+use sqlx::PgPool;
 
 use crate::types::BcName;
 

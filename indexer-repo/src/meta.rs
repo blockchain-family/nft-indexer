@@ -1,7 +1,9 @@
-use crate::types::NftCollectionMeta;
 use anyhow::Result;
 use chrono::NaiveDateTime;
-use sqlx::{postgres::PgQueryResult, Acquire, PgPool, Postgres, Transaction};
+use sqlx::postgres::PgQueryResult;
+use sqlx::{Acquire, PgPool, Postgres, Transaction};
+
+use crate::types::NftCollectionMeta;
 
 #[derive(Clone)]
 pub struct MetadataModelService {

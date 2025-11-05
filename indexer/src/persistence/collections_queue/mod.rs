@@ -1,8 +1,9 @@
+use std::collections::HashMap;
+
 use anyhow::Result;
 use indexer_repo::batch::save_collections;
 use indexer_repo::types::NftCollection;
 use sqlx::PgPool;
-use std::collections::HashMap;
 
 pub struct CollectionsQueue {
     pg_pool: PgPool,

@@ -1,16 +1,12 @@
 use anyhow::Result;
 use indexer_repo::types::{decoded, EventCategory, EventType};
 
-use crate::utils::timestamp_to_datetime;
-use crate::{
-    models::events::{
-        AddCollectionRules, MarketFeeChanged, MarketFeeDefaultChanged, OwnershipTransferred,
-        RemoveCollectionRules,
-    },
-    utils::{DecodeContext, KeyInfo},
-};
-
 use super::{Decode, Decoded};
+use crate::models::events::{
+    AddCollectionRules, MarketFeeChanged, MarketFeeDefaultChanged, OwnershipTransferred,
+    RemoveCollectionRules,
+};
+use crate::utils::{timestamp_to_datetime, DecodeContext, KeyInfo};
 
 impl Decode for OwnershipTransferred {
     fn decode(&self, _: &DecodeContext) -> Result<Decoded> {

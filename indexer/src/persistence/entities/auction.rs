@@ -1,15 +1,11 @@
 use anyhow::Result;
 use indexer_repo::types::{decoded, EventCategory, EventType, NftPriceSource};
 
-use crate::utils::{timestamp_to_datetime, u128_to_bigdecimal};
-use crate::{
-    models::events::{
-        AuctionActive, AuctionCancelled, AuctionComplete, AuctionCreated, BidDeclined, BidPlaced,
-    },
-    utils::{DecodeContext, KeyInfo},
-};
-
 use super::{Decode, Decoded};
+use crate::models::events::{
+    AuctionActive, AuctionCancelled, AuctionComplete, AuctionCreated, BidDeclined, BidPlaced,
+};
+use crate::utils::{timestamp_to_datetime, u128_to_bigdecimal, DecodeContext, KeyInfo};
 
 impl Decode for AuctionCreated {
     fn decode(&self, _ctx: &DecodeContext) -> Result<Decoded> {

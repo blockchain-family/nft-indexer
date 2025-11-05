@@ -1,7 +1,7 @@
-use super::RunLocalSimple;
 use anyhow::Result;
-use nekoton_abi::ExecutionContext;
-use nekoton_abi::*;
+use nekoton_abi::{ExecutionContext, *};
+
+use super::RunLocalSimple;
 
 pub mod metadata_contract;
 

@@ -1,13 +1,10 @@
 use anyhow::Result;
 use indexer_repo::types::{decoded, EventCategory, EventType};
 
-use super::{to_address, types::Decoded, Decode};
-use crate::models::events::{CollectionMetadataUpdated, NftMetadataUpdated};
-use crate::utils::{timestamp_to_datetime, u256_to_bigdecimal};
-use crate::{
-    models::events::{NftBurned, NftCreated},
-    utils::{DecodeContext, KeyInfo},
-};
+use super::types::Decoded;
+use super::{to_address, Decode};
+use crate::models::events::{CollectionMetadataUpdated, NftBurned, NftCreated, NftMetadataUpdated};
+use crate::utils::{timestamp_to_datetime, u256_to_bigdecimal, DecodeContext, KeyInfo};
 
 impl Decode for NftCreated {
     fn decode(&self, ctx: &DecodeContext) -> Result<Decoded> {

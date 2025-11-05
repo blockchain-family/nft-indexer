@@ -21,7 +21,7 @@ pub struct GetInfoOutputs {
     pub collection: MsgAddressInt,
 }
 
-///Get NFT info
+/// Get NFT info
 ///
 /// # Type
 /// Responsible getter method
@@ -34,7 +34,6 @@ pub struct GetInfoOutputs {
 /// * `owner: address` - Address of NFT owner
 /// * `manager: address` - Address of NFT manager
 /// * `collection: address` - Address of collection smart contract, that mint the NFT
-///
 pub fn get_info() -> &'static ton_abi::Function {
     declare_function! {
         name: "getInfo",
@@ -73,7 +72,7 @@ pub struct TransferInputs {
     pub callbacks: BTreeMap<MsgAddressInt, NftCallbackPayload>,
 }
 
-///Change NFT owner
+/// Change NFT owner
 ///
 /// # Type
 /// Internal method
@@ -85,7 +84,6 @@ pub struct TransferInputs {
 /// * `newOwner: address` - New owner of NFT
 /// * `sendGasTo: address` - Address to send remaining gas
 /// * `callbacks: map(address, tuple)` - Callbacks array to send by addresses. It can be empty
-///
 pub fn change_owner() -> &'static ton_abi::Function {
     declare_function! {
         name: "changeOwner",
@@ -94,7 +92,7 @@ pub fn change_owner() -> &'static ton_abi::Function {
     }
 }
 
-///Change NFT manager
+/// Change NFT manager
 ///
 /// # Type
 /// Internal method
@@ -106,7 +104,6 @@ pub fn change_owner() -> &'static ton_abi::Function {
 /// * `newOwner: address` - New manager of NFT
 /// * `sendGasTo: address` - Address to send remaining gas
 /// * `callbacks: map(address, tuple)` - Callbacks array to send by addresses. It can be empty
-///
 pub fn change_manager() -> &'static ton_abi::Function {
     declare_function! {
         name: "changeManager",
@@ -115,7 +112,7 @@ pub fn change_manager() -> &'static ton_abi::Function {
     }
 }
 
-///Change NFT owner and manager
+/// Change NFT owner and manager
 ///
 /// # Type
 /// Internal method
@@ -127,7 +124,6 @@ pub fn change_manager() -> &'static ton_abi::Function {
 /// * `newOwner: address` - New manager of NFT
 /// * `sendGasTo: address` - Address to send remaining gas
 /// * `callbacks: map(address, tuple)` - Callbacks array to send by addresses. It can be empty
-///
 pub fn transfer() -> &'static ton_abi::Function {
     declare_function! {
         name: "transfer",

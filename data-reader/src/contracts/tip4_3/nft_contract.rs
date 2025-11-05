@@ -4,7 +4,7 @@ use crate::contracts::utils::declare_function;
 
 pub const INTERFACE_ID: u32 = 0x4DF6250B;
 
-///Get contract index code
+/// Get contract index code
 ///
 /// # Type
 /// Responsible getter method
@@ -14,7 +14,6 @@ pub const INTERFACE_ID: u32 = 0x4DF6250B;
 ///
 /// # Outputs
 /// * `code: cell` - Index code of the contract
-///
 pub fn index_code() -> &'static ton_abi::Function {
     declare_function! {
         name: "indexBCode",
@@ -23,7 +22,7 @@ pub fn index_code() -> &'static ton_abi::Function {
     }
 }
 
-///Get contract index code hash
+/// Get contract index code hash
 ///
 /// # Type
 /// Responsible getter method
@@ -33,7 +32,6 @@ pub fn index_code() -> &'static ton_abi::Function {
 ///
 /// # Outputs
 /// * `hash: uint256` - Index code hash of the contract
-///
 pub fn index_code_hash() -> &'static ton_abi::Function {
     declare_function! {
         name: "indexBCode",
@@ -42,7 +40,7 @@ pub fn index_code_hash() -> &'static ton_abi::Function {
     }
 }
 
-///Resolve contract index
+/// Resolve contract index
 ///
 /// # Type
 /// Responsible getter method
@@ -54,7 +52,6 @@ pub fn index_code_hash() -> &'static ton_abi::Function {
 ///
 /// # Outputs
 /// * `index: address` - index contract address
-///
 pub fn resolve_index() -> &'static ton_abi::Function {
     declare_function! {
         name: "resolveIndex",

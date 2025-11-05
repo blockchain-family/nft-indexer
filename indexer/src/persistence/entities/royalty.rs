@@ -1,12 +1,9 @@
 use anyhow::Result;
 use indexer_repo::types::{decoded, EventCategory, EventType};
 
-use crate::{
-    models::events::RoyaltySet,
-    utils::{DecodeContext, KeyInfo},
-};
-
 use super::{Decode, Decoded};
+use crate::models::events::RoyaltySet;
+use crate::utils::{DecodeContext, KeyInfo};
 
 impl Decode for RoyaltySet {
     fn decode(&self, ctx: &DecodeContext) -> Result<Decoded> {

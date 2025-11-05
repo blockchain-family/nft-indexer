@@ -1,7 +1,8 @@
 use anyhow::{anyhow, Result};
 use sqlx::PgConnection;
 
-use crate::types::{decoded::AuctionActive, AuctionStatus};
+use crate::types::decoded::AuctionActive;
+use crate::types::AuctionStatus;
 
 pub async fn save_auc_active(tx: &mut PgConnection, data: &[AuctionActive]) -> Result<()> {
     let addresses = data.iter().map(|a| a.address.as_str()).collect::<Vec<_>>();

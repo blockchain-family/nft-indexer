@@ -1,7 +1,9 @@
-use crate::types::decoded::DirectSell;
+use std::collections::HashMap;
+
 use anyhow::{anyhow, Result};
 use sqlx::PgConnection;
-use std::collections::HashMap;
+
+use crate::types::decoded::DirectSell;
 
 pub async fn save_direct_sell(tx: &mut PgConnection, dss: &[DirectSell]) -> Result<()> {
     let addresses = dss.iter().map(|ds| ds.address.as_str()).collect::<Vec<_>>();

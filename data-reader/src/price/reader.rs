@@ -1,16 +1,12 @@
+use std::collections::{HashMap, HashSet};
 use std::sync::Arc;
 use std::sync::atomic::{AtomicU64, Ordering};
-use std::time::UNIX_EPOCH;
-use std::{
-    collections::{HashMap, HashSet},
-    time::Duration,
-};
+use std::time::{Duration, UNIX_EPOCH};
 
-use bigdecimal::{BigDecimal, num_bigint::BigInt};
-use indexer_repo::{
-    price::{NftPriceModel, RowWithoutUsdPrice},
-    types::BcName,
-};
+use bigdecimal::BigDecimal;
+use bigdecimal::num_bigint::BigInt;
+use indexer_repo::price::{NftPriceModel, RowWithoutUsdPrice};
+use indexer_repo::types::BcName;
 use nekoton_utils::TrustMe;
 use sqlx::PgPool;
 use sqlx::types::chrono::DateTime;

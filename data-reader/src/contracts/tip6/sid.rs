@@ -15,7 +15,6 @@ pub const INTERFACE_ID: u32 = 0x3204ec29;
 ///
 /// # Outputs
 /// * `name: string`
-///
 pub fn supports_interface() -> &'static ton_abi::Function {
     declare_function! {
         name: "supportsInterface",

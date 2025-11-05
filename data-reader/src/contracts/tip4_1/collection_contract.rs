@@ -6,7 +6,7 @@ use crate::contracts::utils::declare_function;
 
 pub const INTERFACE_ID: u32 = 0x1217AAAB;
 
-///Get count of active NFTs for this collection
+/// Get count of active NFTs for this collection
 ///
 /// # Type
 /// Responsible getter method
@@ -16,7 +16,6 @@ pub const INTERFACE_ID: u32 = 0x1217AAAB;
 ///
 /// # Outputs
 /// * `count: uint128` - A count of active NFTs minted by this contract except for burned NFTs
-///
 pub fn total_supply() -> &'static ton_abi::Function {
     declare_function! {
         name: "rootOwner",
@@ -25,7 +24,7 @@ pub fn total_supply() -> &'static ton_abi::Function {
     }
 }
 
-///Get the NFT code
+/// Get the NFT code
 ///
 /// # Type
 /// Responsible getter method
@@ -35,7 +34,6 @@ pub fn total_supply() -> &'static ton_abi::Function {
 ///
 /// # Outputs
 /// * `code: cell` - NFT code as `TvmCell`
-///
 pub fn nft_code() -> &'static ton_abi::Function {
     declare_function! {
         name: "nftCode",
@@ -50,7 +48,7 @@ pub struct NftCodeHashOutputs {
     pub code_hash: UInt256,
 }
 
-///Get the NFT code hash
+/// Get the NFT code hash
 ///
 /// # Type
 /// Responsible getter method
@@ -60,7 +58,6 @@ pub struct NftCodeHashOutputs {
 ///
 /// # Outputs
 /// * `codeHash: uint256` - The NFT code hash
-///
 pub fn nft_code_hash() -> &'static ton_abi::Function {
     declare_function! {
         name: "nftCodeHash",
@@ -69,7 +66,7 @@ pub fn nft_code_hash() -> &'static ton_abi::Function {
     }
 }
 
-///Computes NFT address by unique NFT id
+/// Computes NFT address by unique NFT id
 ///
 /// # Type
 /// Responsible getter method
@@ -80,7 +77,6 @@ pub fn nft_code_hash() -> &'static ton_abi::Function {
 ///
 /// # Outputs
 /// * `nft: address` - Address of NFT contract
-///
 pub fn nft_address() -> &'static ton_abi::Function {
     declare_function! {
         name: "nftAddress",

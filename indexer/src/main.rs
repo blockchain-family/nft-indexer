@@ -1,10 +1,12 @@
-use crate::settings::config::Config;
-use anyhow::Result;
-use data_reader::{MetaUpdater, MetaUpdaterContext, PriceReader};
-use indexer_api::run_api;
 use std::net::SocketAddr;
 use std::panic;
 use std::str::FromStr;
+
+use anyhow::Result;
+use data_reader::{MetaUpdater, MetaUpdaterContext, PriceReader};
+use indexer_api::run_api;
+
+use crate::settings::config::Config;
 
 mod abi;
 mod models;

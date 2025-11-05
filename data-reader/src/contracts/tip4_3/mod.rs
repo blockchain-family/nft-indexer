@@ -2,12 +2,12 @@ pub mod collection_contract;
 pub mod index_contract;
 pub mod nft_contract;
 
+use anyhow::Result;
+use nekoton_abi::{ExecutionContext, *};
+use ton_types::Cell;
+
 use super::RunLocalSimple;
 use super::tip4_3::index_contract::IndexGetInfoOutputs;
-use anyhow::Result;
-use nekoton_abi::ExecutionContext;
-use nekoton_abi::*;
-use ton_types::Cell;
 
 #[derive(Copy, Clone)]
 pub struct CollectionContract<'a>(pub ExecutionContext<'a>);

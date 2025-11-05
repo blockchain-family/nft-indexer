@@ -1,6 +1,7 @@
-use crate::types::NftCollection;
 use anyhow::{anyhow, Result};
 use sqlx::PgPool;
+
+use crate::types::NftCollection;
 
 pub async fn save_collections(pool: &PgPool, collections: &[NftCollection]) -> Result<()> {
     let addresses = collections

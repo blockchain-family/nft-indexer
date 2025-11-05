@@ -1,12 +1,9 @@
 use anyhow::Result;
 use indexer_repo::types::{decoded, DirectSellState, EventCategory, EventType, NftPriceSource};
 
+use crate::models::events::DirectSellStateChanged;
 use crate::persistence::entities::{Decode, Decoded};
-use crate::utils::{timestamp_to_datetime, u128_to_bigdecimal};
-use crate::{
-    models::events::DirectSellStateChanged,
-    utils::{DecodeContext, KeyInfo},
-};
+use crate::utils::{timestamp_to_datetime, u128_to_bigdecimal, DecodeContext, KeyInfo};
 
 impl Decode for DirectSellStateChanged {
     fn decode(&self, ctx: &DecodeContext) -> Result<Decoded> {

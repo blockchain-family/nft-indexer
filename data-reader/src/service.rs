@@ -1,12 +1,13 @@
-use crate::contracts::access::OwnableInternalContract;
-use crate::contracts::tip4_1::nft_contract::GetInfoOutputs;
-use crate::contracts::{tip4_1, tip4_2, tip4_2_2, tip4_3, tip6};
 use anyhow::Result;
 use everscale_rpc_client::RpcClient;
 use nekoton::transport::models::ExistingContract;
 use nekoton_utils::{Clock, SimpleClock};
 use ton_block::{MsgAddressInt, Serializable};
 use ton_types::{BuilderData, Cell, UInt256};
+
+use crate::contracts::access::OwnableInternalContract;
+use crate::contracts::tip4_1::nft_contract::GetInfoOutputs;
+use crate::contracts::{tip4_1, tip4_2, tip4_2_2, tip4_3, tip6};
 
 #[derive(Clone)]
 pub struct MetadataRpcService {
@@ -85,9 +86,6 @@ impl MetadataRpcService {
         let collection_state = CollectionContractState(&contract);
 
         let interfaces = collection_state.check_collection_supported_interfaces(&SimpleClock)?;
-        if !interfaces.tip4_3 {
-            return Err(NftError::InvalidCollectionContract.into());
-        }
 
         let ctx = contract.as_context(&SimpleClock);
         let json_data = interfaces
@@ -244,8 +242,6 @@ impl NftContractState<'_> {
 
 #[derive(thiserror::Error, Debug)]
 enum NftError {
-    #[error("Invalid collection contract")]
-    InvalidCollectionContract,
     #[error("Invalid nft contract")]
     InvalidNftContact,
     #[error("Missing metadata")]
@@ -256,11 +252,13 @@ enum NftError {
 
 #[cfg(test)]
 mod tests {
-    use crate::MetadataRpcService;
+    use std::str::FromStr;
+
     use everscale_rpc_client::{ClientOptions, RpcClient};
     use reqwest::Url;
-    use std::str::FromStr;
     use ton_block::MsgAddressInt;
+
+    use crate::MetadataRpcService;
 
     async fn get_rpc_client() -> RpcClient {
         RpcClient::new(

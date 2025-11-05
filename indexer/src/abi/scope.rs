@@ -1,9 +1,9 @@
 pub fn events() -> Vec<&'static str> {
     vec![
-        /* FactoryAuction */
+        // FactoryAuction
         "AuctionDeployed",
         "AuctionDeclined",
-        /* Auction */
+        // Auction
         "AuctionCreated",
         "AuctionActive",
         "BidPlaced",
@@ -11,28 +11,28 @@ pub fn events() -> Vec<&'static str> {
         "AuctionComplete",
         "AuctionCancelled",
         "RoyaltySet",
-        /* Collection */
+        // Collection
         "NftCreated",
         "NftBurned",
-        /* DirectBuy */
+        // DirectBuy
         "DirectBuyStateChanged",
-        /* DirectSell */
+        // DirectSell
         "DirectSellStateChanged",
-        /* FactoryDirectBuy */
+        // FactoryDirectBuy
         "DirectBuyDeployed",
         "DirectBuyDeclined",
-        /* FactoryDirectSell */
+        // FactoryDirectSell
         "DirectSellDeployed",
         "DirectSellDeclined",
-        /* Nft */
+        // Nft
         "ManagerChanged",
         "OwnerChanged",
-        /* Collection 4.2.2 */
+        // Collection 4.2.2
         "NftMetadataUpdated",
         "CollectionMetadataUpdated",
-        /* Nft 4.2.2 */
+        // Nft 4.2.2
         "MetadataUpdated",
-        /* common for all events */
+        // common for all events
         "OwnershipTransferred",
         "MarketFeeDefaultChanged",
         "MarketFeeChanged",

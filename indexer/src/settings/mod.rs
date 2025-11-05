@@ -1,16 +1,19 @@
-use crate::abi::declare_abi::*;
-use crate::abi::scope;
-use crate::settings::config::Config;
+use std::collections::HashMap;
+use std::sync::Arc;
+
 use anyhow::Result;
 use everscale_rpc_client::{ClientOptions, RpcClient};
 use sqlx::PgPool;
-use std::{collections::HashMap, sync::Arc};
 use transaction_buffer::models::{
     AnyExtractable, BufferedConsumerChannels, BufferedConsumerConfig,
 };
 use transaction_buffer::start_parsing_and_get_channels;
 use transaction_consumer::{ConsumerOptions, TransactionConsumer};
 use url::Url;
+
+use crate::abi::declare_abi::*;
+use crate::abi::scope;
+use crate::settings::config::Config;
 
 pub mod config;
 pub async fn init_consumer(config: &Config) -> Result<Arc<TransactionConsumer>> {

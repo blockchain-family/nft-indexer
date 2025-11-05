@@ -1,9 +1,10 @@
+use std::str::FromStr;
+use std::time::Duration;
+
 use anyhow::Result;
 use log::LevelFilter;
 use sqlx::postgres::{PgConnectOptions, PgPoolOptions};
 use sqlx::{ConnectOptions, Executor, PgPool};
-use std::str::FromStr;
-use std::time::Duration;
 
 pub async fn init_pg_pool(
     db_string: &str,

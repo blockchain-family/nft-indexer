@@ -1,12 +1,9 @@
 use anyhow::Result;
 use indexer_repo::types::{decoded, DirectSellState, EventCategory, EventType};
 
+use crate::models::events::{DirectSellDeclined, DirectSellDeployed};
 use crate::persistence::entities::{Decode, Decoded};
-use crate::utils::{timestamp_to_datetime, u128_to_bigdecimal};
-use crate::{
-    models::events::{DirectSellDeclined, DirectSellDeployed},
-    utils::{DecodeContext, KeyInfo},
-};
+use crate::utils::{timestamp_to_datetime, u128_to_bigdecimal, DecodeContext, KeyInfo};
 
 impl Decode for DirectSellDeployed {
     fn decode(&self, ctx: &DecodeContext) -> Result<Decoded> {

@@ -156,9 +156,10 @@ pub struct NftCollectionMeta {
 }
 
 pub mod decoded {
-    use crate::types::{DirectBuyState, DirectSellState, EventCategory, EventType, NftPriceSource};
     use chrono::NaiveDateTime;
     use sqlx::types::BigDecimal;
+
+    use crate::types::{DirectBuyState, DirectSellState, EventCategory, EventType, NftPriceSource};
 
     #[derive(Clone, Debug)]
     pub struct NftPriceHistory {

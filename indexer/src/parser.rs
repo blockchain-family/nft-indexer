@@ -1,8 +1,5 @@
-use crate::models::events::*;
-use crate::persistence::collections_queue::CollectionsQueue;
-use crate::persistence::entities::*;
-use crate::settings;
-use crate::utils::DecodeContext;
+use std::sync::Arc;
+
 use anyhow::Result;
 use data_reader::{MetaUpdater, PriceReader};
 use futures::channel::mpsc::{Receiver, Sender};
@@ -12,8 +9,13 @@ use indexer_repo::types::NftCollection;
 use nekoton_abi::transaction_parser::{ExtractedOwned, ParsedType};
 use nekoton_abi::UnpackAbiPlain;
 use sqlx::PgPool;
-use std::sync::Arc;
 use transaction_buffer::models::{BufferedConsumerChannels, RawTransaction};
+
+use crate::models::events::*;
+use crate::persistence::collections_queue::CollectionsQueue;
+use crate::persistence::entities::*;
+use crate::settings;
+use crate::utils::DecodeContext;
 
 const EVENTS_PER_ITERATION: usize = 1000;
 
@@ -403,10 +405,10 @@ macro_rules! try_unpack_entity {
 fn unpack_entity(event: &ExtractedOwned) -> Result<Option<Box<dyn Decode>>> {
     try_unpack_entity!(
         event,
-        /* FactoryAuction */
+        // FactoryAuction
         AuctionDeployed,
         AuctionDeclined,
-        /* Auction */
+        // Auction
         AuctionCreated,
         AuctionActive,
         BidPlaced,
@@ -414,28 +416,28 @@ fn unpack_entity(event: &ExtractedOwned) -> Result<Option<Box<dyn Decode>>> {
         AuctionComplete,
         AuctionCancelled,
         RoyaltySet,
-        /* Collection */
+        // Collection
         NftCreated,
         NftBurned,
-        /* DirectBuy */
+        // DirectBuy
         DirectBuyStateChanged,
-        /* DirectSell */
+        // DirectSell
         DirectSellStateChanged,
-        /* FactoryDirectBuy */
+        // FactoryDirectBuy
         DirectBuyDeployed,
         DirectBuyDeclined,
-        /* FactoryDirectSell */
+        // FactoryDirectSell
         DirectSellDeployed,
         DirectSellDeclined,
-        /* Nft */
+        // Nft
         ManagerChanged,
         OwnerChanged,
-        /* Collection 4.2.2 */
+        // Collection 4.2.2
         NftMetadataUpdated,
         CollectionMetadataUpdated,
-        /* Nft 4.2.2 */
+        // Nft 4.2.2
         MetadataUpdated,
-        /* common for all events */
+        // common for all events
         OwnershipTransferred,
         MarketFeeDefaultChanged,
         MarketFeeChanged,
@@ -446,23 +448,27 @@ fn unpack_entity(event: &ExtractedOwned) -> Result<Option<Box<dyn Decode>>> {
 
 #[cfg(test)]
 mod test {
-    use crate::parser::save_to_db;
-    use crate::persistence::collections_queue::CollectionsQueue;
-    use crate::persistence::entities::Decoded;
-    use crate::settings::get_jrpc_client;
-    use crate::{abi::scope::events, models::events::*, parser::unpack_entity};
+    use std::collections::{BTreeMap, HashMap};
+    use std::str::FromStr;
+
     use bigdecimal::num_bigint::{BigInt, BigUint};
     use chrono::NaiveDateTime;
     use data_reader::{MetaUpdater, MetaUpdaterContext, PriceReader};
     use indexer_repo::types::{decoded, BcName};
     use indexer_repo::utils::init_pg_pool;
-    use nekoton_abi::{transaction_parser::ExtractedOwned, PackAbiPlain, UnpackAbiPlain};
-    use std::collections::{BTreeMap, HashMap};
-    use std::str::FromStr;
+    use nekoton_abi::transaction_parser::ExtractedOwned;
+    use nekoton_abi::{PackAbiPlain, UnpackAbiPlain};
     use ton_abi::{Int, Param, ParamType, Token, TokenValue, Uint};
     use ton_block::{Grams, Message, MsgAddrStd, MsgAddress, Transaction};
     use ton_types::{Cell, UInt256};
     use url::Url;
+
+    use crate::abi::scope::events;
+    use crate::models::events::*;
+    use crate::parser::{save_to_db, unpack_entity};
+    use crate::persistence::collections_queue::CollectionsQueue;
+    use crate::persistence::entities::Decoded;
+    use crate::settings::get_jrpc_client;
 
     fn create_default_token_value(param_kind: &ParamType) -> TokenValue {
         match &param_kind {
@@ -705,10 +711,10 @@ mod test {
                 let packed_event = repack_event!(
                     name,
                     event_raw,
-                    /* FactoryAuction */
+                    // FactoryAuction
                     AuctionDeployed,
                     AuctionDeclined,
-                    /* Auction */
+                    // Auction
                     AuctionCreated,
                     AuctionActive,
                     BidPlaced,
@@ -716,28 +722,28 @@ mod test {
                     AuctionComplete,
                     AuctionCancelled,
                     RoyaltySet,
-                    /* Collection */
+                    // Collection
                     NftCreated,
                     NftBurned,
-                    /* DirectBuy */
+                    // DirectBuy
                     DirectBuyStateChanged,
-                    /* DirectSell */
+                    // DirectSell
                     DirectSellStateChanged,
-                    /* FactoryDirectBuy */
+                    // FactoryDirectBuy
                     DirectBuyDeployed,
                     DirectBuyDeclined,
-                    /* FactoryDirectSell */
+                    // FactoryDirectSell
                     DirectSellDeployed,
                     DirectSellDeclined,
-                    /* Nft */
+                    // Nft
                     ManagerChanged,
                     OwnerChanged,
-                    /* Collection 4.2.2 */
+                    // Collection 4.2.2
                     NftMetadataUpdated,
                     CollectionMetadataUpdated,
-                    /* Nft 4.2.2 */
+                    // Nft 4.2.2
                     MetadataUpdated,
-                    /* common for all events */
+                    // common for all events
                     OwnershipTransferred,
                     MarketFeeDefaultChanged,
                     MarketFeeChanged,

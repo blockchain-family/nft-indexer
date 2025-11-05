@@ -1,13 +1,9 @@
 use anyhow::Result;
 use indexer_repo::types::{decoded, EventCategory, EventType};
 
-use crate::utils::timestamp_to_datetime;
-use crate::{
-    models::events::{AuctionDeclined, AuctionDeployed},
-    utils::{DecodeContext, KeyInfo},
-};
-
 use super::{Decode, Decoded};
+use crate::models::events::{AuctionDeclined, AuctionDeployed};
+use crate::utils::{timestamp_to_datetime, DecodeContext, KeyInfo};
 
 impl Decode for AuctionDeployed {
     fn decode(&self, ctx: &DecodeContext) -> Result<Decoded> {

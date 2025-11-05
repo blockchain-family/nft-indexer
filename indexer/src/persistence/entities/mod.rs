@@ -1,9 +1,8 @@
 use anyhow::Result;
 use ton_block::MsgAddressInt;
 
-use crate::utils::DecodeContext;
-
 pub use self::types::Decoded;
+use crate::utils::DecodeContext;
 
 mod auction;
 mod collection;

@@ -1,7 +1,9 @@
-use crate::types::decoded::DirectBuy;
+use std::collections::HashMap;
+
 use anyhow::{anyhow, Result};
 use sqlx::PgConnection;
-use std::collections::HashMap;
+
+use crate::types::decoded::DirectBuy;
 
 pub async fn save_direct_buy(tx: &mut PgConnection, dbs: &[DirectBuy]) -> Result<()> {
     let addresses = dbs.iter().map(|db| db.address.as_str()).collect::<Vec<_>>();

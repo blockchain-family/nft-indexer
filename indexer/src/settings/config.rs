@@ -1,6 +1,7 @@
+use std::collections::HashMap;
+
 use indexer_repo::types::BcName;
 use serde::Deserialize;
-use std::collections::HashMap;
 use url::Url;
 
 #[derive(Debug, Deserialize, Clone)]

@@ -1,5 +1,6 @@
-use crate::contracts::utils::declare_function;
 use ton_abi::{Param, ParamType};
+
+use crate::contracts::utils::declare_function;
 
 pub const INTERFACE_ID: u32 = 0x7239d7b1;
 

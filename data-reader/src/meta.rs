@@ -1,14 +1,16 @@
-use crate::service::MetadataRpcService;
+use std::str::FromStr;
+use std::time::Duration;
+
 use anyhow::{Result, bail};
 use everscale_rpc_client::RpcClient;
-use indexer_repo::{
-    meta::{MetadataModelService, NftMeta, NftMetaAttribute},
-    types::NftCollectionMeta,
-};
+use indexer_repo::meta::{MetadataModelService, NftMeta, NftMetaAttribute};
+use indexer_repo::types::NftCollectionMeta;
 use serde_json::Value;
-use sqlx::{PgPool, Postgres, Transaction, types::chrono};
-use std::{str::FromStr, time::Duration};
+use sqlx::types::chrono;
+use sqlx::{PgPool, Postgres, Transaction};
 use ton_block::MsgAddressInt;
+
+use crate::service::MetadataRpcService;
 
 const NFT_PER_ITERATION: i64 = 30_000;
 const COLLECTION_PER_ITERATION: i64 = 100;
@@ -189,18 +191,17 @@ impl MetaUpdater {
             updated: now,
         };
 
-        if !failed {
-            if let Err(e) = self
+        if !failed
+            && let Err(e) = self
                 .meta_model_service
                 .update_collection(&collection, tx.as_deref_mut())
                 .await
-            {
-                bail!(
-                    "Collection address: {}, error while updating collection meta: {:#?}",
-                    address,
-                    e
-                );
-            };
+        {
+            bail!(
+                "Collection address: {}, error while updating collection meta: {:#?}",
+                address,
+                e
+            );
         }
 
         if let Err(e) = self
@@ -225,13 +226,13 @@ impl MetaUpdater {
                 .await;
         }
 
-        if let Some(tx) = owned_tx {
-            if let Err(e) = tx.commit().await {
-                bail!(
-                    "Nft address: {}, error while commiting transaction: {e:#?}",
-                    &address,
-                );
-            };
+        if let Some(tx) = owned_tx
+            && let Err(e) = tx.commit().await
+        {
+            bail!(
+                "Nft address: {}, error while commiting transaction: {e:#?}",
+                &address,
+            );
         }
 
         Ok(())
@@ -346,19 +347,19 @@ impl MetaUpdater {
             );
         };
 
-        if let Some(tx) = owned_tx {
-            if let Err(e) = tx.commit().await {
-                bail!(
-                    "Nft address: {}, error while commiting transaction: {e:#?}",
-                    &address,
-                );
-            };
+        if let Some(tx) = owned_tx
+            && let Err(e) = tx.commit().await
+        {
+            bail!(
+                "Nft address: {}, error while commiting transaction: {e:#?}",
+                &address,
+            );
         }
 
         Ok(())
     }
 
-    pub fn extract_attributes_from_meta(meta: &Value) -> Vec<NftMetaAttribute> {
+    pub fn extract_attributes_from_meta(meta: &Value) -> Vec<NftMetaAttribute<'_>> {
         meta.get("attributes")
             .and_then(|d| d.as_array())
             .map(|d| {
@@ -372,8 +373,9 @@ impl MetaUpdater {
 
 #[cfg(test)]
 mod tests {
-    use crate::MetaUpdater;
     use serde_json::json;
+
+    use crate::MetaUpdater;
 
     #[test]
     pub fn extract_no_attributes_from_meta_empty_test() {

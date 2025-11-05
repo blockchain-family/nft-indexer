@@ -1,10 +1,9 @@
-use axum::{
-    http::StatusCode,
-    routing::{get, post},
-    Router,
-};
-use data_reader::MetaUpdater;
 use std::net::SocketAddr;
+
+use axum::http::StatusCode;
+use axum::routing::{get, post};
+use axum::Router;
+use data_reader::MetaUpdater;
 use tower::ServiceBuilder;
 use tower_http::cors::CorsLayer;
 

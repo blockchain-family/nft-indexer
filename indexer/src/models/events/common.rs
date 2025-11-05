@@ -2,15 +2,14 @@ use nekoton_abi::{PackAbiPlain, UnpackAbiPlain};
 use serde::Serialize;
 use ton_block::MsgAddressInt;
 
-use crate::{models::types::*, utils::serialize_msg_address_int};
+use crate::models::types::*;
+use crate::utils::serialize_msg_address_int;
 
-/*
-   FactoryAuction,
-   Collection,
-   FactoryDirectBuy,
-   FactoryDirectSell,
-   MintAndSell,
-*/
+// FactoryAuction,
+// Collection,
+// FactoryDirectBuy,
+// FactoryDirectSell,
+// MintAndSell,
 #[derive(Clone, UnpackAbiPlain, PackAbiPlain, PartialEq, Eq, Debug, Serialize)]
 pub struct OwnershipTransferred {
     #[abi(name = "oldOwner")]
@@ -21,25 +20,21 @@ pub struct OwnershipTransferred {
     pub new_owner: MsgAddressInt,
 }
 
-/*
-   FactoryAuction,
-   FactoryDirectBuy,
-   FactoryDirectSell,
-*/
+// FactoryAuction,
+// FactoryDirectBuy,
+// FactoryDirectSell,
 #[derive(Clone, UnpackAbiPlain, PackAbiPlain, PartialEq, Eq, Debug, Serialize)]
 pub struct MarketFeeDefaultChanged {
     #[abi]
     pub fee: MarketFee,
 }
 
-/*
-   FactoryAuction,
-   Auction,
-   DirectBuy,
-   DirectSell,
-   FactoryDirectBuy,
-   FactoryDirectSell,
-*/
+// FactoryAuction,
+// Auction,
+// DirectBuy,
+// DirectSell,
+// FactoryDirectBuy,
+// FactoryDirectSell,
 #[derive(Clone, UnpackAbiPlain, PackAbiPlain, PartialEq, Eq, Debug, Serialize)]
 pub struct MarketFeeChanged {
     #[abi]
@@ -49,11 +44,9 @@ pub struct MarketFeeChanged {
     pub fee: MarketFee,
 }
 
-/*
-   FactoryAuction,
-   FactoryDirectBuy,
-   FactoryDirectSell,
-*/
+// FactoryAuction,
+// FactoryDirectBuy,
+// FactoryDirectSell,
 #[derive(Clone, UnpackAbiPlain, PackAbiPlain, PartialEq, Eq, Debug, Serialize)]
 pub struct AddCollectionRules {
     #[abi]
@@ -63,11 +56,9 @@ pub struct AddCollectionRules {
     pub collection_fee_info: CollectionFeeInfo,
 }
 
-/*
-   FactoryAuction,
-   FactoryDirectBuy,
-   FactoryDirectSell,
-*/
+// FactoryAuction,
+// FactoryDirectBuy,
+// FactoryDirectSell,
 #[derive(Clone, UnpackAbiPlain, PackAbiPlain, PartialEq, Eq, Debug, Serialize)]
 pub struct RemoveCollectionRules {
     #[abi]
