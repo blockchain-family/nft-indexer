@@ -8,7 +8,7 @@ env:
   KAFKA_CONSUMER_GROUP: nft-indexer-msha
   KAFKA_TOPIC: msha-raw-transactions
 
-  KAFKA_SETTINGS__BOOTSTRAP_SERVERS: kafka-a050fc9d-o468b9b17.database.cloud.ovh.net:20186
+  KAFKA_SETTINGS__BOOTSTRAP_SERVERS: kafka-f8ec3b33-o1174e556.database.cloud.ovh.net:20186
   KAFKA_SETTINGS__SECURITY_PROTOCOL: SSL
   KAFKA_SETTINGS__SSL_CA_LOCATION: /tmp/ca.pem
   KAFKA_SETTINGS__SSL_KEY_LOCATION: /tmp/service.key
@@ -36,5 +36,5 @@ controller: statefulset
 
 sharedSecrets:
   - nftIndexer
-  - kafkaMsha
+  - kafkaTychoTestnet
   - rpcEndpoints
