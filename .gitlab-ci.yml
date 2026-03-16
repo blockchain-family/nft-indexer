@@ -1,69 +1,45 @@
 include:
   - project: "infrastructure/gitlab-ci"
     ref: main
-    file: "/templates/cloudbuild-common.gitlab-ci.yaml"
+    file: "/templates/docker-dedicated-common.gitlab-ci.yaml"
   - project: "infrastructure/gitlab-ci"
     ref: main
-    file: "templates/deploy.gitlab-ci.yaml"
+    file: "templates/deploy-v2.gitlab-ci.yaml"
 
 stages:
-  - cloudbuild
+  - build
   - deploy
 
-cloudbuild:image:stage:
+build:
   only:
     - tokstock
   except:
     - tags
-  extends: .cloudbuild:common
+  extends: .build:common
 
-deploy:tokstock-stage:
-  only:
-    - tokstock
-  extends: .deploy
-  environment:
-    name: stage
-    on_stop: stop:tokstock-stage
-  variables:
-    K8S_NAMESPACE: ${CI_PROJECT_ROOT_NAMESPACE}-stage
-    APP_CONFIG: tokstock
-
-stop:tokstock-stage:
-  only:
-    - tokstock
-  extends: .stop
-  environment:
-    name: stage
-  variables:
-    K8S_NAMESPACE: ${CI_PROJECT_ROOT_NAMESPACE}-stage
-    APP_CONFIG: tokstock
-
-
-cloudbuild:image:prod:
+deploy:prod-tokstock:
   only:
     - tokstock
   except:
     - tags
-  extends: .cloudbuild:common
-
-
-deploy:tokstock-prod:
-  only:
-    - tokstock
   extends: .deploy
   variables:
-    K8S_NAMESPACE: ${CI_PROJECT_ROOT_NAMESPACE}-prod
+    K8S_NAMESPACE: nft-tokstock
     APP_CONFIG: tokstock
   environment:
     name: prod
-    on_stop: stop:tokstock-prod
+    on_stop: stop:prod-tokstock
+  tags: ["broxus-pve-main"]
 
-stop:tokstock-prod:
+stop:prod-tokstock:
   only:
     - tokstock
+  except:
+    - tags
   extends: .stop
   variables:
-    K8S_NAMESPACE: ${CI_PROJECT_ROOT_NAMESPACE}-prod
+    K8S_NAMESPACE: nft-tokstock
     APP_CONFIG: tokstock
   environment:
     name: prod
+  tags: ["broxus-pve-main"]
