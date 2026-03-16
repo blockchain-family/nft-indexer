@@ -38,9 +38,9 @@ vault:
   role: "nft-nft-indexer-msha"
   file:
     name: config
-    path: kubernetes/data/broxus/main/nft-msha/nft-indexer-msha
+    path: kubernetes/data/broxus/main/nft-msha/nft-indexer
     template: |
-      {{- with secret "kubernetes/data/broxus/main/nft-msha/nft-indexer-msha" -}}
+      {{- with secret "kubernetes/data/broxus/main/nft-msha/nft-indexer" -}}
       {{- range $k, $v := .Data.data }}
       export {{ $k }}={{ printf "%q" $v }}
       {{- end }}
