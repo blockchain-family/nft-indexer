@@ -35,7 +35,7 @@ containerArguments:
 
 vault:
   enabled: true
-  role: "nft-indexer-prod-msha"
+  role: "nft-nft-indexer-msha"
   file:
     name: config
     path: kubernetes/data/broxus/main/nft-msha/nft-indexer-msha

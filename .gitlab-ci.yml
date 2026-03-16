@@ -44,32 +44,6 @@ stop:prod-tycho-testnet:
     name: prod
   tags: ["broxus-pve-main"]
 
-deploy:prod-mainnet-venom:
-  only:
-    - master
-  except:
-    - tags
-  extends: .deploy
-  variables:
-    K8S_NAMESPACE: nft-venom
-    APP_CONFIG: mainnet-venom
-  environment:
-    name: prod
-    on_stop: stop:prod-mainnet-venom
-  tags: ["broxus-pve-main"]
-
-stop:prod-mainnet-venom:
-  only:
-    - master
-  except:
-    - tags
-  extends: .stop
-  variables:
-    K8S_NAMESPACE: nft-venom
-    APP_CONFIG: mainnet-venom
-  environment:
-    name: prod
-  tags: ["broxus-pve-main"]
 
 deploy:prod-msha:
   only:
