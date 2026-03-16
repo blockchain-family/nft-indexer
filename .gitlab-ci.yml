@@ -1,110 +1,99 @@
 include:
   - project: "infrastructure/gitlab-ci"
     ref: main
-    file: "/templates/cloudbuild-common.gitlab-ci.yaml"
+    file: "/templates/docker-dedicated-common.gitlab-ci.yaml"
   - project: "infrastructure/gitlab-ci"
     ref: main
-    file: "templates/deploy.gitlab-ci.yaml"
+    file: "templates/deploy-v2.gitlab-ci.yaml"
 
 stages:
-  - cloudbuild
+  - build
   - deploy
 
-cloudbuild:image:stage:
+build:stage:
   only:
     - master
   except:
     - tags
-  extends: .cloudbuild:common
+  extends: .build:common
 
-deploy:stage-mainnet-venom:
+deploy:prod-tycho-testnet:
   only:
     - master
-  extends: .deploy
-  environment:
-    name: stage
-    on_stop: stop:stage-mainnet-venom
-  variables:
-    K8S_NAMESPACE: ${CI_PROJECT_ROOT_NAMESPACE}-stage
-    APP_CONFIG: mainnet-venom
-
-stop:stage-mainnet-venom:
-  only:
-    - master
-  extends: .stop
-  environment:
-    name: stage
-  variables:
-    K8S_NAMESPACE: ${CI_PROJECT_ROOT_NAMESPACE}-stage
-    APP_CONFIG: mainnet-venom
-
-deploy:stage-tycho-testnet:
-  only:
-    - master
-  extends: .deploy
-  environment:
-    name: stage
-    on_stop: stop:stage-tycho-testnet
-  variables:
-    K8S_NAMESPACE: ${CI_PROJECT_ROOT_NAMESPACE}-tycho-testnet
-    APP_CONFIG: tycho-testnet
-
-stop:stage-tycho-testnet:
-  only:
-    - master
-  extends: .stop
-  environment:
-    name: stage
-  variables:
-    K8S_NAMESPACE: ${CI_PROJECT_ROOT_NAMESPACE}-tycho-testnet
-    APP_CONFIG: tycho-testnet
-
-
-cloudbuild:image:prod:
-  only:
-    - prod
   except:
     - tags
-  extends: .cloudbuild:common
+  extends: .deploy
+  variables:
+    K8S_NAMESPACE: nft-tycho-testnet
+    APP_CONFIG: tycho-testnet
+  environment:
+    name: prod
+    on_stop: stop:prod-tycho-testnet
+  tags: ["broxus-pve-main"]
+
+stop:prod-tycho-testnet:
+  only:
+    - master
+  except:
+    - tags
+  extends: .stop
+  variables:
+    K8S_NAMESPACE: nft-tycho-testnet
+    APP_CONFIG: tycho-testnet
+  environment:
+    name: prod
+  tags: ["broxus-pve-main"]
 
 deploy:prod-mainnet-venom:
   only:
-    - prod
+    - master
+  except:
+    - tags
   extends: .deploy
+  variables:
+    K8S_NAMESPACE: nft-venom
+    APP_CONFIG: mainnet-venom
   environment:
     name: prod
     on_stop: stop:prod-mainnet-venom
-  variables:
-    K8S_NAMESPACE: ${CI_PROJECT_ROOT_NAMESPACE}-prod
-    APP_CONFIG: mainnet-venom
+  tags: ["broxus-pve-main"]
 
 stop:prod-mainnet-venom:
   only:
-    - prod
+    - master
+  except:
+    - tags
   extends: .stop
+  variables:
+    K8S_NAMESPACE: nft-venom
+    APP_CONFIG: mainnet-venom
   environment:
     name: prod
-  variables:
-    K8S_NAMESPACE: ${CI_PROJECT_ROOT_NAMESPACE}-prod
-    APP_CONFIG: mainnet-venom
+  tags: ["broxus-pve-main"]
 
 deploy:prod-msha:
   only:
-    - prod
+    - master
+  except:
+    - tags
   extends: .deploy
+  variables:
+    K8S_NAMESPACE: nft-msha
+    APP_CONFIG: msha
   environment:
     name: prod
     on_stop: stop:prod-msha
-  variables:
-    K8S_NAMESPACE: ${CI_PROJECT_ROOT_NAMESPACE}-msha
-    APP_CONFIG: msha
+  tags: ["broxus-pve-main"]
 
 stop:prod-msha:
   only:
-    - prod
+    - master
+  except:
+    - tags
   extends: .stop
+  variables:
+    K8S_NAMESPACE: nft-msha
+    APP_CONFIG: msha
   environment:
     name: prod
-  variables:
-    K8S_NAMESPACE: ${CI_PROJECT_ROOT_NAMESPACE}-msha
-    APP_CONFIG: msha
+  tags: ["broxus-pve-main"]
